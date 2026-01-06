@@ -15,6 +15,7 @@ TUSHARE_INCOME_MAP = {
     "biz_tax_surchg": "total_operating_cost.taxes_and_surcharges",
     "sell_exp": "total_operating_cost.selling_expenses",
     "admin_exp": "total_operating_cost.admin_expenses",
+    "rd_exp": "total_operating_cost.rd_expenses",
     "fin_exp": "total_operating_cost.financial_expenses.amount",
     "assets_impair_loss": "total_operating_cost.asset_impairment_loss",
     "credit_impa_loss": "total_operating_cost.credit_impairment_loss",
@@ -32,9 +33,12 @@ TUSHARE_INCOME_MAP = {
     "asset_disp_income": "other_operating_income.asset_disposal_income",
     "net_expo_hedging_benefits": "other_operating_income.net_exposure_hedging_income",
     # L1: 营业利润
-    "op_profit": "operating_profit.amount",
-    "non_op_income": "operating_profit.non_operating_revenue",
-    "non_op_exp": "operating_profit.non_operating_expenses",
+    "operate_profit": "operating_profit.amount",
+    "op_profit": "operating_profit.amount", # Alias
+    "non_oper_income": "operating_profit.non_operating_revenue",
+    "non_op_income": "operating_profit.non_operating_revenue", # Alias
+    "non_oper_exp": "operating_profit.non_operating_expenses",
+    "non_op_exp": "operating_profit.non_operating_expenses", # Alias
     "n_loss_mt_assets": "operating_profit.non_current_asset_disposal_loss",
     # L1: 利润总额
     "total_profit": "total_profit.amount",
@@ -68,6 +72,7 @@ TUSHARE_BALANCE_MAP = {
     "div_receiv": "current_assets.other_receivables_total.dividends_receivable",
     "int_receiv": "current_assets.other_receivables_total.interest_receivable",
     "inventories": "current_assets.inventories",
+    "contract_assets": "current_assets.contract_assets",
     "nca_within_1y": "current_assets.non_current_assets_due_within_1y",
     "oth_cur_assets": "current_assets.other_current_assets",
     # Assets - Non Current
@@ -75,9 +80,12 @@ TUSHARE_BALANCE_MAP = {
     "lt_eqt_invest": "non_current_assets.long_term_equity_investments",
     "invest_real_estate": "non_current_assets.investment_properties",
     "fix_assets": "non_current_assets.fixed_assets",
-    "cip": "non_current_assets.construction_in_progress", # common abbr
+    "cip_total": "non_current_assets.construction_in_progress",
+    "cip": "non_current_assets.construction_in_progress", # Alias
     "const_materials": "non_current_assets.construction_materials",
+    "use_right_assets": "non_current_assets.right_of_use_assets",
     "intan_assets": "non_current_assets.intangible_assets",
+    "r_and_d": "non_current_assets.development_expenses",
     "goodwill": "non_current_assets.goodwill",
     "lt_amor_exp": "non_current_assets.long_term_deferred_expenses",
     "defer_tax_assets": "non_current_assets.deferred_tax_assets",
@@ -89,16 +97,19 @@ TUSHARE_BALANCE_MAP = {
     "notes_payable": "current_liabilities.notes_and_accounts_payable.notes_payable",
     "acct_payable": "current_liabilities.notes_and_accounts_payable.accounts_payable",
     "adv_receipts": "current_liabilities.advances_from_customers",
+    "contract_liab": "current_liabilities.contract_liabilities",
     "payroll_payable": "current_liabilities.payroll_payable",
     "taxes_payable": "current_liabilities.taxes_payable",
     "int_payable": "current_liabilities.other_payables_total.interest_payable",
     "div_payable": "current_liabilities.other_payables_total.dividends_payable",
     "oth_payable": "current_liabilities.other_payables_total.other_payables",
+    "oth_pay_total": "current_liabilities.other_payables_total.amount",
     "non_cur_liab_due_1y": "current_liabilities.non_current_liabilities_due_within_1y",
     # Liabilities - Non Current
     "total_nc_liab": "non_current_liabilities.total_non_current_liabilities",
     "lt_borr": "non_current_liabilities.long_term_borrowings",
     "bond_payable": "non_current_liabilities.bonds_payable.amount",
+    "lease_liab": "non_current_liabilities.lease_liabilities",
     "lt_payable": "non_current_liabilities.long_term_payables",
     "defer_tax_liab": "non_current_liabilities.deferred_tax_liabilities",
     # Total Liabilities
@@ -114,7 +125,8 @@ TUSHARE_BALANCE_MAP = {
 
 TUSHARE_CASH_MAP = {
     # Operating
-    "n_cashflow_act_oper_a": "operating_activities.net_cash_flow_from_operating",
+    "n_cashflow_act": "operating_activities.net_cash_flow_from_operating",
+    "n_cashflow_act_oper_a": "operating_activities.net_cash_flow_from_operating", # Alias
     "c_fr_sale_sg": "operating_activities.cash_received_from_goods_and_services",
     "recp_tax_rends": "operating_activities.tax_refunds_received",
     "c_fr_oth_operate_a": "operating_activities.other_cash_received_operating",
@@ -123,24 +135,34 @@ TUSHARE_CASH_MAP = {
     "c_paid_to_for_empl": "operating_activities.cash_paid_to_employees",
     "c_paid_for_taxes": "operating_activities.taxes_paid",
     "c_paid_oth_operate_a": "operating_activities.other_cash_paid_operating",
+    "oth_cash_pay_oper_act": "operating_activities.other_cash_paid_operating", # Alias from log
     "c_out_flow_operate_a": "operating_activities.subtotal_cash_outflow_operating",
+    "st_cash_out_act": "operating_activities.subtotal_cash_outflow_operating", # Alias from log
     # Investing
-    "n_cashflow_act_invest_a": "investing_activities.net_cash_flow_from_investing",
+    "n_cashflow_inv_act": "investing_activities.net_cash_flow_from_investing",
+    "n_cashflow_act_invest_a": "investing_activities.net_cash_flow_from_investing", # Alias
     "c_recp_return_invest": "investing_activities.cash_received_from_investment_income",
     "c_disp_withdrwl_invest": "investing_activities.cash_received_from_investment_recovery",
     "n_recp_disp_fix_intan_long": "investing_activities.net_cash_from_disposal_assets",
+    "n_recp_disp_fiolta": "investing_activities.net_cash_from_disposal_assets", # Alias from log
     "c_inf_fr_invest_act": "investing_activities.subtotal_cash_inflow_investing",
+    "stot_inflows_inv_act": "investing_activities.subtotal_cash_inflow_investing", # Alias from log
     "c_paid_acq_invest": "investing_activities.cash_paid_for_assets",
+    "c_pay_acq_const_fiolta": "investing_activities.cash_paid_for_assets", # Alias from log
     "c_paid_invest": "investing_activities.cash_paid_for_investments",
     "c_out_flow_invest_act": "investing_activities.subtotal_cash_outflow_investing",
+    "stot_out_inv_act": "investing_activities.subtotal_cash_outflow_investing", # Alias from log
     # Financing
-    "n_cashflow_act_fnc_a": "financing_activities.net_cash_flow_from_financing",
+    "n_cash_flows_fnc_act": "financing_activities.net_cash_flow_from_financing",
+    "n_cashflow_act_fnc_a": "financing_activities.net_cash_flow_from_financing", # Alias
     "c_recp_cap_invest": "financing_activities.cash_received_from_investments.amount",
     "c_recp_borrow": "financing_activities.cash_received_from_borrowings",
     "c_inf_fr_fnc_act": "financing_activities.subtotal_cash_inflow_financing",
     "c_prepay_amt_borr": "financing_activities.cash_paid_for_debt_repayment",
     "c_dist_dm_profit": "financing_activities.cash_paid_for_dividends_and_profits",
+    "c_pay_dist_dpcp_int_exp": "financing_activities.cash_paid_for_dividends_and_profits", # Alias from log
     "c_out_flow_fnc_act": "financing_activities.subtotal_cash_outflow_financing",
+    "stot_cashout_fnc_act": "financing_activities.subtotal_cash_outflow_financing", # Alias from log
     # Overall
     "n_incr_cash_cash_equ": "cash_increase.net_increase_cash_and_equivalents",
     "c_cash_equ_beg_period": "cash_increase.cash_at_beginning",

@@ -49,6 +49,60 @@ class TushareClient:
         df_income = self.pro.income(ts_code=symbol, start_date=start_date, end_date=end_date)
         df_balance = self.pro.balancesheet(ts_code=symbol, start_date=start_date, end_date=end_date)
         df_cash = self.pro.cashflow(ts_code=symbol, start_date=start_date, end_date=end_date)
+
+        # --- PRE-FILTER: Only keep Consolidated Reports (type 1) and handle NaN ---
+        def clean_df(df):
+            if df.empty: return df
+            # Filter for report_type '1'. Note: Tushare sometimes returns it as string or int
+            df['report_type'] = df['report_type'].astype(str)
+            df = df[df['report_type'] == '1'].copy()
+            return df.fillna(0)
+
+        df_income = clean_df(df_income)
+        df_balance = clean_df(df_balance)
+        df_cash = clean_df(df_cash)
+
+        # --- TEMP LOGGING START ---
+        def log_df_types(name, df):
+            print(f"\n--- {name} Columns Analysis ---")
+            if df.empty:
+                print("DataFrame is empty.")
+                return
+            
+            # Use the most recent row for sample check
+            sample_row = df.iloc[0]
+            
+            print(f"Context -> Date: {sample_row.get('end_date')}, Report Type: {sample_row.get('report_type')}, Comp Type: {sample_row.get('comp_type')}")
+            
+            float_count = 0
+            object_count = 0
+            
+            for col in df.columns:
+                val = sample_row[col]
+                # Determine "Effective Type" based on value
+                eff_type = "Object" # Default to Object (0/Null logic)
+                try:
+                    num_val = float(val)
+                    if num_val != 0 and not pd.isna(num_val):
+                        eff_type = "Float"
+                        float_count += 1
+                    else:
+                        object_count += 1
+                except (ValueError, TypeError):
+                    object_count += 1
+                
+                print(f"{col}: {eff_type} (Raw: {val})")
+            
+            print(f"\n--- {name} Summary ---")
+            print(f"Total Columns: {len(df.columns)}")
+            print(f"Dense Fields (Float): {float_count}")
+            print(f"Sparse/Empty Fields (Object): {object_count}")
+            print(f"Density: {(float_count/len(df.columns))*100:.1f}%")
+
+        log_df_types("Income Statement", df_income)
+        log_df_types("Balance Sheet", df_balance)
+        log_df_types("Cash Flow", df_cash)
+        # --- TEMP LOGGING END ---
         
         # 2. Preprocess
         # We need to merge by 'end_date'. Tushare returns multiple rows per year (quarters).
@@ -93,8 +147,11 @@ class TushareClient:
             month = date[4:6]
             period_type = "Annual" if month == "12" else f"Q{int(month)//3}"
             
+            # UNIQUE ID for the report period to prevent frontend overwriting
+            period_label = f"{year} {period_type}"
+
             reports_list.append(Report(
-                fiscal_year=year,
+                fiscal_year=period_label, # Use the full label as the ID
                 period_type=period_type,
                 data=fin_data
             ))
