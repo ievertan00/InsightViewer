@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { User, Settings, Bell, Menu, Landmark } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Check for company name in localStorage periodically or on mount
@@ -32,7 +34,7 @@ export default function Header() {
             <Menu className="w-6 h-6" />
         </button>
         <div className="flex items-center space-x-2">
-            {companyName ? (
+            {companyName && pathname !== "/upload" ? (
                 <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
                     <Landmark className="w-4 h-4 text-primary mr-2" />
                     <span className="text-sm font-semibold text-primary">{companyName}</span>
