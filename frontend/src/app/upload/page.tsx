@@ -14,9 +14,12 @@ export default function UploadPage() {
   const [isFetchingStock, setIsFetchingStock] = useState(false);
   const [isProcessingPaste, setIsProcessingPaste] = useState(false);
   const [isProcessingUpload, setIsProcessingUpload] = useState(false);
+  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [pasteError, setPasteError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [stockSymbol, setStockSymbol] = useState("");
   const [startYear, setStartYear] = useState("2020");
   const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
@@ -35,18 +38,37 @@ export default function UploadPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    setUploadError(null);
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const newFiles = Array.from(e.dataTransfer.files).filter(f => 
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      const validFiles = droppedFiles.filter(f => 
           f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv') || f.name.endsWith('.json')
       );
-      setFiles((prev) => [...prev, ...newFiles]);
+
+      if (validFiles.length !== droppedFiles.length) {
+          setUploadError("File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files.");
+          return;
+      }
+
+      setFiles((prev) => [...prev, ...validFiles]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
     if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      setFiles((prev) => [...prev, ...newFiles]);
+      const selectedFiles = Array.from(e.target.files);
+      const validFiles = selectedFiles.filter(f => 
+          f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv') || f.name.endsWith('.json')
+      );
+
+      if (validFiles.length !== selectedFiles.length) {
+          setUploadError("File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files.");
+          return;
+      }
+      
+      setFiles((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -56,8 +78,15 @@ export default function UploadPage() {
 
   const fetchStockData = async () => {
     if (!stockSymbol) return;
+    
+    // Validation: 6-digit number
+    if (!/^\d{6}$/.test(stockSymbol)) {
+        setSearchError("Stock Code must be a 6-digit number.");
+        return;
+    }
+
     setIsFetchingStock(true);
-    setError(null);
+    setSearchError(null);
     setProgress(30);
 
     try {
@@ -95,24 +124,31 @@ export default function UploadPage() {
                 router.push("/visualize");
             }, 800);
         } else {
-            setError("No financial reports found for this symbol in the selected period.");
+            setSearchError("No financial reports found for this symbol in the selected period.");
             setIsFetchingStock(false);
         }
     } catch (err: any) {
         console.error(err);
-        setError(err.message || "An error occurred while fetching stock data.");
+        setSearchError(err.message || "An error occurred while fetching stock data.");
         setIsFetchingStock(false);
     }
   };
 
   const handleJsonPaste = async () => {
       if (!jsonContent.trim()) return;
+      
+      try {
+        JSON.parse(jsonContent);
+      } catch (e) {
+        setPasteError("Input must be valid JSON format only.");
+        return;
+      }
+
       setIsProcessingPaste(true);
-      setError(null);
+      setPasteError(null);
       setProgress(20);
       
       try {
-          JSON.parse(jsonContent);
           
           const blob = new Blob([jsonContent], { type: "application/json" });
           const formData = new FormData();
@@ -172,13 +208,13 @@ export default function UploadPage() {
                   router.push("/visualize");
               }, 800);
           } else {
-              setError("The pasted JSON is valid but contains no report data.");
+              setPasteError("The pasted JSON is valid but contains no report data.");
               setIsProcessingPaste(false);
           }
 
       } catch (e: any) {
           console.error(e);
-          setError(e.message || "Invalid JSON format. Please check your syntax.");
+          setPasteError(e.message || "Invalid JSON format. Please check your syntax.");
           setIsProcessingPaste(false);
       }
   };
@@ -628,14 +664,15 @@ Template:
 }
 `;
       navigator.clipboard.writeText(prompt);
-      alert("LLM Prompt copied to clipboard!");
+      setShowCopiedMessage(true);
+      setTimeout(() => setShowCopiedMessage(false), 3000); // Hide after 3 seconds
   };
 
   const processFiles = async () => {
     if (files.length === 0) return;
     
     setIsProcessingUpload(true);
-    setError(null);
+    setUploadError(null);
     setProgress(10); 
 
     try {
@@ -680,7 +717,7 @@ Template:
         }
 
         if (allReports.length === 0) {
-            setError("No valid data could be extracted. Please check the file format.");
+            setUploadError("No valid data could be extracted. Please check the file format.");
             setIsProcessingUpload(false);
             return;
         }
@@ -711,7 +748,7 @@ Template:
 
     } catch (err: any) {
         console.error(err);
-        setError(err.message || "An error occurred while communicating with the backend.");
+        setUploadError(err.message || "An error occurred while communicating with the backend.");
         setIsProcessingUpload(false);
     }
   };
@@ -728,6 +765,12 @@ Template:
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">1</span>
           Search A-Share (Tushare)
         </h3>
+        {searchError && (
+            <div className="text-sm text-red-600 flex items-center bg-red-50 p-2 rounded-md">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {searchError}
+            </div>
+        )}
         <div className="flex space-x-2">
           <input 
             type="text" 
@@ -773,12 +816,7 @@ Template:
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center shadow-sm border border-red-100">
-          <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div className="flex justify-between items-center">
@@ -793,6 +831,12 @@ Template:
             Copy LLM Prompt Template
           </button>
         </div>
+        {pasteError && (
+            <div className="text-sm text-red-600 flex items-center bg-red-50 p-2 rounded-md">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {pasteError}
+            </div>
+        )}
         <textarea
           className="w-full h-32 p-4 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
           placeholder='{"company_meta": {...}, "reports": [...]}'
@@ -834,6 +878,13 @@ Template:
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">3</span>
           Drag & Drop Reports
         </h3>
+        
+        {uploadError && (
+            <div className="text-sm text-red-600 flex items-center bg-red-50 p-2 rounded-md">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {uploadError}
+            </div>
+        )}
         
         <div
           className={clsx(
@@ -917,6 +968,16 @@ Template:
           </div>
         </div>
       )}
+        
+                {/* Copied to Clipboard Message */}
+                <div
+                  className={clsx(
+                    "fixed bottom-4 left-4 px-4 py-2 bg-gray-800 text-white rounded-md shadow-lg transition-all duration-300 z-50",
+                    showCopiedMessage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+                  )}
+                >
+                  Copied to clipboard
+                </div>
     </div>
   );
 }

@@ -328,15 +328,22 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
           "Solvency",
           "Debt to Equity",
           safeDiv(totalDebt, totalEquity),
-          formatNumber,
+          formatPercent,
           "Total Debt / Total Equity"
         );
         addMetric(
           "Solvency",
           "Liabilities to Equity",
           safeDiv(totalLiabilities, totalEquity),
-          formatNumber,
+          formatPercent,
           "Total Liabilities / Total Equity"
+        );
+        addMetric(
+          "Solvency",
+          "Liabilities to Assets",
+          safeDiv(totalLiabilities, totalAssets),
+          formatPercent,
+          "Total Liabilities / Total Assets"
         );
         addMetric(
           "Solvency",
