@@ -9,14 +9,19 @@ export default function UploadPage() {
   const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Split loading states
+  const [isFetchingStock, setIsFetchingStock] = useState(false);
+  const [isProcessingPaste, setIsProcessingPaste] = useState(false);
+  const [isProcessingUpload, setIsProcessingUpload] = useState(false);
+  
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [stockSymbol, setStockSymbol] = useState("");
   const [startYear, setStartYear] = useState("2020");
   const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
-  const [showJsonPaste, setShowJsonPaste] = useState(false);
   const [jsonContent, setJsonContent] = useState("");
+  const [isAppendMode, setIsAppendMode] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -51,7 +56,7 @@ export default function UploadPage() {
 
   const fetchStockData = async () => {
     if (!stockSymbol) return;
-    setIsProcessing(true);
+    setIsFetchingStock(true);
     setError(null);
     setProgress(30);
 
@@ -91,18 +96,18 @@ export default function UploadPage() {
             }, 800);
         } else {
             setError("No financial reports found for this symbol in the selected period.");
-            setIsProcessing(false);
+            setIsFetchingStock(false);
         }
     } catch (err: any) {
         console.error(err);
         setError(err.message || "An error occurred while fetching stock data.");
-        setIsProcessing(false);
+        setIsFetchingStock(false);
     }
   };
 
   const handleJsonPaste = async () => {
       if (!jsonContent.trim()) return;
-      setIsProcessing(true);
+      setIsProcessingPaste(true);
       setError(null);
       setProgress(20);
       
@@ -125,15 +130,41 @@ export default function UploadPage() {
 
           const reportData = await response.json();
           
-          if (reportData.company_meta?.name) {
+          if (isAppendMode) {
+            const existingName = localStorage.getItem("insight_viewer_company_name");
+            const newName = reportData.company_meta?.name;
+            
+            if (existingName && newName && existingName !== newName) {
+                alert(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+                setIsProcessingPaste(false);
+                return;
+            }
+          }
+
+          if (reportData.company_meta?.name && (!isAppendMode || !localStorage.getItem("insight_viewer_company_name"))) {
               localStorage.setItem("insight_viewer_company_name", reportData.company_meta.name);
               window.dispatchEvent(new Event("companyNameUpdate"));
           }
 
           if (reportData.reports) {
-              reportData.reports.sort((a: any, b: any) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year));
+              let finalReports = reportData.reports;
+              if (isAppendMode) {
+                  const existingReportsStr = localStorage.getItem("insight_viewer_reports");
+                  if (existingReportsStr) {
+                      try {
+                          const existingReports = JSON.parse(existingReportsStr);
+                          if (Array.isArray(existingReports)) {
+                              finalReports = [...existingReports, ...reportData.reports];
+                          }
+                      } catch (e) {
+                          console.error("Failed to parse existing reports", e);
+                      }
+                  }
+              }
+
+              finalReports.sort((a: any, b: any) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year));
               
-              localStorage.setItem("insight_viewer_reports", JSON.stringify(reportData.reports));
+              localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
               localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
               
               setProgress(100);
@@ -142,13 +173,13 @@ export default function UploadPage() {
               }, 800);
           } else {
               setError("The pasted JSON is valid but contains no report data.");
-              setIsProcessing(false);
+              setIsProcessingPaste(false);
           }
 
       } catch (e: any) {
           console.error(e);
           setError(e.message || "Invalid JSON format. Please check your syntax.");
-          setIsProcessing(false);
+          setIsProcessingPaste(false);
       }
   };
 
@@ -603,7 +634,7 @@ Template:
   const processFiles = async () => {
     if (files.length === 0) return;
     
-    setIsProcessing(true);
+    setIsProcessingUpload(true);
     setError(null);
     setProgress(10); 
 
@@ -612,8 +643,6 @@ Template:
         
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
-            // Create FormData to send file to Backend
             const formData = new FormData();
             formData.append("file", file);
 
@@ -627,46 +656,68 @@ Template:
                 throw new Error(errorData.detail || `Failed to parse ${file.name}`);
             }
 
-                    const reportData = await response.json();
-                            // Save company name if available
-                            if (reportData.company_meta?.name) {
-                                localStorage.setItem("insight_viewer_company_name", reportData.company_meta.name);
-                                window.dispatchEvent(new Event("companyNameUpdate"));
-                            }
-                                        if (reportData.reports) {
-                        allReports = [...allReports, ...reportData.reports];
-                    }
-                        setProgress(10 + Math.round(((i + 1) / files.length) * 80));
+            const reportData = await response.json();
+            
+            if (isAppendMode) {
+                const existingName = localStorage.getItem("insight_viewer_company_name");
+                const newName = reportData.company_meta?.name;
+                
+                if (existingName && newName && existingName !== newName) {
+                    alert(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+                    setIsProcessingUpload(false);
+                    return;
+                }
+            }
+
+            if (reportData.company_meta?.name && (!isAppendMode || !localStorage.getItem("insight_viewer_company_name"))) {
+                localStorage.setItem("insight_viewer_company_name", reportData.company_meta.name);
+                window.dispatchEvent(new Event("companyNameUpdate"));
+            }
+            if (reportData.reports) {
+                allReports = [...allReports, ...reportData.reports];
+            }
+            setProgress(10 + Math.round(((i + 1) / files.length) * 80));
         }
 
         if (allReports.length === 0) {
             setError("No valid data could be extracted. Please check the file format.");
-            setIsProcessing(false);
+            setIsProcessingUpload(false);
             return;
         }
 
-        // Save standardized reports to LocalStorage (or context later)
-        // Sort by year desc across all uploaded files
-        allReports.sort((a, b) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year));
+        let finalReports = allReports;
+        if (isAppendMode) {
+            const existingReportsStr = localStorage.getItem("insight_viewer_reports");
+            if (existingReportsStr) {
+                try {
+                    const existingReports = JSON.parse(existingReportsStr);
+                    if (Array.isArray(existingReports)) {
+                        finalReports = [...existingReports, ...allReports];
+                    }
+                } catch (e) {
+                    console.error("Failed to parse existing reports", e);
+                }
+            }
+        }
 
-        localStorage.setItem("insight_viewer_reports", JSON.stringify(allReports));
+        finalReports.sort((a: any, b: any) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year));
+        localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
         localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
 
         setProgress(100);
-        
         setTimeout(() => {
-            router.push("/visualize"); // Redirect to visualize or data view
+            router.push("/visualize");
         }, 800);
 
     } catch (err: any) {
         console.error(err);
         setError(err.message || "An error occurred while communicating with the backend.");
-        setIsProcessing(false);
+        setIsProcessingUpload(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Get Financial Data</h1>
         <p className="text-gray-500">Search by Stock Symbol or upload Excel/JSON files.</p>
@@ -674,170 +725,195 @@ Template:
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <h3 className="font-semibold text-gray-800 flex items-center">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">1</span>
-            Search A-Share (Tushare)
+          <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">1</span>
+          Search A-Share (Tushare)
         </h3>
         <div className="flex space-x-2">
-            <input 
-                type="text" 
-                placeholder="Code (e.g. 600519)" 
-                className="flex-[2] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                value={stockSymbol}
-                onChange={(e) => setStockSymbol(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchStockData()}
-            />
-            <input 
-                type="number" 
-                placeholder="Start" 
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                value={startYear}
-                onChange={(e) => setStartYear(e.target.value)}
-            />
-            <span className="self-center text-gray-400">-</span>
-            <input 
-                type="number" 
-                placeholder="End" 
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                value={endYear}
-                onChange={(e) => setEndYear(e.target.value)}
-            />
-            <button 
-                onClick={fetchStockData}
-                disabled={isProcessing || !stockSymbol}
-                className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 whitespace-nowrap"
-            >
-                Fetch Data
-            </button>
+          <input 
+            type="text" 
+            placeholder="Code (e.g. 600519)" 
+            className="flex-[2] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            value={stockSymbol}
+            onChange={(e) => setStockSymbol(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchStockData()}
+          />
+          <input 
+            type="number" 
+            placeholder="Start" 
+            className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            value={startYear}
+            onChange={(e) => setStartYear(e.target.value)}
+          />
+          <span className="self-center text-gray-400">-</span>
+          <input 
+            type="number" 
+            placeholder="End" 
+            className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            value={endYear}
+            onChange={(e) => setEndYear(e.target.value)}
+          />
+          <button 
+            onClick={fetchStockData}
+            disabled={isFetchingStock || !stockSymbol}
+            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 whitespace-nowrap flex items-center"
+          >
+            {isFetchingStock ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isFetchingStock ? "Fetching..." : "Fetch Data"}
+          </button>
         </div>
         <p className="text-xs text-gray-400">Note: Requires Tushare API Token configured on backend.</p>
       </div>
 
       <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-              <span className="bg-gray-50 px-2 text-gray-500">OR</span>
-          </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div className="flex justify-between items-center">
-            <h3 className="font-semibold text-gray-800 flex items-center">
-                <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">2</span>
-                Paste JSON Data
-            </h3>
-            <button 
-                onClick={copyLlmPrompt}
-                className="text-xs text-primary hover:text-blue-800 font-medium underline"
-            >
-                Copy LLM Prompt Template
-            </button>
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200"></div>
         </div>
-        <textarea
-            className="w-full h-32 p-4 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            placeholder='{"company_meta": {...}, "reports": [...]}'
-            value={jsonContent}
-            onChange={(e) => setJsonContent(e.target.value)}
-        />
-        <div className="flex justify-end">
-            <button 
-                onClick={handleJsonPaste}
-                disabled={!jsonContent.trim() || isProcessing}
-                className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 flex items-center"
-            >
-                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                {isProcessing ? "Processing..." : "Load & Process JSON"}
-            </button>
-        </div>
-      </div>
-
-      <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-              <span className="bg-gray-50 px-2 text-gray-500">OR</span>
-          </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <h3 className="font-semibold text-gray-800 flex items-center">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">3</span>
-            Drag & Drop Reports
-        </h3>
-        
-        <div
-            className={clsx(
-            "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer bg-gray-50/50 min-h-[200px]",
-            isDragging ? "border-primary bg-blue-50" : "border-gray-200 hover:border-primary"
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
-            <UploadCloud className={clsx("w-12 h-12 mb-4", isDragging ? "text-primary" : "text-gray-400")} />
-            <p className="text-sm text-gray-500 mb-4 text-center">
-                Drag and drop your Excel or JSON files here
-            </p>
-            <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors">
-                Browse Files
-                <input type="file" className="hidden" multiple onChange={handleFileChange} accept=".xlsx,.xls,.csv,.json" />
-            </label>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-gray-50 px-2 text-gray-500">OR</span>
         </div>
       </div>
 
       {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              {error}
-          </div>
+        <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center shadow-sm border border-red-100">
+          <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold text-gray-800 flex items-center">
+            <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">2</span>
+            Paste JSON Data
+          </h3>
+          <button 
+            onClick={copyLlmPrompt}
+            className="text-xs text-primary hover:text-blue-800 font-medium underline"
+          >
+            Copy LLM Prompt Template
+          </button>
+        </div>
+        <textarea
+          className="w-full h-32 p-4 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          placeholder='{"company_meta": {...}, "reports": [...]}'
+          value={jsonContent}
+          onChange={(e) => setJsonContent(e.target.value)}
+        />
+        <div className="flex justify-end items-center space-x-4">
+          <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={isAppendMode} 
+              onChange={(e) => setIsAppendMode(e.target.checked)}
+              className="rounded text-primary focus:ring-primary"
+            />
+            <span>Add to existing data</span>
+          </label>
+          <button 
+            onClick={handleJsonPaste}
+            disabled={!jsonContent.trim() || isProcessingPaste}
+            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 flex items-center"
+          >
+            {isProcessingPaste ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isProcessingPaste ? "Processing..." : "Load & Process JSON"}
+          </button>
+        </div>
+      </div>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-gray-50 px-2 text-gray-500">OR</span>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-semibold text-gray-800 flex items-center">
+          <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">3</span>
+          Drag & Drop Reports
+        </h3>
+        
+        <div
+          className={clsx(
+            "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer bg-gray-50/50 min-h-[200px]",
+            isDragging ? "border-primary bg-blue-50" : "border-gray-200 hover:border-primary"
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <UploadCloud className={clsx("w-12 h-12 mb-4", isDragging ? "text-primary" : "text-gray-400")} />
+          <p className="text-sm text-gray-500 mb-2 text-center">Drag and drop your Excel or JSON files here</p>
+          <div className="flex space-x-3 text-xs mb-4">
+            <span className="text-gray-400">Templates:</span>
+            <a href="/templates/Standard_Income_Statement.xlsx" download className="text-primary hover:underline">Income Statement</a>
+            <span className="text-gray-300">|</span>
+            <a href="/templates/Standard_Balance_Sheet.xlsx" download className="text-primary hover:underline">Balance Sheet</a>
+            <span className="text-gray-300">|</span>
+            <a href="/templates/Standard_Cash_Flow.xlsx" download className="text-primary hover:underline">Cash Flow</a>
+          </div>
+          <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors">
+            Browse Files
+            <input type="file" className="hidden" multiple onChange={handleFileChange} accept=".xlsx,.xls,.csv,.json" />
+          </label>
+        </div>
+      </div>
 
       {files.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
           <h3 className="font-semibold text-gray-800">Selected Files ({files.length})</h3>
           <div className="space-y-2">
             {files.map((file, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                        <FileIcon className="w-5 h-5 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">{file.name}</span>
-                        <span className="text-xs text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    {!isProcessing && (
-                        <button onClick={() => removeFile(idx)} className="text-red-500 hover:text-red-700 text-sm">Remove</button>
-                    )}
+              <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <FileIcon className="w-5 h-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">{file.name}</span>
+                  <span className="text-xs text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
                 </div>
+                {!isProcessingUpload && (
+                  <button onClick={() => removeFile(idx)} className="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                )}
+              </div>
             ))}
           </div>
           
           <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-             {isProcessing ? (
-                 <div className="flex-1 mr-4">
-                     <div className="flex justify-between text-sm mb-1">
-                        <span className="text-primary font-medium">Processing...</span>
-                        <span className="text-gray-500">{progress}%</span>
-                     </div>
-                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                     </div>
-                 </div>
-             ) : (
-                <div className="flex-1"></div>
-             )}
+            {isProcessingUpload ? (
+              <div className="flex-1 mr-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-primary font-medium">Processing...</span>
+                  <span className="text-gray-500">{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="bg-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                </div>
+              </div>
+            ) : <div className="flex-1"></div>}
 
-             <button 
-               onClick={processFiles}
-               disabled={isProcessing}
-               className={clsx(
-                   "px-6 py-2 rounded-lg font-medium text-white transition-colors flex items-center ml-4",
-                   isProcessing ? "bg-gray-400 cursor-not-allowed" : "bg-primary hover:bg-blue-900"
-               )}
-             >
-               {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-               {isProcessing ? "Parsing..." : "Start Processing"}
-             </button>
+            <div className="flex items-center ml-4">
+              <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer mr-4">
+                <input 
+                  type="checkbox" 
+                  checked={isAppendMode} 
+                  onChange={(e) => setIsAppendMode(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary"
+                />
+                <span>Add to existing data</span>
+              </label>
+              <button 
+                onClick={processFiles}
+                disabled={isProcessingUpload}
+                className={clsx(
+                  "px-6 py-2 rounded-lg font-medium text-white transition-colors flex items-center",
+                  isProcessingUpload ? "bg-gray-400 cursor-not-allowed" : "bg-primary hover:bg-blue-900"
+                )}
+              >
+                {isProcessingUpload && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isProcessingUpload ? "Parsing..." : "Start Processing"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -11,26 +11,90 @@ const formatKey = (key: string) => {
 
 // Custom sort for periods: Year DESC, then Period (Annual > Q4 > Q3 > Q2 > Q1)
 const sortPeriods = (periods: string[]) => {
-    const priority: Record<string, number> = { "Annual": 10, "Q4": 4, "Q3": 3, "Q2": 2, "Q1": 1 };
+    const priority: Record<string, number> = { "ANNUAL": 10, "Q4": 4, "Q3": 3, "Q2": 2, "Q1": 1 };
     
     return [...periods].sort((a, b) => {
-        const [yearA, pA] = a.split(' ');
-        const [yearB, pB] = b.split(' ');
+        const partsA = a.trim().split(/\s+/);
+        const partsB = b.trim().split(/\s+/);
+        
+        const yearA = parseInt(partsA[0]) || 0;
+        const yearB = parseInt(partsB[0]) || 0;
         
         if (yearA !== yearB) {
-            return parseInt(yearB) - parseInt(yearA); // Year Descending
+            return yearB - yearA; // Year Descending
         }
         
-        // Same year, use priority
+        const pA = (partsA.length > 1 ? partsA[1] : "").toUpperCase();
+        const pB = (partsB.length > 1 ? partsB[1] : "").toUpperCase();
+        
         return (priority[pB] || 0) - (priority[pA] || 0); // Priority Descending
     });
 };
+
+// Standard schema order for consistent row sorting
+const STANDARD_SCHEMA_ORDER: Record<string, number> = (() => {
+    const order: string[] = [
+        // Income Statement
+        "total_operating_revenue", "operating_revenue", "interest_income", "earned_premiums", "fee_and_commission_income", "other_business_revenue",
+        "total_operating_cost", "operating_cost", "interest_expenses", "fee_and_commission_expenses", "taxes_and_surcharges", "selling_expenses", "admin_expenses", "rd_expenses", "financial_expenses", 
+        "asset_impairment_loss", "credit_impairment_loss", "surrender_value", "net_compensation_expenses", "net_insurance_contract_reserves", "policy_dividend_expenses", "reinsurance_expenses", "other_business_costs",
+        "other_operating_income", "fair_value_change_income", "investment_income", "investment_income_from_associates_jv", "net_exposure_hedging_income", "exchange_income", "asset_disposal_income",
+        "operating_profit", "non_operating_revenue", "non_operating_expenses", 
+        "total_profit", "income_tax", 
+        "net_profit", "net_profit_continuing_ops", "net_profit_discontinued_ops", "net_profit_attr_to_parent", "minority_interest_income",
+        "earnings_per_share", "basic_eps", "diluted_eps",
+        "other_comprehensive_income", "total_comprehensive_income",
+
+        // Balance Sheet - Assets
+        "current_assets", "monetary_funds", "clearing_settlement_funds", "lending_funds", "trading_financial_assets", "derivative_financial_assets", "notes_and_accounts_receivable", "notes_receivable", "accounts_receivable", "receivables_financing", "prepayments", "premiums_receivable", "reinsurance_accounts_receivable", "other_receivables_total", "other_receivables", "inventories", "contract_assets", "assets_held_for_sale", "non_current_assets_due_within_1y", "other_current_assets", "total_current_assets",
+        "non_current_assets", "loans_and_advances", "debt_investments", "long_term_receivables", "long_term_equity_investments", "investment_properties", "fixed_assets", "construction_in_progress", "right_of_use_assets", "intangible_assets", "development_expenses", "goodwill", "long_term_deferred_expenses", "deferred_tax_assets", "other_non_current_assets", "total_non_current_assets",
+        "total_assets",
+
+        // Balance Sheet - Liabilities
+        "current_liabilities", "short_term_borrowings", "borrowings_from_central_bank", "trading_financial_liabilities", "derivative_financial_liabilities", "notes_and_accounts_payable", "notes_payable", "accounts_payable", "advances_from_customers", "contract_liabilities", "payroll_payable", "taxes_payable", "other_payables_total", "other_payables", "non_current_liabilities_due_within_1y", "other_current_liabilities", "total_current_liabilities",
+        "non_current_liabilities", "long_term_borrowings", "bonds_payable", "lease_liabilities", "long_term_payables", "estimated_liabilities", "deferred_revenue", "deferred_tax_liabilities", "other_non_current_liabilities", "total_non_current_liabilities",
+        "total_liabilities",
+
+        // Balance Sheet - Equity
+        "equity", "paid_in_capital", "other_equity_instruments", "capital_reserves", "treasury_stock", "other_comprehensive_income", "special_reserves", "surplus_reserves", "general_risk_reserves", "undistributed_profit", "total_parent_equity", "minority_interests", "total_equity", "total_liabilities_and_equity",
+
+        // Cash Flow - Operating
+        "operating_activities", "cash_received_from_goods_and_services", "tax_refunds_received", "other_cash_received_operating", "subtotal_cash_inflow_operating",
+        "cash_paid_for_goods_and_services", "cash_paid_to_employees", "taxes_paid", "other_cash_paid_operating", "subtotal_cash_outflow_operating", "net_cash_flow_from_operating",
+
+        // Cash Flow - Investing
+        "investing_activities", "cash_received_from_investment_recovery", "cash_received_from_investment_income", "net_cash_from_disposal_assets", "subtotal_cash_inflow_investing",
+        "cash_paid_for_assets", "cash_paid_for_investments", "subtotal_cash_outflow_investing", "net_cash_flow_from_investing",
+
+        // Cash Flow - Financing
+        "financing_activities", "cash_received_from_investments", "cash_received_from_borrowings", "subtotal_cash_inflow_financing",
+        "cash_paid_for_debt_repayment", "cash_paid_for_dividends_and_profits", "subtotal_cash_outflow_financing", "net_cash_flow_from_financing",
+
+        // Cash Flow - End
+        "cash_increase", "exchange_rate_effect", "net_increase_cash_and_equivalents", "cash_at_beginning", "cash_at_end",
+        "supplementary_info", "net_profit_adjustment"
+    ];
+    
+    const map: Record<string, number> = {};
+    order.forEach((key, idx) => {
+        map[key] = idx;
+    });
+    return map;
+})();
 
 const flattenReports = (reports: any[]) => {
     const flattened: Record<string, any> = {};
 
     reports.forEach((report: any) => {
-        const yearKey = report.fiscal_year; // e.g. "2024 Q3"
+        let yearKey = report.fiscal_year.trim(); // e.g. "2024", "2024 Q3"
+        
+        // Normalize Annual keys for filtering consistency
+        if (report.period_type && report.period_type.toLowerCase() === 'annual') {
+            if (!yearKey.toLowerCase().includes('annual')) {
+                yearKey = `${yearKey} Annual`;
+            }
+        }
+
         const data = report.data;
 
         if (!data) return;
@@ -44,6 +108,11 @@ const flattenReports = (reports: any[]) => {
 
                     const value = obj[key];
                     const fullKey = prefix ? `${prefix}.${key}` : key;
+                    // Use just the last key part for ID generation if it's unique enough for sorting, 
+                    // or keep full path but map to order.
+                    // Let's use the key itself (e.g. "operating_revenue") for matching schema order.
+                    const keyForOrder = key; 
+                    
                     const uniqueId = `${typeLabel}-${fullKey}`;
 
                     if (typeof value === 'object' && value !== null) {
@@ -53,6 +122,7 @@ const flattenReports = (reports: any[]) => {
                                     account: formatKey(key), 
                                     type: typeLabel, 
                                     originalKey: fullKey,
+                                    orderKey: keyForOrder, // Store for sorting
                                     id: uniqueId
                                 };
                              }
@@ -65,6 +135,7 @@ const flattenReports = (reports: any[]) => {
                                 account: formatKey(key), 
                                 type: typeLabel, 
                                 originalKey: fullKey,
+                                orderKey: keyForOrder, // Store for sorting
                                 id: uniqueId
                             };
                          }
@@ -80,7 +151,18 @@ const flattenReports = (reports: any[]) => {
         processSection("cash_flow_statement", data.cash_flow_statement, "Cash Flow");
     });
 
-    return Object.values(flattened);
+    return Object.values(flattened).sort((a, b) => {
+        // Sort by Type first (Income > Balance > Cash)
+        const typeOrder: Record<string, number> = { "Income Statement": 1, "Balance Sheet": 2, "Cash Flow": 3 };
+        const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+        if (typeDiff !== 0) return typeDiff;
+
+        // Sort by Schema Order
+        const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
+        const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
+        
+        return orderA - orderB;
+    });
 };
 
 export default function DataPage() {
@@ -113,7 +195,14 @@ export default function DataPage() {
         try {
             const reports = JSON.parse(storedReports);
             if (Array.isArray(reports) && reports.length > 0) {
-                 const allYearsRaw = Array.from(new Set(reports.map((r: any) => r.fiscal_year))) as string[];
+                 const allYearsRaw = Array.from(new Set(reports.map((r: any) => {
+                     let y = r.fiscal_year.trim();
+                     if (r.period_type && r.period_type.toLowerCase() === 'annual' && !y.toLowerCase().includes('annual')) {
+                         y = `${y} Annual`;
+                     }
+                     return y;
+                 }))) as string[];
+                 
                  const sortedYears = sortPeriods(allYearsRaw);
                  setYears(sortedYears);
 
