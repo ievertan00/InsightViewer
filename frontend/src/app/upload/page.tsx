@@ -13,6 +13,9 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [stockSymbol, setStockSymbol] = useState("");
+  const [startYear, setStartYear] = useState("2020");
+  const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -45,6 +48,58 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const fetchStockData = async () => {
+    if (!stockSymbol) return;
+    setIsProcessing(true);
+    setError(null);
+    setProgress(30);
+
+    try {
+        const symbol = stockSymbol.includes('.') ? stockSymbol : `${stockSymbol}.SH`;
+        
+        // Construct API URL with date filters
+        let url = `http://localhost:8000/api/v1/stock/${symbol}`;
+        const params = new URLSearchParams();
+        if (startYear) params.append("start_date", `${startYear}0101`);
+        if (endYear) params.append("end_date", `${endYear}1231`);
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to fetch stock data");
+        }
+
+        const data = await response.json();
+        setProgress(100);
+
+        if (data.company_meta?.name) {
+            localStorage.setItem("insight_viewer_company_name", data.company_meta.name);
+            window.dispatchEvent(new Event("companyNameUpdate"));
+        }
+
+        if (data.reports && data.reports.length > 0) {
+            localStorage.setItem("insight_viewer_reports", JSON.stringify(data.reports));
+            localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
+            
+            setTimeout(() => {
+                router.push("/visualize");
+            }, 800);
+        } else {
+            setError("No financial reports found for this symbol in the selected period.");
+            setIsProcessing(false);
+        }
+    } catch (err: any) {
+        console.error(err);
+        setError(err.message || "An error occurred while fetching stock data.");
+        setIsProcessing(false);
+    }
+  };
+
   const processFiles = async () => {
     if (files.length === 0) return;
     
@@ -72,14 +127,16 @@ export default function UploadPage() {
                 throw new Error(errorData.detail || `Failed to parse ${file.name}`);
             }
 
-            const reportData = await response.json();
-            // In the new schema, reportData is a StandardizedReport object
-            // We want to accumulate the 'reports' array (list of years)
-            if (reportData.reports) {
-                allReports = [...allReports, ...reportData.reports];
-            }
-            
-            setProgress(10 + Math.round(((i + 1) / files.length) * 80));
+                    const reportData = await response.json();
+                            // Save company name if available
+                            if (reportData.company_meta?.name) {
+                                localStorage.setItem("insight_viewer_company_name", reportData.company_meta.name);
+                                window.dispatchEvent(new Event("companyNameUpdate"));
+                            }
+                                        if (reportData.reports) {
+                        allReports = [...allReports, ...reportData.reports];
+                    }
+                        setProgress(10 + Math.round(((i + 1) / files.length) * 80));
         }
 
         if (allReports.length === 0) {
@@ -111,8 +168,57 @@ export default function UploadPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Upload Financial Reports</h1>
-        <p className="text-gray-500">Supported formats: Excel (.xlsx, .xls). Upload Balance Sheet, Income Statement, and Cash Flow.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Get Financial Data</h1>
+        <p className="text-gray-500">Search by Stock Symbol or upload Excel files.</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-semibold text-gray-800 flex items-center">
+            <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">1</span>
+            Search A-Share (Tushare)
+        </h3>
+        <div className="flex space-x-2">
+            <input 
+                type="text" 
+                placeholder="Code (e.g. 600519)" 
+                className="flex-[2] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                value={stockSymbol}
+                onChange={(e) => setStockSymbol(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchStockData()}
+            />
+            <input 
+                type="number" 
+                placeholder="Start" 
+                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+            />
+            <span className="self-center text-gray-400">-</span>
+            <input 
+                type="number" 
+                placeholder="End" 
+                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+            />
+            <button 
+                onClick={fetchStockData}
+                disabled={isProcessing || !stockSymbol}
+                className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 whitespace-nowrap"
+            >
+                Fetch Data
+            </button>
+        </div>
+        <p className="text-xs text-gray-400">Note: Requires Tushare API Token configured on backend.</p>
+      </div>
+
+      <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+              <span className="bg-gray-50 px-2 text-gray-500">OR</span>
+          </div>
       </div>
 
       <div

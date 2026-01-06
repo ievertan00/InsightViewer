@@ -1,14 +1,46 @@
-import { User, Settings, Bell, Menu } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { User, Settings, Bell, Menu, Landmark } from "lucide-react";
 
 export default function Header() {
+  const [companyName, setCompanyName] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for company name in localStorage periodically or on mount
+    const name = localStorage.getItem("insight_viewer_company_name");
+    if (name) setCompanyName(name);
+
+    // Optional: Listen for storage changes if multiple tabs are used
+    const handleStorage = () => {
+        setCompanyName(localStorage.getItem("insight_viewer_company_name"));
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('companyNameUpdate', handleStorage); // Listen for local updates
+
+    return () => {
+        window.removeEventListener('storage', handleStorage);
+        window.removeEventListener('companyNameUpdate', handleStorage);
+    };
+  }, []);
+
   return (
     <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 md:ml-64 sticky top-0 z-30">
       <div className="flex items-center">
-        <button className="mr-4 md:hidden text-gray-500">
+        <button className="mr-4 md:hidden text-gray-500" aria-label="Menu">
             <Menu className="w-6 h-6" />
         </button>
-        {/* Breadcrumb or Page Title could go here */}
-        <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
+        <div className="flex items-center space-x-2">
+            {companyName ? (
+                <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                    <Landmark className="w-4 h-4 text-primary mr-2" />
+                    <span className="text-sm font-semibold text-primary">{companyName}</span>
+                </div>
+            ) : (
+                <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
+            )}
+        </div>
       </div>
       <div className="flex items-center space-x-4">
         <button className="p-2 text-gray-500 hover:text-primary transition-colors">

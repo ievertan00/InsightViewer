@@ -1,7 +1,12 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.schemas import StandardizedReport
-from app.api import upload
+from app.api import upload, stock
+
+# Load .env file
+load_dotenv()
 
 app = FastAPI(title="Insight Viewer API", version="0.1.0")
 
@@ -15,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(upload.router, prefix="/api/v1", tags=["upload"])
+app.include_router(stock.router, prefix="/api/v1", tags=["stock"])
 
 @app.get("/")
 def read_root():
