@@ -85,6 +85,44 @@ def set_nested_value(data_dict: Dict, path: str, value: float):
     last_key = keys[-1]
     current[last_key] = value
 
+def post_process_totals(sheet_type: str, data: Dict):
+    """
+    Recalculates totals for compound fields if they are 0 but children have values.
+    This handles cases where Excel only provides child items but schema expects a total.
+    """
+    if sheet_type == "balance_sheet":
+        # Receivables
+        if "current_assets" in data:
+            ca = data["current_assets"]
+            
+            # Notes & Accounts Receivable
+            if "notes_and_accounts_receivable" in ca:
+                nar = ca["notes_and_accounts_receivable"]
+                if nar.get("amount", 0) == 0:
+                    nar["amount"] = nar.get("notes_receivable", 0) + nar.get("accounts_receivable", 0)
+            
+            # Other Receivables
+            if "other_receivables_total" in ca:
+                ort = ca["other_receivables_total"]
+                if ort.get("amount", 0) == 0:
+                    ort["amount"] = ort.get("interest_receivable", 0) + ort.get("dividends_receivable", 0) + ort.get("other_receivables", 0)
+
+        # Payables
+        if "current_liabilities" in data:
+            cl = data["current_liabilities"]
+            
+            # Notes & Accounts Payable
+            if "notes_and_accounts_payable" in cl:
+                nap = cl["notes_and_accounts_payable"]
+                if nap.get("amount", 0) == 0:
+                    nap["amount"] = nap.get("notes_payable", 0) + nap.get("accounts_payable", 0)
+            
+            # Other Payables
+            if "other_payables_total" in cl:
+                opt = cl["other_payables_total"]
+                if opt.get("amount", 0) == 0:
+                    opt["amount"] = opt.get("interest_payable", 0) + opt.get("dividends_payable", 0) + opt.get("other_payables", 0)
+
 def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping: Dict) -> Dict[str, Dict]:
     """
     Parses rows and returns a dict keyed by YEAR containing the structured data.
@@ -177,6 +215,9 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
         
         # 5. Merge into Aggregated Data
         for year, data in parsed_years_data.items():
+            # Post-process totals for this year's data
+            post_process_totals(sheet_type, data)
+
             if year not in aggregated_data:
                 aggregated_data[year] = {}
             

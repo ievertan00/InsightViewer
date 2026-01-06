@@ -17,6 +17,8 @@ TUSHARE_INCOME_MAP = {
     "admin_exp": "total_operating_cost.admin_expenses",
     "rd_exp": "total_operating_cost.rd_expenses",
     "fin_exp": "total_operating_cost.financial_expenses.amount",
+    "fin_exp_int_exp": "total_operating_cost.financial_expenses.interest_expenses",
+    "fin_exp_int_inc": "total_operating_cost.financial_expenses.interest_income",
     "assets_impair_loss": "total_operating_cost.asset_impairment_loss",
     "credit_impa_loss": "total_operating_cost.credit_impairment_loss",
     "prem_refund": "total_operating_cost.surrender_value",

@@ -34,6 +34,43 @@ class TushareClient:
                     pass
         return result
 
+    def _post_process_totals(self, sheet_type: str, data: Dict):
+        """
+        Recalculates totals for compound fields if they are 0 but children have values.
+        """
+        if sheet_type == "balance_sheet":
+            # Receivables
+            if "current_assets" in data:
+                ca = data["current_assets"]
+                
+                # Notes & Accounts Receivable
+                if "notes_and_accounts_receivable" in ca:
+                    nar = ca["notes_and_accounts_receivable"]
+                    if nar.get("amount", 0) == 0:
+                        nar["amount"] = nar.get("notes_receivable", 0) + nar.get("accounts_receivable", 0)
+                
+                # Other Receivables
+                if "other_receivables_total" in ca:
+                    ort = ca["other_receivables_total"]
+                    if ort.get("amount", 0) == 0:
+                        ort["amount"] = ort.get("interest_receivable", 0) + ort.get("dividends_receivable", 0) + ort.get("other_receivables", 0)
+
+            # Payables
+            if "current_liabilities" in data:
+                cl = data["current_liabilities"]
+                
+                # Notes & Accounts Payable
+                if "notes_and_accounts_payable" in cl:
+                    nap = cl["notes_and_accounts_payable"]
+                    if nap.get("amount", 0) == 0:
+                        nap["amount"] = nap.get("notes_payable", 0) + nap.get("accounts_payable", 0)
+                
+                # Other Payables
+                if "other_payables_total" in cl:
+                    opt = cl["other_payables_total"]
+                    if opt.get("amount", 0) == 0:
+                        opt["amount"] = opt.get("interest_payable", 0) + opt.get("dividends_payable", 0) + opt.get("other_payables", 0)
+
     def fetch_financial_data(self, symbol: str, start_date: str = None, end_date: str = None) -> StandardizedReport:
         """
         Fetches Income, Balance, Cashflow from Tushare and merges them into StandardizedReport.
@@ -129,6 +166,11 @@ class TushareClient:
             inc_data = self._map_dataframe_to_dict(inc_row, TUSHARE_INCOME_MAP)
             bal_data = self._map_dataframe_to_dict(bal_row, TUSHARE_BALANCE_MAP)
             cash_data = self._map_dataframe_to_dict(cash_row, TUSHARE_CASH_MAP)
+            
+            # Post-Process Totals
+            self._post_process_totals("income_statement", inc_data)
+            self._post_process_totals("balance_sheet", bal_data)
+            self._post_process_totals("cash_flow_statement", cash_data)
             
             # Construct Pydantic Models
             # We initialize with parsed data. Missing fields get defaults (0) from schema.
