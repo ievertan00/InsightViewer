@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Search, Database, ArrowRight, Eye, EyeOff, Filter, Check, Calendar } from "lucide-react";
 import Link from "next/link";
+import clsx from "clsx";
 
 // Helper to flatten nested object keys into a readable format
 const formatKey = (key: string) => {
@@ -31,48 +32,369 @@ const sortPeriods = (periods: string[]) => {
     });
 };
 
-// Standard schema order for consistent row sorting
+// Standard schema order for consistent row sorting - using full paths
 const STANDARD_SCHEMA_ORDER: Record<string, number> = (() => {
     const order: string[] = [
         // Income Statement
-        "total_operating_revenue", "operating_revenue", "interest_income", "earned_premiums", "fee_and_commission_income", "other_business_revenue",
-        "total_operating_cost", "operating_cost", "interest_expenses", "fee_and_commission_expenses", "taxes_and_surcharges", "selling_expenses", "admin_expenses", "rd_expenses", "financial_expenses", 
-        "asset_impairment_loss", "credit_impairment_loss", "surrender_value", "net_compensation_expenses", "net_insurance_contract_reserves", "policy_dividend_expenses", "reinsurance_expenses", "other_business_costs",
-        "other_operating_income", "fair_value_change_income", "investment_income", "investment_income_from_associates_jv", "net_exposure_hedging_income", "exchange_income", "asset_disposal_income",
-        "operating_profit", "non_operating_revenue", "non_operating_expenses", 
-        "total_profit", "income_tax", 
-        "net_profit", "net_profit_continuing_ops", "net_profit_discontinued_ops", "net_profit_attr_to_parent", "minority_interest_income",
-        "earnings_per_share", "basic_eps", "diluted_eps",
-        "other_comprehensive_income", "total_comprehensive_income",
+        "income_statement.total_operating_revenue",
+        "income_statement.total_operating_revenue.operating_revenue",
+        "income_statement.total_operating_revenue.interest_income",
+        "income_statement.total_operating_revenue.earned_premiums",
+        "income_statement.total_operating_revenue.fee_and_commission_income",
+        "income_statement.total_operating_revenue.other_business_revenue",
+        "income_statement.total_operating_revenue.other_items",
+        "income_statement.total_operating_cost",
+        "income_statement.total_operating_cost.operating_cost",
+        "income_statement.total_operating_cost.interest_expenses",
+        "income_statement.total_operating_cost.fee_and_commission_expenses",
+        "income_statement.total_operating_cost.taxes_and_surcharges",
+        "income_statement.total_operating_cost.selling_expenses",
+        "income_statement.total_operating_cost.admin_expenses",
+        "income_statement.total_operating_cost.rd_expenses",
+        "income_statement.total_operating_cost.financial_expenses",
+        "income_statement.total_operating_cost.financial_expenses.interest_expenses",
+        "income_statement.total_operating_cost.financial_expenses.interest_income",
+        "income_statement.total_operating_cost.asset_impairment_loss",
+        "income_statement.total_operating_cost.credit_impairment_loss",
+        "income_statement.total_operating_cost.surrender_value",
+        "income_statement.total_operating_cost.net_compensation_expenses",
+        "income_statement.total_operating_cost.net_insurance_contract_reserves",
+        "income_statement.total_operating_cost.policy_dividend_expenses",
+        "income_statement.total_operating_cost.reinsurance_expenses",
+        "income_statement.total_operating_cost.other_business_costs",
+        "income_statement.total_operating_cost.other_items",
+        "income_statement.other_operating_income",
+        "income_statement.other_operating_income.fair_value_change_income",
+        "income_statement.other_operating_income.investment_income",
+        "income_statement.other_operating_income.investment_income_from_associates_jv",
+        "income_statement.other_operating_income.net_exposure_hedging_income",
+        "income_statement.other_operating_income.exchange_income",
+        "income_statement.other_operating_income.asset_disposal_income",
+        "income_statement.other_operating_income.asset_impairment_loss_new",
+        "income_statement.other_operating_income.credit_impairment_loss_new",
+        "income_statement.other_operating_income.other_income",
+        "income_statement.other_operating_income.operating_profit_other_items",
+        "income_statement.other_operating_income.operating_profit_balance_items",
+        "income_statement.operating_profit",
+        "income_statement.operating_profit.non_operating_revenue",
+        "income_statement.operating_profit.non_current_asset_disposal_gain",
+        "income_statement.operating_profit.non_operating_expenses",
+        "income_statement.operating_profit.non_current_asset_disposal_loss",
+        "income_statement.operating_profit.other_items_affecting_total_profit",
+        "income_statement.operating_profit.total_profit_balance_items",
+        "income_statement.total_profit",
+        "income_statement.total_profit.income_tax",
+        "income_statement.total_profit.unconfirmed_investment_loss",
+        "income_statement.total_profit.other_items_affecting_net_profit",
+        "income_statement.total_profit.net_profit_difference",
+        "income_statement.net_profit",
+        "income_statement.net_profit.net_profit_continuing_ops",
+        "income_statement.net_profit.net_profit_discontinued_ops",
+        "income_statement.net_profit.profit_from_merged_party_before_merger",
+        "income_statement.net_profit.net_profit_attr_to_parent",
+        "income_statement.net_profit.minority_interest_income",
+        "income_statement.net_profit.net_profit_deducting_non_recurring",
+        "income_statement.net_profit.other_items",
+        "income_statement.net_profit.balance_items",
+        "income_statement.earnings_per_share",
+        "income_statement.earnings_per_share.basic_eps",
+        "income_statement.earnings_per_share.diluted_eps",
+        "income_statement.other_comprehensive_income",
+        "income_statement.other_comprehensive_income.attr_to_parent",
+        "income_statement.other_comprehensive_income.attr_to_minority",
+        "income_statement.total_comprehensive_income",
+        "income_statement.total_comprehensive_income.attr_to_parent",
+        "income_statement.total_comprehensive_income.attr_to_minority",
+        "income_statement.total_comprehensive_income.derecognition_income_amortized_cost",
 
         // Balance Sheet - Assets
-        "current_assets", "monetary_funds", "clearing_settlement_funds", "lending_funds", "trading_financial_assets", "derivative_financial_assets", "notes_and_accounts_receivable", "notes_receivable", "accounts_receivable", "receivables_financing", "prepayments", "premiums_receivable", "reinsurance_accounts_receivable", "other_receivables_total", "other_receivables", "inventories", "contract_assets", "assets_held_for_sale", "non_current_assets_due_within_1y", "other_current_assets", "total_current_assets",
-        "non_current_assets", "loans_and_advances", "debt_investments", "long_term_receivables", "long_term_equity_investments", "investment_properties", "fixed_assets", "construction_in_progress", "right_of_use_assets", "intangible_assets", "development_expenses", "goodwill", "long_term_deferred_expenses", "deferred_tax_assets", "other_non_current_assets", "total_non_current_assets",
-        "total_assets",
+        "balance_sheet.current_assets",
+        "balance_sheet.current_assets.monetary_funds",
+        "balance_sheet.current_assets.clearing_settlement_funds",
+        "balance_sheet.current_assets.lending_funds",
+        "balance_sheet.current_assets.funds_lent",
+        "balance_sheet.current_assets.trading_financial_assets",
+        "balance_sheet.current_assets.financial_assets_fvpl",
+        "balance_sheet.current_assets.financial_assets_fvpl.trading_financial_assets",
+        "balance_sheet.current_assets.financial_assets_fvpl.designated_financial_assets_fvpl",
+        "balance_sheet.current_assets.derivative_financial_assets",
+        "balance_sheet.current_assets.notes_and_accounts_receivable",
+        "balance_sheet.current_assets.notes_and_accounts_receivable.notes_receivable",
+        "balance_sheet.current_assets.notes_and_accounts_receivable.accounts_receivable",
+        "balance_sheet.current_assets.receivables_financing",
+        "balance_sheet.current_assets.prepayments",
+        "balance_sheet.current_assets.premiums_receivable",
+        "balance_sheet.current_assets.reinsurance_accounts_receivable",
+        "balance_sheet.current_assets.reinsurance_contract_reserves_receivable",
+        "balance_sheet.current_assets.other_receivables_total",
+        "balance_sheet.current_assets.other_receivables_total.interest_receivable",
+        "balance_sheet.current_assets.other_receivables_total.dividends_receivable",
+        "balance_sheet.current_assets.other_receivables_total.other_receivables",
+        "balance_sheet.current_assets.export_tax_refund_receivable",
+        "balance_sheet.current_assets.subsidies_receivable",
+        "balance_sheet.current_assets.internal_receivables",
+        "balance_sheet.current_assets.buy_back_financial_assets",
+        "balance_sheet.current_assets.financial_assets_amortized_cost",
+        "balance_sheet.current_assets.inventories",
+        "balance_sheet.current_assets.financial_assets_fvoci",
+        "balance_sheet.current_assets.contract_assets",
+        "balance_sheet.current_assets.assets_held_for_sale",
+        "balance_sheet.current_assets.non_current_assets_due_within_1y",
+        "balance_sheet.current_assets.agency_business_assets",
+        "balance_sheet.current_assets.other_current_assets",
+        "balance_sheet.current_assets.other_items",
+        "balance_sheet.current_assets.balance_items",
+        "balance_sheet.current_assets.total_current_assets",
+        "balance_sheet.non_current_assets",
+        "balance_sheet.non_current_assets.loans_and_advances",
+        "balance_sheet.non_current_assets.debt_investments",
+        "balance_sheet.non_current_assets.other_debt_investments",
+        "balance_sheet.non_current_assets.financial_assets_amortized_cost_non_current",
+        "balance_sheet.non_current_assets.financial_assets_fvoci_non_current",
+        "balance_sheet.non_current_assets.available_for_sale_financial_assets",
+        "balance_sheet.non_current_assets.held_to_maturity_investments",
+        "balance_sheet.non_current_assets.long_term_receivables",
+        "balance_sheet.non_current_assets.long_term_equity_investments",
+        "balance_sheet.non_current_assets.investment_properties",
+        "balance_sheet.non_current_assets.fixed_assets",
+        "balance_sheet.non_current_assets.construction_in_progress",
+        "balance_sheet.non_current_assets.construction_materials",
+        "balance_sheet.non_current_assets.other_equity_instrument_investments",
+        "balance_sheet.non_current_assets.other_non_current_financial_assets",
+        "balance_sheet.non_current_assets.fixed_assets_liquidation",
+        "balance_sheet.non_current_assets.productive_biological_assets",
+        "balance_sheet.non_current_assets.oil_and_gas_assets",
+        "balance_sheet.non_current_assets.right_of_use_assets",
+        "balance_sheet.non_current_assets.intangible_assets",
+        "balance_sheet.non_current_assets.balance_items",
+        "balance_sheet.non_current_assets.development_expenses",
+        "balance_sheet.non_current_assets.goodwill",
+        "balance_sheet.non_current_assets.long_term_deferred_expenses",
+        "balance_sheet.non_current_assets.deferred_tax_assets",
+        "balance_sheet.non_current_assets.other_non_current_assets",
+        "balance_sheet.non_current_assets.other_items",
+        "balance_sheet.non_current_assets.total_non_current_assets",
+        "balance_sheet.assets_summary.other_asset_items",
+        "balance_sheet.assets_summary.asset_balance_items",
+        "balance_sheet.assets_summary.total_assets",
 
         // Balance Sheet - Liabilities
-        "current_liabilities", "short_term_borrowings", "borrowings_from_central_bank", "trading_financial_liabilities", "derivative_financial_liabilities", "notes_and_accounts_payable", "notes_payable", "accounts_payable", "advances_from_customers", "contract_liabilities", "payroll_payable", "taxes_payable", "other_payables_total", "other_payables", "non_current_liabilities_due_within_1y", "other_current_liabilities", "total_current_liabilities",
-        "non_current_liabilities", "long_term_borrowings", "bonds_payable", "lease_liabilities", "long_term_payables", "estimated_liabilities", "deferred_revenue", "deferred_tax_liabilities", "other_non_current_liabilities", "total_non_current_liabilities",
-        "total_liabilities",
+        "balance_sheet.current_liabilities",
+        "balance_sheet.current_liabilities.short_term_borrowings",
+        "balance_sheet.current_liabilities.borrowings_from_central_bank",
+        "balance_sheet.current_liabilities.deposits_and_interbank_placements",
+        "balance_sheet.current_liabilities.borrowings_from_interbank",
+        "balance_sheet.current_liabilities.trading_financial_liabilities",
+        "balance_sheet.current_liabilities.financial_liabilities_fvpl",
+        "balance_sheet.current_liabilities.financial_liabilities_fvpl.trading_financial_liabilities",
+        "balance_sheet.current_liabilities.financial_liabilities_fvpl.designated_financial_liabilities_fvpl",
+        "balance_sheet.current_liabilities.derivative_financial_liabilities",
+        "balance_sheet.current_liabilities.notes_and_accounts_payable",
+        "balance_sheet.current_liabilities.notes_and_accounts_payable.notes_payable",
+        "balance_sheet.current_liabilities.notes_and_accounts_payable.accounts_payable",
+        "balance_sheet.current_liabilities.advances_from_customers",
+        "balance_sheet.current_liabilities.contract_liabilities",
+        "balance_sheet.current_liabilities.sell_buy_back_financial_assets",
+        "balance_sheet.current_liabilities.fees_and_commissions_payable",
+        "balance_sheet.current_liabilities.payroll_payable",
+        "balance_sheet.current_liabilities.taxes_payable",
+        "balance_sheet.current_liabilities.other_payables_total",
+        "balance_sheet.current_liabilities.other_payables_total.interest_payable",
+        "balance_sheet.current_liabilities.other_payables_total.dividends_payable",
+        "balance_sheet.current_liabilities.other_payables_total.other_payables",
+        "balance_sheet.current_liabilities.reinsurance_accounts_payable",
+        "balance_sheet.current_liabilities.internal_payables",
+        "balance_sheet.current_liabilities.estimated_current_liabilities",
+        "balance_sheet.current_liabilities.insurance_contract_reserves",
+        "balance_sheet.current_liabilities.acting_trading_securities",
+        "balance_sheet.current_liabilities.acting_underwriting_securities",
+        "balance_sheet.current_liabilities.deferred_revenue_within_1y",
+        "balance_sheet.current_liabilities.financial_liabilities_amortized_cost",
+        "balance_sheet.current_liabilities.short_term_bonds_payable",
+        "balance_sheet.current_liabilities.liabilities_held_for_sale",
+        "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y",
+        "balance_sheet.current_liabilities.agency_business_liabilities",
+        "balance_sheet.current_liabilities.other_current_liabilities",
+        "balance_sheet.current_liabilities.other_items",
+        "balance_sheet.current_liabilities.balance_items",
+        "balance_sheet.current_liabilities.total_current_liabilities",
+        "balance_sheet.non_current_liabilities",
+        "balance_sheet.non_current_liabilities.long_term_borrowings",
+        "balance_sheet.non_current_liabilities.financial_liabilities_amortized_cost_non_current",
+        "balance_sheet.non_current_liabilities.bonds_payable",
+        "balance_sheet.non_current_liabilities.bonds_payable.preference_shares",
+        "balance_sheet.non_current_liabilities.bonds_payable.perpetual_bonds",
+        "balance_sheet.non_current_liabilities.lease_liabilities",
+        "balance_sheet.non_current_liabilities.long_term_payables",
+        "balance_sheet.non_current_liabilities.long_term_payroll_payable",
+        "balance_sheet.non_current_liabilities.special_payables",
+        "balance_sheet.non_current_liabilities.estimated_liabilities",
+        "balance_sheet.non_current_liabilities.deferred_revenue",
+        "balance_sheet.non_current_liabilities.deferred_tax_liabilities",
+        "balance_sheet.non_current_liabilities.other_non_current_liabilities",
+        "balance_sheet.non_current_liabilities.other_items",
+        "balance_sheet.non_current_liabilities.balance_items",
+        "balance_sheet.non_current_liabilities.total_non_current_liabilities",
+        "balance_sheet.liabilities_summary.other_liability_items",
+        "balance_sheet.liabilities_summary.liability_balance_items",
+        "balance_sheet.liabilities_summary.total_liabilities",
 
         // Balance Sheet - Equity
-        "equity", "paid_in_capital", "other_equity_instruments", "capital_reserves", "treasury_stock", "other_comprehensive_income", "special_reserves", "surplus_reserves", "general_risk_reserves", "undistributed_profit", "total_parent_equity", "minority_interests", "total_equity", "total_liabilities_and_equity",
+        "balance_sheet.equity.paid_in_capital",
+        "balance_sheet.equity.other_equity_instruments",
+        "balance_sheet.equity.other_equity_instruments.preference_shares",
+        "balance_sheet.equity.other_equity_instruments.perpetual_bonds",
+        "balance_sheet.equity.other_equity_instruments.other",
+        "balance_sheet.equity.capital_reserves",
+        "balance_sheet.equity.other_comprehensive_income",
+        "balance_sheet.equity.treasury_stock",
+        "balance_sheet.equity.special_reserves",
+        "balance_sheet.equity.surplus_reserves",
+        "balance_sheet.equity.general_risk_reserves",
+        "balance_sheet.equity.unconfirmed_investment_loss",
+        "balance_sheet.equity.undistributed_profit",
+        "balance_sheet.equity.proposed_cash_dividends",
+        "balance_sheet.equity.currency_translation_diff",
+        "balance_sheet.equity.parent_equity_other_items",
+        "balance_sheet.equity.parent_equity_balance_items",
+        "balance_sheet.equity.total_parent_equity",
+        "balance_sheet.equity.minority_interests",
+        "balance_sheet.equity.equity_other_items",
+        "balance_sheet.equity.equity_balance_items",
+        "balance_sheet.equity.total_equity",
+        "balance_sheet.balance_check.liabilities_and_equity_other_items",
+        "balance_sheet.balance_check.liabilities_and_equity_balance_items",
+        "balance_sheet.balance_check.total_liabilities_and_equity",
 
         // Cash Flow - Operating
-        "operating_activities", "cash_received_from_goods_and_services", "tax_refunds_received", "other_cash_received_operating", "subtotal_cash_inflow_operating",
-        "cash_paid_for_goods_and_services", "cash_paid_to_employees", "taxes_paid", "other_cash_paid_operating", "subtotal_cash_outflow_operating", "net_cash_flow_from_operating",
+        "cash_flow_statement.operating_activities.cash_received_from_goods_and_services",
+        "cash_flow_statement.operating_activities.net_increase_deposits_interbank",
+        "cash_flow_statement.operating_activities.net_increase_borrowings_central_bank",
+        "cash_flow_statement.operating_activities.net_increase_borrowings_other_financial",
+        "cash_flow_statement.operating_activities.cash_received_original_premiums",
+        "cash_flow_statement.operating_activities.net_cash_received_reinsurance",
+        "cash_flow_statement.operating_activities.net_increase_insured_investment",
+        "cash_flow_statement.operating_activities.net_increase_disposal_trading_assets",
+        "cash_flow_statement.operating_activities.cash_received_interest_commission",
+        "cash_flow_statement.operating_activities.net_increase_borrowed_funds",
+        "cash_flow_statement.operating_activities.net_decrease_loans_advances",
+        "cash_flow_statement.operating_activities.net_increase_repurchase_funds",
+        "cash_flow_statement.operating_activities.tax_refunds_received",
+        "cash_flow_statement.operating_activities.other_cash_received_operating",
+        "cash_flow_statement.operating_activities.inflow_other_items",
+        "cash_flow_statement.operating_activities.inflow_balance_items",
+        "cash_flow_statement.operating_activities.subtotal_cash_inflow_operating",
+        "cash_flow_statement.operating_activities.cash_paid_for_goods_and_services",
+        "cash_flow_statement.operating_activities.net_increase_loans_advances",
+        "cash_flow_statement.operating_activities.net_increase_deposits_central_bank_interbank",
+        "cash_flow_statement.operating_activities.cash_paid_original_contract_claims",
+        "cash_flow_statement.operating_activities.cash_paid_interest_commission",
+        "cash_flow_statement.operating_activities.cash_paid_policy_dividends",
+        "cash_flow_statement.operating_activities.cash_paid_to_employees",
+        "cash_flow_statement.operating_activities.taxes_paid",
+        "cash_flow_statement.operating_activities.other_cash_paid_operating",
+        "cash_flow_statement.operating_activities.outflow_other_items",
+        "cash_flow_statement.operating_activities.outflow_balance_items",
+        "cash_flow_statement.operating_activities.subtotal_cash_outflow_operating",
+        "cash_flow_statement.operating_activities.net_cash_flow_other_items",
+        "cash_flow_statement.operating_activities.net_cash_flow_balance_items",
+        "cash_flow_statement.operating_activities.net_cash_flow_from_operating",
 
         // Cash Flow - Investing
-        "investing_activities", "cash_received_from_investment_recovery", "cash_received_from_investment_income", "net_cash_from_disposal_assets", "subtotal_cash_inflow_investing",
-        "cash_paid_for_assets", "cash_paid_for_investments", "subtotal_cash_outflow_investing", "net_cash_flow_from_investing",
+        "cash_flow_statement.investing_activities.cash_received_from_investment_recovery",
+        "cash_flow_statement.investing_activities.cash_received_from_investment_income",
+        "cash_flow_statement.investing_activities.net_cash_from_disposal_assets",
+        "cash_flow_statement.investing_activities.net_cash_from_disposal_subsidiaries",
+        "cash_flow_statement.investing_activities.cash_received_from_pledge_deposit_reduction",
+        "cash_flow_statement.investing_activities.other_cash_received_investing",
+        "cash_flow_statement.investing_activities.inflow_other_items",
+        "cash_flow_statement.investing_activities.inflow_balance_items",
+        "cash_flow_statement.investing_activities.subtotal_cash_inflow_investing",
+        "cash_flow_statement.investing_activities.cash_paid_for_assets",
+        "cash_flow_statement.investing_activities.cash_paid_for_investments",
+        "cash_flow_statement.investing_activities.net_increase_pledged_loans",
+        "cash_flow_statement.investing_activities.net_cash_paid_subsidiaries",
+        "cash_flow_statement.investing_activities.cash_paid_for_pledge_deposit_increase",
+        "cash_flow_statement.investing_activities.other_cash_paid_investing",
+        "cash_flow_statement.investing_activities.outflow_other_items",
+        "cash_flow_statement.investing_activities.outflow_balance_items",
+        "cash_flow_statement.investing_activities.subtotal_cash_outflow_investing",
+        "cash_flow_statement.investing_activities.net_cash_flow_other_items",
+        "cash_flow_statement.investing_activities.net_cash_flow_balance_items",
+        "cash_flow_statement.investing_activities.net_cash_flow_from_investing",
 
         // Cash Flow - Financing
-        "financing_activities", "cash_received_from_investments", "cash_received_from_borrowings", "subtotal_cash_inflow_financing",
-        "cash_paid_for_debt_repayment", "cash_paid_for_dividends_and_profits", "subtotal_cash_outflow_financing", "net_cash_flow_from_financing",
+        "cash_flow_statement.financing_activities.cash_received_from_investments",
+        "cash_flow_statement.financing_activities.cash_received_from_investments.from_minority_shareholders",
+        "cash_flow_statement.financing_activities.cash_received_from_borrowings",
+        "cash_flow_statement.financing_activities.cash_received_from_bond_issue",
+        "cash_flow_statement.financing_activities.other_cash_received_financing",
+        "cash_flow_statement.financing_activities.inflow_other_items",
+        "cash_flow_statement.financing_activities.inflow_balance_items",
+        "cash_flow_statement.financing_activities.subtotal_cash_inflow_financing",
+        "cash_flow_statement.financing_activities.cash_paid_for_debt_repayment",
+        "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits",
+        "cash_flow_statement.financing_activities.dividends_paid_to_minority",
+        "cash_flow_statement.financing_activities.cash_paid_for_minority_equity",
+        "cash_flow_statement.financing_activities.other_cash_paid_financing",
+        "cash_flow_statement.financing_activities.other_cash_paid_financing.paid_to_minority_for_capital_reduction",
+        "cash_flow_statement.financing_activities.outflow_other_items",
+        "cash_flow_statement.financing_activities.outflow_balance_items",
+        "cash_flow_statement.financing_activities.subtotal_cash_outflow_financing",
+        "cash_flow_statement.financing_activities.net_cash_flow_other_items",
+        "cash_flow_statement.financing_activities.net_cash_flow_balance_items",
+        "cash_flow_statement.financing_activities.net_cash_flow_from_financing",
 
         // Cash Flow - End
-        "cash_increase", "exchange_rate_effect", "net_increase_cash_and_equivalents", "cash_at_beginning", "cash_at_end",
-        "supplementary_info", "net_profit_adjustment"
+        "cash_flow_statement.cash_increase.exchange_rate_effect",
+        "cash_flow_statement.cash_increase.increase_other_items",
+        "cash_flow_statement.cash_increase.increase_balance_items",
+        "cash_flow_statement.cash_increase.net_increase_cash_and_equivalents",
+        "cash_flow_statement.cash_increase.cash_at_beginning",
+        "cash_flow_statement.cash_increase.end_balance_other_items",
+        "cash_flow_statement.cash_increase.end_balance_balance_items",
+        "cash_flow_statement.cash_increase.cash_at_end",
+        
+        // Supplementary
+        "cash_flow_statement.supplementary_info.net_profit_adjustment",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.net_profit",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.asset_impairment_reserves",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_fixed_assets_investment_props",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_others",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_investment_props",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.amortization_intangible_assets",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.amortization_long_term_deferred",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.amortization_deferred_revenue",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.decrease_deferred_expenses",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.increase_accrued_expenses",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.loss_disposal_assets",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.loss_scrapping_assets",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.loss_fair_value_change",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.financial_expenses",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.investment_loss",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.deferred_tax",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.decrease_deferred_tax_assets",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.increase_deferred_tax_liabilities",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.increase_estimated_liabilities",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.decrease_inventories",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.decrease_operating_receivables",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.increase_operating_payables",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.other",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.net_cash_flow_other_items",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.net_cash_flow_balance_items",
+        "cash_flow_statement.supplementary_info.net_profit_adjustment.net_cash_flow_from_operating_indirect",
+        "cash_flow_statement.supplementary_info.significant_non_cash.debt_to_capital",
+        "cash_flow_statement.supplementary_info.significant_non_cash.convertible_bonds_due_within_1y",
+        "cash_flow_statement.supplementary_info.significant_non_cash.fixed_assets_finance_lease",
+        "cash_flow_statement.supplementary_info.significant_non_cash.non_cash_items_other",
+        "cash_flow_statement.supplementary_info.cash_change_check.cash_end_balance",
+        "cash_flow_statement.supplementary_info.cash_change_check.cash_begin_balance",
+        "cash_flow_statement.supplementary_info.cash_change_check.equivalents_end_balance",
+        "cash_flow_statement.supplementary_info.cash_change_check.equivalents_begin_balance",
+        "cash_flow_statement.supplementary_info.cash_change_check.net_increase_other",
+        "cash_flow_statement.supplementary_info.cash_change_check.net_increase_balance",
+        "cash_flow_statement.supplementary_info.cash_change_check.net_increase_cash_and_equivalents_indirect",
+        "cash_flow_statement.supplementary_info.credit_impairment_loss"
     ];
     
     const map: Record<string, number> = {};
@@ -103,43 +425,46 @@ const flattenReports = (reports: any[]) => {
             if (!sectionData) return;
 
             const traverse = (obj: any, prefix: string = "") => {
+                const parts = prefix ? prefix.split('.') : [];
+                const level = parts.length + 1;
+
                 for (const key in obj) {
                     if (key === "title" || key === "amount" || typeof obj[key] === 'string') continue;
 
                     const value = obj[key];
-                    const fullKey = prefix ? `${prefix}.${key}` : key;
-                    // Use just the last key part for ID generation if it's unique enough for sorting, 
-                    // or keep full path but map to order.
-                    // Let's use the key itself (e.g. "operating_revenue") for matching schema order.
-                    const keyForOrder = key; 
+                    const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
                     
-                    const uniqueId = `${typeLabel}-${fullKey}`;
+                    const uniqueId = `${typeLabel}-${currentPath}`;
+
+                    const processItem = (val: number | any) => {
+                        if (!flattened[uniqueId]) {
+                            let accountName = formatKey(key);
+                            const itemLevel = currentPath.split('.').length;
+
+                            // Level 3 prefix (path length 4)
+                            if (itemLevel === 4) {
+                                accountName = `- ${accountName}`;
+                            }
+
+                            flattened[uniqueId] = { 
+                                account: accountName, 
+                                type: typeLabel, 
+                                originalKey: currentPath,
+                                orderKey: currentPath, 
+                                id: uniqueId,
+                                itemLevel: itemLevel
+                            };
+                        }
+                        flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
+                    };
 
                     if (typeof value === 'object' && value !== null) {
                         if ('amount' in value) {
-                             if (!flattened[uniqueId]) {
-                                flattened[uniqueId] = { 
-                                    account: formatKey(key), 
-                                    type: typeLabel, 
-                                    originalKey: fullKey,
-                                    orderKey: keyForOrder, // Store for sorting
-                                    id: uniqueId
-                                };
-                             }
-                             flattened[uniqueId][yearKey] = value.amount;
+                             processItem(value);
                         }
-                        traverse(value, fullKey);
+                        traverse(value, prefix ? `${prefix}.${key}` : `${sectionName}.${key}`);
                     } else if (typeof value === 'number') {
-                         if (!flattened[uniqueId]) {
-                            flattened[uniqueId] = { 
-                                account: formatKey(key), 
-                                type: typeLabel, 
-                                originalKey: fullKey,
-                                orderKey: keyForOrder, // Store for sorting
-                                id: uniqueId
-                            };
-                         }
-                         flattened[uniqueId][yearKey] = value;
+                         processItem(value);
                     }
                 }
             };
@@ -157,7 +482,7 @@ const flattenReports = (reports: any[]) => {
         const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
         if (typeDiff !== 0) return typeDiff;
 
-        // Sort by Schema Order
+        // Sort by Schema Order using full path
         const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
         const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
         
@@ -425,7 +750,14 @@ export default function DataPage() {
               <tbody className="divide-y divide-gray-100">
                 {filteredData.map((row, idx) => (
                   <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-3 px-6 text-gray-900 font-medium truncate max-w-[300px]" title={row.originalKey}>{row.account}</td>
+                    <td className={clsx(
+                        "py-3 pr-6 text-gray-900 truncate max-w-[300px]",
+                        row.itemLevel === 2 ? "font-bold pl-6" : "font-medium",
+                        row.itemLevel === 3 && "pl-10",
+                        row.itemLevel === 4 && "pl-14"
+                    )} title={row.originalKey}>
+                        {row.account}
+                    </td>
                     <td className="py-3 px-6 text-gray-500 text-sm truncate max-w-[150px]">
                         <span className="bg-gray-100 px-2 py-1 rounded text-xs">{row.type}</span>
                     </td>
