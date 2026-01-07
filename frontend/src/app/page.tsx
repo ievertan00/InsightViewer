@@ -16,7 +16,7 @@ export default function Home() {
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-primary mb-2">2. Analyze</h3>
-          <p className="text-gray-500">View computed ratios, signals, and visualize key trends.</p>
+          <p className="text-gray-500">View computed ratios, Key Financial Ratios, and visualize key trends.</p>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-primary mb-2">3. Interpret</h3>

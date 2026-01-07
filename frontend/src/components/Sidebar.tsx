@@ -2,26 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  UploadCloud, 
-  Table, 
-  Flag, 
-  BarChart3, 
-  FileText, 
-  Download, 
-  Menu
-} from "lucide-react";
 import clsx from "clsx";
+import {
+  LayoutDashboard,
+  FileText,
+  BarChart4,
+  Zap,
+  Share2,
+  Database,
+  Calculator,
+} from "lucide-react";
 
-const navItems = [
-  { name: "Upload", href: "/upload", icon: UploadCloud },
-  { name: "Data View", href: "/data", icon: Table },
-  { name: "Signals", href: "/signals", icon: Flag },
-  { name: "Visualizations", href: "/visualize", icon: BarChart3 },
-  { name: "Interpretation", href: "/interpret", icon: FileText },
-  { name: "Export", href: "/export", icon: Download },
+const navigation = [
+  { name: "Executive Summary", href: "/visualize", icon: LayoutDashboard },
+  { name: "Statement View", href: "/data", icon: FileText },
+  { name: "Key Financial Ratios", href: "/signals", icon: Calculator },
+  { name: "AI Interpretation", href: "/interpret", icon: Zap },
+  { name: "Smart Export", href: "/export", icon: Share2 },
+  { name: "Data Management", href: "/upload", icon: Database },
 ];
-
 export default function Sidebar() {
   const pathname = usePathname();
 
@@ -32,7 +31,7 @@ export default function Sidebar() {
       </div>
       <div className="py-4">
         <ul className="space-y-2">
-          {navItems.map((item) => {
+          {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (

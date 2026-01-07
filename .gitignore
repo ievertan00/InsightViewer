@@ -10,7 +10,7 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 
 # Backend (Python/FastAPI)
-backend/__pycache__/
+**/__pycache__/
 backend/*.py[cod]
 backend/*$py.class
 backend/venv/
@@ -24,7 +24,7 @@ backend/.pytest_cache/
 backend/.mypy_cache/
 
 # Genkit
-frontend/.genkit/
+**/.genkit/
 
 # Misc
 .DS_Store

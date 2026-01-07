@@ -127,7 +127,7 @@ The company shows strong top-line resilience with revenue holding steady at ¥2.
 | Gross Margin | 24.5% |
 | Net Profit Margin | 8.2% |
 
-## 3. Signals
+## 3. Key Financial Ratios
 ### 🚩 High Cash, High Debt
 Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.
 `}
