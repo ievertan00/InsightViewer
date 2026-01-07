@@ -274,7 +274,7 @@ export default function ChartsPage() {
               COLORS.brown,
               "#F4B084",
               COLORS.yellow,
-              COLORS.paleYellow,
+              COLORS.lightBlue,
               COLORS.blue,
             ]}
           />
