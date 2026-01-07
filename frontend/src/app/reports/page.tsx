@@ -10,7 +10,7 @@ export default function ExportPage() {
   return (
     <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Export Report</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Report Generator</h1>
         <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-900 transition-colors shadow-sm">
             <Download className="w-5 h-5 mr-2" />
             Download {format.toUpperCase()}

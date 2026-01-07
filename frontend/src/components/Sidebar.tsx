@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Executive Summary", href: "/visualize", icon: LayoutDashboard },
-  { name: "Statement View", href: "/data", icon: FileText },
-  { name: "Key Financial Ratios", href: "/signals", icon: Calculator },
-  { name: "AI Interpretation", href: "/interpret", icon: Zap },
-  { name: "Smart Export", href: "/export", icon: Share2 },
-  { name: "Data Management", href: "/upload", icon: Database },
+  { name: "Data Import", href: "/import", icon: Database },
+  { name: "Data Explorer", href: "/explore", icon: FileText },
+  { name: "Ratios", href: "/ratios", icon: Calculator },
+  { name: "Charts", href: "/charts", icon: LayoutDashboard },
+  { name: "Insights", href: "/insights", icon: Zap },
+  { name: "Report Generator", href: "/reports", icon: Share2 },
 ];
 export default function Sidebar() {
   const pathname = usePathname();

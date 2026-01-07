@@ -24,10 +24,10 @@ export default function Home() {
         </div>
       </div>
 
-      <Link 
-        href="/upload" 
-        className="mt-8 px-8 py-3 bg-primary text-white text-lg font-semibold rounded-lg shadow hover:bg-blue-900 transition-colors flex items-center"
-      >
+          <Link
+            href="/import"
+            className="group relative inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-primary rounded-full overflow-hidden transition-all hover:bg-blue-900 shadow-lg hover:shadow-xl"
+          >
         Start Analysis <ArrowRight className="ml-2 w-5 h-5" />
       </Link>
     </div>

@@ -121,7 +121,7 @@ export default function UploadPage() {
             localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
             
             setTimeout(() => {
-                router.push("/visualize");
+                router.push("/charts");
             }, 800);
         } else {
             setSearchError("No financial reports found for this symbol in the selected period.");
@@ -205,7 +205,7 @@ export default function UploadPage() {
               
               setProgress(100);
               setTimeout(() => {
-                  router.push("/visualize");
+                  router.push("/charts");
               }, 800);
           } else {
               setPasteError("The pasted JSON is valid but contains no report data.");
@@ -743,7 +743,7 @@ Template:
 
         setProgress(100);
         setTimeout(() => {
-            router.push("/visualize");
+            router.push("/charts");
         }, 800);
 
     } catch (err: any) {
@@ -756,7 +756,7 @@ Template:
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Get Financial Data</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Data Import</h1>
         <p className="text-gray-500">Search by Stock Symbol or upload Excel/JSON files.</p>
       </div>
 

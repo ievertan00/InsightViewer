@@ -27,7 +27,7 @@ export default function VisualizePage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Visualizations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Financial Charts</h1>
         <div className="bg-white border border-gray-200 rounded-lg p-1 flex space-x-1">
             <button className="px-3 py-1 bg-gray-100 text-gray-800 rounded font-medium text-sm">Annual</button>
             <button className="px-3 py-1 text-gray-500 hover:bg-gray-50 rounded font-medium text-sm transition-colors">Quarterly</button>

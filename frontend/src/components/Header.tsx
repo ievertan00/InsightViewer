@@ -34,7 +34,7 @@ export default function Header() {
             <Menu className="w-6 h-6" />
         </button>
         <div className="flex items-center space-x-2">
-            {companyName && pathname !== "/upload" ? (
+            {companyName && pathname !== "/import" ? (
                 <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
                     <Landmark className="w-4 h-4 text-primary mr-2" />
                     <span className="text-sm font-semibold text-primary">{companyName}</span>

@@ -7,7 +7,7 @@ export default function InterpretPage() {
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-           <h1 className="text-2xl font-bold text-gray-900">Interpretation & Reasoning</h1>
+           <h1 className="text-2xl font-bold text-gray-900">AI Insights</h1>
            <p className="text-gray-500 mt-1">AI-assisted analysis of key financial ratios.</p>
         </div>
         <div className="text-sm text-gray-400">

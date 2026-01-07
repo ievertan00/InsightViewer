@@ -289,7 +289,7 @@ export default function DataPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900">No Data Found</h2>
               <p className="text-gray-500 max-w-md">It looks like you haven't fetched any financial reports yet.</p>
-              <Link href="/upload" className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-blue-900 transition-colors flex items-center">
+              <Link href="/import" className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-blue-900 transition-colors flex items-center">
                   Get Financial Data <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
           </div>
@@ -300,7 +300,7 @@ export default function DataPage() {
     <div className="space-y-6" onClick={() => { setShowFilterDropdown(false); setShowTypeDropdown(false); }}>
       <div className="flex justify-between items-center">
         <div>
-            <h1 className="text-2xl font-bold text-gray-900">Data View</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Financial Data Explorer</h1>
             {lastUpdate && <p className="text-xs text-gray-500 mt-1">Last updated: {lastUpdate}</p>}
         </div>
         

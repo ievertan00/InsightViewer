@@ -655,7 +655,7 @@ export default function KeyRatiosPage() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-100 pb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Key Financial Ratios
+            Financial Ratios
           </h1>
           <p className="text-gray-500">
             Advanced financial performance metrics and ratio analysis.
