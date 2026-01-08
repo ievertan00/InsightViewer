@@ -57,10 +57,13 @@ const getVal = (data: any, path: string) => {
     return typeof curr === "number" ? curr : curr?.amount || 0;
 };
 
-const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
+const calculateMetrics = (currentData: any, prevData: any, periodType: string = "Annual"): Metric[] => {
   if (!currentData) return [];
 
   const metrics: Metric[] = [];
+  const isMonthly = periodType === "Monthly";
+  const isQuarterly = periodType === "Quarterly";
+  const flowMult = isMonthly ? 12 : (isQuarterly ? 4 : 1);
 
   // --- 1. Extract Core Variables (Current Year) ---
   const revenue = getVal(currentData, "income_statement.total_operating_revenue");
@@ -70,7 +73,7 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   const sellingExp = getVal(currentData, "income_statement.total_operating_cost.selling_expenses");
   const adminExp = getVal(currentData, "income_statement.total_operating_cost.admin_expenses");
   const financeExp = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.amount") || 
-                     getVal(currentData, "income_statement.total_operating_cost.financial_expenses"); // Handle structure variation
+                     getVal(currentData, "income_statement.total_operating_cost.financial_expenses"); 
   const rdExp = getVal(currentData, "income_statement.total_operating_cost.rd_expenses");
   
   const assetImpairment = getVal(currentData, "income_statement.total_operating_cost.asset_impairment_loss") + 
@@ -85,6 +88,15 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   const interestIncome = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_income");
   const interestPaid = getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
   
+  // Annualized Flows
+  const annRevenue = revenue * flowMult;
+  const annCost = costOfSales * flowMult;
+  const annInterestExp = interestExpense * flowMult;
+  const annInterestPaid = interestPaid * flowMult;
+  const annOCF = getVal(currentData, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") * flowMult;
+  const annOperatingProfit = operatingProfit * flowMult;
+  const annEBIT = (totalProfit + interestExpense) * flowMult;
+
   // EBIT Proxy: Total Profit + Interest Expense
   const ebit = totalProfit + interestExpense; 
   const taxRate = totalProfit !== 0 ? safeDiv(incomeTax, totalProfit) : 0; // Effective tax rate
@@ -120,8 +132,6 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   const fcf = ocf - capex;
 
   // --- 2. Extract Previous Year & Averages ---
-  const getPrevVal = (path: string) => prevData ? getVal(prevData, path) : 0;
-  
   const prevShortTermDebt = getVal(prevData, "balance_sheet.current_liabilities.short_term_borrowings") +
                             getVal(prevData, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
   const prevLongTermDebt = getVal(prevData, "balance_sheet.non_current_liabilities.long_term_borrowings") +
@@ -163,11 +173,11 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   // ==========================================
   // 2. Return on Investment (回报率)
   // ==========================================
-  addMetric("Return on Investment", "ROE", safeDiv(netIncome, avgEquity), formatPercent, "净资产收益率", "Net Income / Avg Shareholders' Equity");
-  addMetric("Return on Investment", "ROA", safeDiv(netIncome, avgAssets), formatPercent, "总资产报酬率", "Net Income / Avg Total Assets");
-  addMetric("Return on Investment", "ROIC", safeDiv(ebit * (1 - taxRate), investedCapital), formatPercent, "投入资本回报率", "EBIT * (1 - Tax Rate) / Invested Capital");
-  addMetric("Return on Investment", "CFROI (Proxy)", safeDiv(ocf, investedCapital), formatPercent, "现金流投资回报率 (Proxy)", "Operating Cash Flow / Invested Capital");
-  addMetric("Return on Investment", "CROIC", safeDiv(fcf, investedCapital), formatPercent, "现金投入资本回报率", "Free Cash Flow / (Equity + Debt)");
+  addMetric("Return on Investment", "ROE", safeDiv(netIncome * flowMult, avgEquity), formatPercent, "净资产收益率", "Annualized Net Income / Avg Shareholders' Equity");
+  addMetric("Return on Investment", "ROA", safeDiv(netIncome * flowMult, avgAssets), formatPercent, "总资产报酬率", "Annualized Net Income / Avg Total Assets");
+  addMetric("Return on Investment", "ROIC", safeDiv(ebit * (1 - taxRate) * flowMult, investedCapital), formatPercent, "投入资本回报率", "Annualized EBIT * (1 - Tax Rate) / Invested Capital");
+  addMetric("Return on Investment", "CFROI (Proxy)", safeDiv(annOCF, investedCapital), formatPercent, "现金流投资回报率 (Proxy)", "Annualized Operating Cash Flow / Invested Capital");
+  addMetric("Return on Investment", "CROIC", safeDiv(fcf * flowMult, investedCapital), formatPercent, "现金投入资本回报率", "Annualized Free Cash Flow / (Equity + Debt)");
 
   // ==========================================
   // 3. Solvency & Liquidity (偿债能力)
@@ -177,9 +187,9 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   addMetric("Solvency & Liquidity", "Cash Ratio", safeDiv(monetaryFunds + tradingAssets, currentLiabilities), formatNumber, "现金比率", "(Cash + Cash Equiv) / Current Liabilities");
   addMetric("Solvency & Liquidity", "Debt to Assets", safeDiv(totalLiabilities, totalAssets), formatPercent, "资产负债率", "Total Liabilities / Total Assets");
   addMetric("Solvency & Liquidity", "Debt to Equity", safeDiv(totalLiabilities, totalEquity), formatPercent, "产权比率", "Total Liabilities / Shareholders' Equity");
-  addMetric("Solvency & Liquidity", "Interest Coverage", safeDiv(ebit, interestExpense), formatNumber, "已获利息倍数", "EBIT / Interest Expense");
-  addMetric("Solvency & Liquidity", "Accrued Interest Rate", safeDiv(interestExpense, avgInterestBearingDebt), formatPercent, "有息负债利率", "Interest Expense / Avg Total Debt");
-  addMetric("Solvency & Liquidity", "Cash Interest Rate", safeDiv(interestPaid, avgInterestBearingDebt), formatPercent, "现金利率", "Interest Paid (Proxy) / Avg Total Debt");
+  addMetric("Solvency & Liquidity", "Interest Coverage", safeDiv(annEBIT, annInterestExp), formatNumber, "已获利息倍数", "EBIT / Interest Expense");
+  addMetric("Solvency & Liquidity", "Accrued Interest Rate", safeDiv(annInterestExp, avgInterestBearingDebt), formatPercent, "有息负债利率", "Annualized Interest Expense / Avg Total Debt");
+  addMetric("Solvency & Liquidity", "Cash Interest Rate", safeDiv(annInterestPaid, avgInterestBearingDebt), formatPercent, "现金利率", "Annualized Interest Paid (Proxy) / Avg Total Debt");
   addMetric("Solvency & Liquidity", "Operating Cash Flow Ratio", safeDiv(ocf, currentLiabilities), formatNumber, "经营现金流比率", "Operating Cash Flow / Current Liabilities");
   addMetric("Solvency & Liquidity", "NWC to Assets", safeDiv(currentAssets - currentLiabilities, totalAssets), formatPercent, "营运资金占总资产比率", "(Current Assets - Current Liabilities) / Total Assets");
   addMetric("Solvency & Liquidity", "Net Debt", interestBearingDebt - monetaryFunds, (v) => (v / 100000000).toFixed(2) + "B", "净债务 (100M)", "Interest Bearing Debt - Cash");
@@ -191,16 +201,16 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   addMetric("Operating Efficiency", "Admin Expense Ratio", safeDiv(adminExp, revenue), formatPercent, "管理费用率", "Administrative Expenses / Revenue");
   addMetric("Operating Efficiency", "R&D Expense Ratio", safeDiv(rdExp, revenue), formatPercent, "研发费用率", "R&D Expenses / Revenue");
   
-  const invTurn = safeDiv(costOfSales, avgInventory);
-  const arTurn = safeDiv(revenue, avgReceivables);
+  const invTurn = safeDiv(annCost, avgInventory);
+  const arTurn = safeDiv(annRevenue, avgReceivables);
   const dio = safeDiv(365, invTurn);
   const dso = safeDiv(365, arTurn);
 
-  addMetric("Operating Efficiency", "Inventory Turnover", invTurn, formatNumber, "存货周转率", "COGS / Avg Inventory");
-  addMetric("Operating Efficiency", "Days Inventory Outstanding", dio, formatDays, "存货周转天数", "365 / Inventory Turnover");
-  addMetric("Operating Efficiency", "AR Turnover", arTurn, formatNumber, "应收账款周转率", "Revenue / Avg AR");
-  addMetric("Operating Efficiency", "Days Sales Outstanding", dso, formatDays, "应收账款周转天数", "365 / AR Turnover");
-  addMetric("Operating Efficiency", "Total Asset Turnover", safeDiv(revenue, avgAssets), formatNumber, "总资产周转率", "Revenue / Avg Total Assets");
+  addMetric("Operating Efficiency", "Inventory Turnover", invTurn, formatNumber, "存货周转率", "Annualized COGS / Avg Inventory");
+  addMetric("Operating Efficiency", "Days Inventory Outstanding", dio, formatDays, "存货周转天数", "365 / Annualized Inventory Turnover");
+  addMetric("Operating Efficiency", "AR Turnover", arTurn, formatNumber, "应收账款周转率", "Annualized Revenue / Avg AR");
+  addMetric("Operating Efficiency", "Days Sales Outstanding", dso, formatDays, "应收账款周转天数", "365 / Annualized AR Turnover");
+  addMetric("Operating Efficiency", "Total Asset Turnover", safeDiv(annRevenue, avgAssets), formatNumber, "总资产周转率", "Annualized Revenue / Avg Total Assets");
   addMetric("Operating Efficiency", "Operating Cycle", dio + dso, formatDays, "营业周期", "DIO + DSO");
   addMetric("Operating Efficiency", "Working Capital", currentAssets - currentLiabilities, (v) => (v / 100000000).toFixed(2) + "B", "营运资金 (100M)", "Current Assets - Current Liabilities");
 
@@ -208,11 +218,11 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   // 5. Cash Flow Quality (现金流质量)
   // ==========================================
   addMetric("Cash Flow Quality", "OCF to Revenue", safeDiv(ocf, revenue), formatPercent, "经营现金流与收入比", "Operating Cash Flow / Revenue");
-  addMetric("Cash Flow Quality", "OCF to Operating Income", safeDiv(ocf, operatingProfit), formatNumber, "盈利现金比率", "Operating Cash Flow / Operating Income");
+  addMetric("Cash Flow Quality", "OCF to Operating Income", safeDiv(ocf, operatingProfit), formatPercent, "盈利现金比率", "Operating Cash Flow / Operating Income");
   addMetric("Cash Flow Quality", "Free Cash Flow (FCFF)", fcf, (v) => (v / 100000000).toFixed(2) + "B", "企业自由现金流量 (100M)", "OCF - Capex (Simplified)");
   addMetric("Cash Flow Quality", "Cash Collection Ratio", safeDiv(salesCash, revenue), formatPercent, "收现比", "Cash Received from Sales / Revenue");
-  addMetric("Cash Flow Quality", "OCF to Debt", safeDiv(ocf, totalLiabilities), formatPercent, "经营现金流与负债比", "Operating Cash Flow / Total Liabilities");
-  addMetric("Cash Flow Quality", "OCF to Capex", safeDiv(ocf, capex), formatNumber, "经营现金流与资本支出比", "Operating Cash Flow / Capital Expenditures");
+  addMetric("Cash Flow Quality", "OCF to Debt", safeDiv(annOCF, totalLiabilities), formatPercent, "经营现金流与负债比", "Annualized Operating Cash Flow / Total Liabilities");
+  addMetric("Cash Flow Quality", "OCF to Capex", safeDiv(ocf, capex), formatPercent, "经营现金流与资本支出比", "Operating Cash Flow / Capital Expenditures");
 
   // ==========================================
   // 6. Growth Indicators (成长性)
@@ -222,13 +232,13 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
       const prevNetIncome = getVal(prevData, "income_statement.net_profit.net_profit_attr_to_parent");
       const prevOCF = getVal(prevData, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
 
-      addMetric("Growth Indicators", "Revenue Growth (YoY)", safeDiv(revenue - prevRevenue, prevRevenue), formatPercent, "营业总收入增长率", "(Current Revenue - Prev) / Prev");
-      addMetric("Growth Indicators", "Net Profit Growth (YoY)", safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)), formatPercent, "净利润增长率", "(Current Net Income - Prev) / |Prev|");
-      addMetric("Growth Indicators", "OCF Growth (YoY)", safeDiv(ocf - prevOCF, Math.abs(prevOCF)), formatPercent, "经营现金流增长率", "(Current OCF - Prev) / |Prev|");
+      addMetric("Growth Indicators", "Revenue Growth", safeDiv(revenue - prevRevenue, prevRevenue), formatPercent, "营收增长率", "(Current - Prev) / Prev");
+      addMetric("Growth Indicators", "Net Profit Growth", safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)), formatPercent, "净利润增长率", "(Current - Prev) / |Prev|");
+      addMetric("Growth Indicators", "OCF Growth", safeDiv(ocf - prevOCF, Math.abs(prevOCF)), formatPercent, "经营现金流增长率", "(Current - Prev) / |Prev|");
   } else {
-      addMetric("Growth Indicators", "Revenue Growth", 0, () => "-", "Requires prev year data", "N/A");
-      addMetric("Growth Indicators", "Net Profit Growth", 0, () => "-", "Requires prev year data", "N/A");
-      addMetric("Growth Indicators", "OCF Growth", 0, () => "-", "Requires prev year data", "N/A");
+      addMetric("Growth Indicators", "Revenue Growth", 0, () => "-", "Requires prev period data", "N/A");
+      addMetric("Growth Indicators", "Net Profit Growth", 0, () => "-", "Requires prev period data", "N/A");
+      addMetric("Growth Indicators", "OCF Growth", 0, () => "-", "Requires prev period data", "N/A");
   }
 
   return metrics;
@@ -315,7 +325,7 @@ export default function KeyRatiosPage() {
         return rYearNum === currentYearNum - 1 && r.period_type === currentPeriodType;
     });
 
-    const currentMetrics = calculateMetrics(currentReport.data, prevYearReport?.data);
+    const currentMetrics = calculateMetrics(currentReport.data, prevYearReport?.data, currentPeriodType);
     const currentDupont = calculateDupont(currentReport, prevYearReport);
 
     let comparisonMetrics: Metric[] = [];
@@ -329,7 +339,7 @@ export default function KeyRatiosPage() {
                 const rYearNum = parseInt(r.fiscal_year.split(" ")[0]);
                 return rYearNum === currentYearNum - 1 && r.period_type === currentPeriodType;
             });
-            comparisonMetrics = calculateMetrics(comparisonReport.data, targetPrevReport?.data);
+            comparisonMetrics = calculateMetrics(comparisonReport.data, targetPrevReport?.data, comparisonReport.period_type);
             comparisonDupont = calculateDupont(comparisonReport, targetPrevReport);
         }
     } else if (comparisonMode === "YoY") {
@@ -339,12 +349,12 @@ export default function KeyRatiosPage() {
             const rYearNum = parseInt(r.fiscal_year.split(" ")[0]);
             return rYearNum === currentYearNum - 2 && r.period_type === currentPeriodType;
         });
-        comparisonMetrics = calculateMetrics(comparisonReport.data, prevPrevReport?.data);
+        comparisonMetrics = calculateMetrics(comparisonReport.data, prevPrevReport?.data, comparisonReport.period_type);
         comparisonDupont = calculateDupont(comparisonReport, prevPrevReport);
       }
     } else if (comparisonMode === "Sequential" && currentIndex + 1 < reports.length) {
         comparisonReport = reports[currentIndex + 1];
-        comparisonMetrics = calculateMetrics(comparisonReport.data, null);
+        comparisonMetrics = calculateMetrics(comparisonReport.data, null, comparisonReport.period_type);
         comparisonDupont = calculateDupont(comparisonReport, null);
     }
 

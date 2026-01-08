@@ -53,6 +53,11 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     else if (lower.includes("q2") || lower.includes("semi")) weight = 0.2;
     else if (lower.includes("q3")) weight = 0.3;
     else if (lower.includes("annual") || lower.includes("q4")) weight = 0.4;
+    else if (lower.includes("-") || lower.includes(".")) {
+        // Monthly: extract month
+        const m = fy.match(/[-/\.年](\d{1,2})/);
+        if(m) weight = parseInt(m[1]) / 100;
+    }
     
     return year + weight;
   };
@@ -73,7 +78,15 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const d = curr.data;
   const pd = prev.data;
 
-  // --- Balance Sheet Data ---
+  // Period Handling (Annualization)
+  const isMonthly = curr.period_type === "Monthly" || curr.fiscal_year.includes("-") || curr.fiscal_year.includes(".");
+  const isQuarterly = curr.period_type === "Quarterly" || curr.fiscal_year.includes("Q");
+  
+  let flowMult = 1;
+  if (isMonthly) flowMult = 12;
+  else if (isQuarterly) flowMult = 4;
+
+  // --- Balance Sheet Data (Stocks - No Mult) ---
   const cash = getVal(d, "balance_sheet.current_assets.monetary_funds");
   const tradingFinAssets = getVal(d, "balance_sheet.current_assets.trading_financial_assets") + 
                            getVal(d, "balance_sheet.current_assets.financial_assets_fvpl.trading_financial_assets");
@@ -100,12 +113,11 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const totalEquity = getVal(d, "balance_sheet.equity.total_equity");
   const netAssets = totalEquity; 
 
-  // Calculated Debt
   const totalDebt = shortTermBorrowings + nonCurrentLiabDue1Y + longTermBorrowings + bondsPayable;
   const interestBearingDebt = totalDebt + leaseLiab + tradingFinLiab; 
   const shortTermDebt = shortTermBorrowings + nonCurrentLiabDue1Y; 
 
-  // --- Income Statement Data ---
+  // --- Income Statement & Cash Flow Data (Flows - Need Mult) ---
   const revenue = getVal(d, "income_statement.total_operating_revenue");
   const costOfSales = getVal(d, "income_statement.total_operating_cost.operating_cost");
   const sellingExp = getVal(d, "income_statement.total_operating_cost.selling_expenses");
@@ -131,14 +143,22 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const netProfit = getVal(d, "income_statement.net_profit.amount");
   const netProfitParent = getVal(d, "income_statement.net_profit.net_profit_attr_to_parent");
 
-  // --- Cash Flow Data ---
   const ocf = getVal(d, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
   const ocfInflow = getVal(d, "cash_flow_statement.operating_activities.subtotal_cash_inflow_operating");
   const otherCashReceivedOp = getVal(d, "cash_flow_statement.operating_activities.other_cash_received_operating");
   const cashPaidDivProfInt = getVal(d, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
   const capex = getVal(d, "cash_flow_statement.investing_activities.cash_paid_for_assets");
 
-  // --- Previous Year Data ---
+  // Annualized Flows
+  const annRev = revenue * flowMult;
+  const annCost = costOfSales * flowMult;
+  const annOCF = ocf * flowMult;
+  const annInterestExp = interestExp * flowMult;
+  const annInterestIncome = interestIncome * flowMult;
+  const annNetProfitParent = netProfitParent * flowMult;
+  const annOpProfit = operatingProfit * flowMult;
+
+  // --- Previous Year Data (for Growth) ---
   const prevRevenue = getVal(pd, "income_statement.total_operating_revenue");
   const prevCostOfSales = getVal(pd, "income_statement.total_operating_cost.operating_cost");
   const prevInventory = getVal(pd, "balance_sheet.current_assets.inventories");
@@ -172,28 +192,29 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const prevGrossMargin = safeDiv(prevRevenue - prevCostOfSales, prevRevenue);
   const gmIncrease = grossMargin - prevGrossMargin;
 
-  const invTurnover = safeDiv(costOfSales, avgInventory);
-  const prevInvTurnoverApprox = safeDiv(prevCostOfSales, prevInventory);
+  const invTurnover = safeDiv(annCost, avgInventory);
+  const prevInvTurnoverApprox = safeDiv(prevCostOfSales * (isMonthly ? 12 : isQuarterly ? 4 : 1), prevInventory);
   const invTurnoverChange = safeGrowth(invTurnover, prevInvTurnoverApprox); 
 
-  const dso = safeDiv(arTotal * 365, revenue);
-  const prevDSO = safeDiv(prevAR * 365, prevRevenue);
-  const dpo = safeDiv(payablesTotal * 365, costOfSales);
-  const prevDPO = safeDiv(prevPayables * 365, prevCostOfSales);
+  const dso = safeDiv(arTotal * 365, annRev);
+  const prevDSO = safeDiv(prevAR * 365, prevRevenue * (isMonthly ? 12 : isQuarterly ? 4 : 1));
+  const dpo = safeDiv(payablesTotal * 365, annCost);
+  const prevDPO = safeDiv(prevPayables * 365, prevCostOfSales * (isMonthly ? 12 : isQuarterly ? 4 : 1));
   const dpoGrowth = safeGrowth(dpo, prevDPO);
   const opMargin = safeDiv(operatingProfit, revenue);
   const prevOpMargin = safeDiv(getVal(pd, "income_statement.operating_profit.amount"), prevRevenue);
   const niGrowth = safeGrowth(netProfitParent, getVal(pd, "income_statement.net_profit.net_profit_attr_to_parent"));
   const ocfGrowth = safeGrowth(ocf, getVal(pd, "cash_flow_statement.operating_activities.net_cash_flow_from_operating"));
   const fcf = ocf - capex;
+  const annFCF = fcf * flowMult;
   const prevFCF = getVal(pd, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") - getVal(pd, "cash_flow_statement.investing_activities.cash_paid_for_assets");
+  const annPrevFCF = prevFCF * (isMonthly ? 12 : isQuarterly ? 4 : 1);
 
   // ==========================================
   // 1. Profitability & Inventory Signals
   // ==========================================
 
   // ID: F1
-  // Abnormal Gross Margin Expansion
   flags.push({
     name: "Abnormal Gross Margin Expansion",
     category: "Cost",
@@ -206,7 +227,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F2
-  // Inventory Divergence
   flags.push({
     name: "Inventory Divergence",
     category: "Asset",
@@ -223,8 +243,8 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F3
-  // High Cash Interest Rate
-  const cashInterestRate = safeDiv(cashPaidDivProfInt, avgInterestBearingDebt);
+  const annCashInterestPaid = cashPaidDivProfInt * flowMult;
+  const cashInterestRate = safeDiv(annCashInterestPaid, avgInterestBearingDebt);
   flags.push({
     name: "High Cash Interest Rate",
     category: "Debt",
@@ -232,13 +252,12 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: cashInterestRate > 0.05, 
     value: `Rate: ${(cashInterestRate*100).toFixed(1)}%`,
     threshold: "> 5% (Distressed)",
-    logic: `Cash Interest Paid / Avg Debt = ${(cashInterestRate*100).toFixed(1)}% (> 5%)`,
+    logic: `Annualized Cash Interest Paid / Avg Debt = ${(cashInterestRate*100).toFixed(1)}% (> 5%)`,
     description: "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status."
   });
 
   // ID: F4
-  // Inverted Interest Rate
-  const depositRate = safeDiv(interestIncome, avgMonetaryFunds);
+  const depositRate = safeDiv(annInterestIncome, avgMonetaryFunds);
   flags.push({
     name: "Inverted Interest Rate",
     category: "Liquidity",
@@ -246,17 +265,15 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: depositRate < 0.005,
     value: `Yield: ${(depositRate*100).toFixed(2)}%`,
     threshold: "< 0.5%",
-    logic: `Interest Income / Avg Cash = ${(depositRate*100).toFixed(2)}% (< 0.5%)`,
+    logic: `Annualized Interest Income / Avg Cash = ${(depositRate*100).toFixed(2)}% (< 0.5%)`,
     description: "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent."
   });
 
   // ID: F5
-  // High-Cash, High-Debt
   const hchd_c1 = (safeDiv(cash, (shortTermDebt + tradingFinLiab)) >= 1.0) && (shortTermDebt > 0);
   const hchd_c2 = (safeDiv(interestBearingDebt, totalAssets) >= 0.30);
   const hchd_c3 = (depositRate < 0.005);
   const hchd_c4 = (safeDiv(cashGrowth, revenueGrowth) >= 2.0) && (revenueGrowth > 0);
-  
   const hchdCount = [hchd_c1, hchd_c2, hchd_c3, hchd_c4].filter(Boolean).length;
 
   flags.push({
@@ -363,7 +380,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F13
-  // AR Bloat
   const arToAssets = safeDiv(arTotal, totalAssets);
   const arGrowthGap = arGrowth - revenueGrowth;
   flags.push({
@@ -378,7 +394,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F14
-  // Excessive Inventory
   const invToAssets = safeDiv(inventory, totalAssets);
   const invGrowthGap = inventoryGrowth - revenueGrowth;
   flags.push({
@@ -393,7 +408,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F15
-  // Other Receivables Anomaly
   const otherRecToAssets = safeDiv(otherReceivables, totalAssets);
   flags.push({
     name: "Other Receivables Anomaly",
@@ -407,7 +421,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F16
-  // Goodwill Risk
   const goodwillToNetAssets = safeDiv(goodwill, netAssets);
   flags.push({
     name: "Goodwill Risk",
@@ -421,9 +434,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F17
-  // CIP Trap
   const cipToAssets = safeDiv(cip, totalAssets);
-  // Note: "stagnant for > 2 years" requires more history. We strictly implement the ratio check here.
   flags.push({
     name: "CIP Trap",
     category: "Asset",
@@ -436,7 +447,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F18
-  // Deferred Expense Bloat
   const deferredExpToAssets = safeDiv(longTermDeferredExp, totalAssets);
   flags.push({
     name: "Deferred Expense Bloat",
@@ -450,7 +460,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F19
-  // Other Payables Anomaly
   const otherPayToLiab = safeDiv(otherPayables, totalLiabilities);
   flags.push({
     name: "Other Payables Anomaly",
@@ -468,7 +477,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F20
-  // Selling Expense Efficiency
   const sellingEffGap = revenueGrowth - 0.20;
   flags.push({
     name: "Selling Expense Efficiency",
@@ -482,7 +490,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F21
-  // Admin Expense Divergence
   const adminDivGap = adminExpGrowth - revenueGrowth;
   flags.push({
     name: "Admin Expense Divergence",
@@ -496,7 +503,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F22
-  // Prepayment Surge
   const prepayToAssets = safeDiv(prepayments, totalAssets);
   flags.push({
     name: "Prepayment Surge",
@@ -510,7 +516,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F23
-  // Payables Gap
   const payablesGap = payablesGrowth - (revenueGrowth + 0.20);
   flags.push({
     name: "Payables Gap",
@@ -528,7 +533,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F24
-  // Other Cash Received Anomaly
   const otherCashRecRatio = safeDiv(otherCashReceivedOp, ocfInflow);
   flags.push({
     name: "Other Cash Received Anomaly",
@@ -546,7 +550,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F25
-  // Cash-Backed Profits
   const ocfNiRatio = ocf / netProfitParent;
   flags.push({
     name: "Cash-Backed Profits",
@@ -561,7 +564,6 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F26
-  // Self-Funding Capability
   const ocfCapexRatio = ocf / capex;
   flags.push({
     name: "Self-Funding",
@@ -576,10 +578,10 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   });
 
   // ID: F27
-  // Conservative Leverage
-  const netDebt = totalDebt - cash;
+  const netDebt = interestBearingDebt - cash;
   const ebitdaProxy = totalProfit + interestExp + getVal(d, "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_fixed_assets_investment_props");
-  const leverageRatio = netDebt / ebitdaProxy;
+  const annEbitda = ebitdaProxy * flowMult;
+  const leverageRatio = safeDiv(netDebt, annEbitda);
   flags.push({
     name: "Conservative Leverage",
     category: "Debt",
@@ -587,16 +589,14 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: leverageRatio < 2.0 && netDebt > 0,
     value: `Net Debt/EBITDA: ${leverageRatio.toFixed(2)}`,
     threshold: "< 2.0x",
-    logic: `Net Debt / EBITDA = ${leverageRatio.toFixed(2)} (threshold < 2.0x)`,
+    logic: `Net Debt / Annualized EBITDA = ${leverageRatio.toFixed(2)} (threshold < 2.0x)`,
     description:
       "Debt levels are low relative to earnings, indicating a strong balance sheet.",
   });
 
-  // Preserved Existing Flags
-  
   // ID: F28
   // "Kangde Xin Paradox"
-  const intToDebt = totalDebt > 0 ? interestExp / totalDebt : 0;
+  const intToDebt = totalDebt > 0 ? annInterestExp / totalDebt : 0;
   const cashToAssets = safeDiv(cash, totalAssets);
   flags.push({
     name: "Kangde Xin Paradox",
@@ -605,7 +605,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: cashToAssets > 0.2 && intToDebt > 0.05,
     value: `Cash/Assets: ${(cashToAssets * 100).toFixed(1)}%, Int/Debt: ${(intToDebt * 100).toFixed(1)}%`,
     threshold: "> 20% & > 5%",
-    logic: `Cash/Assets = ${(cashToAssets * 100).toFixed(1)}% (threshold > 20%) & Int/Debt = ${(intToDebt * 100).toFixed(1)}% (threshold > 5%)`,
+    logic: `Cash/Assets = ${(cashToAssets * 100).toFixed(1)}% (threshold > 20%) & Annualized Int/Debt = ${(intToDebt * 100).toFixed(1)}% (threshold > 5%)`,
     description:
       "High cash balance coexisting with high-interest debt suggests cash might be restricted or fictitious.",
   });
@@ -638,20 +638,22 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
 
   // ID: F31
   // "Rising DSO"
+  const dsoChange = dso - prevDSO;
   flags.push({
     name: "Rising DSO",
     category: "Revenue",
     type: "Red",
-    status: dso - prevDSO > 15,
-    value: `Change: +${(dso - prevDSO).toFixed(0)} days`,
+    status: dsoChange > 15,
+    value: `Change: +${dsoChange.toFixed(0)} days`,
     threshold: "> +15 days",
-    logic: `DSO Change = ${(dso - prevDSO).toFixed(0)} days (threshold > 15 days)`,
+    logic: `DSO Change = ${dsoChange.toFixed(0)} days (threshold > 15 days)`,
     description: "It is taking significantly longer to collect payment from customers.",
   });
 
   // ID: F32
   // "High Total Accruals"
-  const accrualAssetsRatio = (netProfitParent - ocf) / totalAssets;
+  const annAccruals = (annNetProfitParent - annOCF);
+  const accrualAssetsRatio = annAccruals / totalAssets;
   flags.push({
     name: "High Total Accruals",
     category: "Earnings",
@@ -659,13 +661,13 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: accrualAssetsRatio > 0.1,
     value: `Accruals/Assets: ${(accrualAssetsRatio * 100).toFixed(1)}%`,
     threshold: "> 10%",
-    logic: `(NI - OCF) / Total Assets = ${(accrualAssetsRatio * 100).toFixed(1)}% (threshold > 10%)`,
+    logic: `Annualized (NI - OCF) / Total Assets = ${(accrualAssetsRatio * 100).toFixed(1)}% (threshold > 10%)`,
     description: "Earnings are driven heavily by non-cash accruals rather than cash flow.",
   });
 
   // ID: F33
   // "Debt Cliff"
-  const debtCliffRatio2 = shortTermDebt / totalDebt;
+  const debtCliffRatio2 = safeDiv(shortTermDebt, totalDebt);
   flags.push({
     name: "Debt Cliff",
     category: "Debt",
@@ -696,10 +698,10 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Negative FCF",
     category: "Liquidity",
     type: "Red",
-    status: fcf < 0 && prevFCF < 0,
-    value: `Current: ${(fcf / 1e8).toFixed(2)}B, Prev: ${(prevFCF / 1e8).toFixed(2)}B`,
-    threshold: "Negative for > 1 year",
-    logic: `Current FCF = ${(fcf / 1e8).toFixed(2)}B & Previous FCF = ${(prevFCF / 1e8).toFixed(2)}B (threshold both < 0)`,
+    status: annFCF < 0 && annPrevFCF < 0,
+    value: `Current: ${(annFCF / 1e8).toFixed(2)}B, Prev: ${(annPrevFCF / 1e8).toFixed(2)}B`,
+    threshold: "Negative for > 1 period",
+    logic: `Annualized Current FCF = ${(annFCF / 1e8).toFixed(2)}B & Annualized Previous FCF = ${(annPrevFCF / 1e8).toFixed(2)}B (threshold both < 0)`,
     description: "Free Cash Flow has been negative for consecutive periods despite any reported profits.",
   });
 
@@ -711,7 +713,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     type: "Red",
     status: dpoGrowth > 0.2,
     value: `DPO Growth: ${(dpoGrowth * 100).toFixed(1)}%`,
-    threshold: "> 20% YoY",
+    threshold: "> 20% YoY/MoM",
     logic: `DPO Growth = ${(dpoGrowth * 100).toFixed(1)}% (threshold > 20%)`,
     description: "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.",
   });

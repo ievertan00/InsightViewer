@@ -26,11 +26,16 @@ def create_template(filename, sheet_name, mapping_dict):
     header_font = Font(bold=True)
     center_align = Alignment(horizontal='center')
 
+    # Instructions
+    ws.append(["Note: The date header (Row 2) supports: '2023 Annual', '2023 Q1', '2023-01'"])
+    ws.merge_cells('A1:D1')
+    ws['A1'].font = Font(italic=True, color="FF0000")
+    
     # Headers
-    headers = ["报表项目 (Account Name)", "2024", "2023", "2022"]
+    headers = ["报表项目 (Account Name)", "2024 Annual", "2023 Annual", "2022 Annual"]
     ws.append(headers)
     
-    for cell in ws[1]:
+    for cell in ws[2]:
         cell.font = header_font
         cell.alignment = center_align
 

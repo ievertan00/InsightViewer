@@ -17,6 +17,32 @@ const getVal = (data: ReportData | undefined, path: string): number => {
   return typeof curr === "number" ? curr : curr?.amount || 0;
 };
 
+// Helper to get sortable score for fiscal_year string
+export const getFiscalYearScore = (fy: string): number => {
+  const clean = fy.trim();
+  
+  // Try to find Year
+  const yearMatch = clean.match(/20\d{2}/);
+  const year = yearMatch ? parseInt(yearMatch[0]) : 0;
+  
+  let subScore = 0.99; // Default to end of year (Annual)
+  
+  if (clean.includes("Q1")) subScore = 0.20;
+  else if (clean.includes("Q2") || clean.includes("Semi")) subScore = 0.45;
+  else if (clean.includes("Q3")) subScore = 0.70;
+  else if (clean.includes("Q4")) subScore = 0.95;
+  else if (clean.includes("-") || clean.includes(".")) {
+    // Monthly: "2023-01" -> 0.01 to 0.12
+    const monthMatch = clean.match(/[-/\.年](\d{1,2})/);
+    if (monthMatch) {
+      const month = parseInt(monthMatch[1]);
+      subScore = month / 100;
+    }
+  }
+  
+  return year + subScore;
+};
+
 // Custom Aggregations
 export const aggregations = {
   // 货币资金等 = 货币资金 + 拆出资金 + 交易性金融资产

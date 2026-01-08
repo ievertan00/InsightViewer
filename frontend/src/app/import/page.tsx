@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Loader2,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -278,7 +279,12 @@ Rules:
 1. Return ONLY valid JSON. No markdown formatting, no explanations.
 2. If a field is missing in the source, use 0.
 3. Use the exact keys provided below.
-4. If the source contains data for MULTIPLE years (e.g., 2023 and 2022), generate a separate object in the "reports" array for EACH year found.
+4. "fiscal_year" Format:
+   - Annual: "2023 Annual"
+   - Quarterly: "2023 Q1", "2023 Q2", etc.
+   - Monthly: "2023-01", "2023-02", etc.
+5. "period_type": "Annual", "Quarterly", or "Monthly".
+6. If the source contains multiple periods, generate a separate object in the "reports" array for EACH period.
 
 Template:
 {
@@ -839,6 +845,47 @@ Template:
         </p>
       </div>
 
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-4">
+        <h2 className="font-semibold text-blue-900 flex items-center">
+          <Info className="w-5 h-5 mr-2 text-blue-600" />
+          How to Import Data Correctly
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
+          <div>
+            <h3 className="font-bold mb-2">1. Search A-Share</h3>
+            <p className="mb-2">For Chinese A-Share companies only.</p>
+            <ul className="list-disc list-inside space-y-1 text-blue-700">
+              <li>Enter 6-digit code (e.g., 600519).</li>
+              <li>Set Start/End years (e.g., 2020-2023).</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold mb-2">2. Paste JSON</h3>
+            <p className="mb-2">For structured data from LLMs.</p>
+            <ul className="list-disc list-inside space-y-1 text-blue-700">
+              <li>Use the "Copy LLM Prompt" button.</li>
+              <li>Paste the prompt into DeepSeek/ChatGPT/Claude.</li>
+              <li>Upload your Excel/PDF/Image to the LLM.</li>
+              <li>Paste the JSON response here.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold mb-2">3. Upload Excel</h3>
+            <p className="mb-2">For custom financial models.</p>
+            <ul className="list-disc list-inside space-y-1 text-blue-700">
+              <li>Download standard templates below.</li>
+              <li>
+                Ensure header row has years (e.g., 2023 Annual, 2023 Q1,
+                2023-01).
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <h3 className="font-semibold text-gray-800 flex items-center">
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
@@ -995,7 +1042,8 @@ Template:
           <p className="text-sm text-gray-500 mb-2 text-center">
             Drag and drop your Excel or JSON files here
           </p>
-          <div className="flex space-x-3 text-xs mb-4">
+          
+          <div className="flex space-x-3 text-xs mb-4 text-center">
             <span className="text-gray-400">Templates:</span>
             <a
               href="/templates/Standard_Income_Statement.xlsx"
@@ -1021,7 +1069,8 @@ Template:
               Cash Flow
             </a>
           </div>
-          <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors">
+
+          <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors z-10 relative">
             Browse Files
             <input
               type="file"

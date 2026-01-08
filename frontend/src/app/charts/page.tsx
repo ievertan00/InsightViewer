@@ -20,6 +20,7 @@ import {
   mapGrowthIndicators,
   mapRevenueVsCash,
   mapCapexTrend,
+  getFiscalYearScore,
 } from "@/lib/chartDataMapper";
 
 // --- Color Constants (from Financial Visualization.md) ---
@@ -93,7 +94,7 @@ const PROFIT_SOURCE_COLORS = [
 
 export default function ChartsPage() {
   const [reports, setReports] = useState<any[]>([]);
-  const [annualOnly, setAnnualOnly] = useState(true);
+  const [filterType, setFilterType] = useState<"Annual" | "Quarterly" | "Monthly" | "All">("Annual");
 
   // Data State
   const [assetData, setAssetData] = useState<any[]>([]);
@@ -114,37 +115,22 @@ export default function ChartsPage() {
       try {
         const parsed = JSON.parse(storedReports);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sort ASC for charts (Time series left to right)
+          // Sort ASC using the robust helper
           const sorted = [...parsed].sort((a: any, b: any) => {
-            const yA = parseInt(a.fiscal_year.split(" ")[0]);
-            const yB = parseInt(b.fiscal_year.split(" ")[0]);
-
-            if (yA !== yB) return yA - yB;
-
-            // Same year, sort by period priority
-            const priority: Record<string, number> = {
-              Q1: 1,
-              Q2: 2,
-              Q3: 3,
-              Q4: 4,
-              Annual: 10,
-            };
-            const pA =
-              a.period_type ||
-              (a.fiscal_year.includes("Annual") ? "Annual" : "Q4");
-            const pB =
-              b.period_type ||
-              (b.fiscal_year.includes("Annual") ? "Annual" : "Q4");
-            return (priority[pA] || 0) - (priority[pB] || 0);
+            return getFiscalYearScore(a.fiscal_year) - getFiscalYearScore(b.fiscal_year);
           });
 
-          // Filter for Annual if toggle is on
-          const filtered = annualOnly
-            ? sorted.filter(
-                (r: any) =>
-                  r.period_type === "Annual" || r.fiscal_year.includes("Annual")
-              )
-            : sorted;
+          // Filter Logic
+          const filtered = sorted.filter((r: any) => {
+            const fy = r.fiscal_year || "";
+            const pt = r.period_type || "";
+            
+            if (filterType === "All") return true;
+            if (filterType === "Annual") return pt === "Annual" || fy.includes("Annual");
+            if (filterType === "Quarterly") return pt === "Quarterly" || fy.includes("Q");
+            if (filterType === "Monthly") return pt === "Monthly" || fy.includes("-") || fy.includes(".");
+            return true;
+          });
 
           setReports(filtered);
 
@@ -165,9 +151,9 @@ export default function ChartsPage() {
         console.error("Error loading reports", e);
       }
     }
-  }, [annualOnly]);
+  }, [filterType]);
 
-  if (reports.length === 0 && !annualOnly) {
+  if (reports.length === 0 && filterType === "All") {
     return (
       <div className="p-10 text-center text-gray-500">
         No report data found. Please import data first.
@@ -185,17 +171,22 @@ export default function ChartsPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setAnnualOnly(!annualOnly)}
-            className={clsx(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
-              annualOnly
-                ? "bg-blue-50 border-blue-200 text-blue-700"
-                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-            )}
-          >
-            {annualOnly ? "Annual Data Only" : "All Periods"}
-          </button>
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            {(["Annual", "Quarterly", "Monthly", "All"] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={clsx(
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                  filterType === type
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
           <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
             Unit: 100 Million CNY
           </div>

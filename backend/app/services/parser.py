@@ -40,8 +40,9 @@ def find_header_row(sheet, max_rows=30) -> Tuple[int, List[Dict[str, Any]]]:
     header_row_index = -1
     years_map = []
     
-    # Heuristic 1: Look for regex dates (2019, 2020-12-31)
-    date_pattern = re.compile(r"20\d{2}")
+    # Heuristic 1: Look for regex dates (2019, 2020-12, 2020.12, 2023年1月)
+    # Matches: 2023, 2023-01, 2023.01, 202301, 2023年, 2023年1月
+    date_pattern = re.compile(r"20\d{2}(?:[-\./年]\d{1,2}(?:月)?)?|20\d{4}")
     
     for r_idx, row in enumerate(sheet.iter_rows(min_row=1, max_row=max_rows, values_only=True)):
         current_row_years = []
@@ -49,11 +50,15 @@ def find_header_row(sheet, max_rows=30) -> Tuple[int, List[Dict[str, Any]]]:
         
         for c_idx, cell_value in enumerate(row):
             str_val = str(cell_value).strip() if cell_value else ""
-            if date_pattern.search(str_val):
-                # Clean up the year string (e.g., "2023年" -> "2023")
+            # Simple check first
+            if "20" in str_val:
                 year_match = date_pattern.search(str_val)
                 if year_match:
                     year_str = year_match.group(0)
+                    # Basic cleanup
+                    year_str = year_str.replace("年", "-").replace("月", "")
+                    if year_str.endswith("-"): year_str = year_str[:-1]
+                    
                     current_row_years.append({"col_idx": c_idx, "year": year_str})
                     found_date = True
         
@@ -244,9 +249,18 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
             cash_flow_statement=cash_flow
         )
         
+        # Determine period type based on year string format
+        # e.g., "2023-01", "2023.12" -> Monthly
+        # "2023" -> Annual
+        p_type = "Annual"
+        if "-" in year or "." in year:
+            p_type = "Monthly"
+        elif len(year) == 6 and year.isdigit(): # 202301
+            p_type = "Monthly"
+            
         report = Report(
             fiscal_year=year,
-            period_type="Annual", # Default, ideally extract from header
+            period_type=p_type,
             data=fin_data
         )
         reports_list.append(report)
