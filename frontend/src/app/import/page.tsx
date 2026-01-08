@@ -108,9 +108,9 @@ export default function UploadPage() {
     setProgress(30);
 
     try {
-      const symbol = stockSymbol.includes(".")
-        ? stockSymbol
-        : `${stockSymbol}.SH`;
+      const symbol = stockSymbol.startsWith("6")
+        ? `${stockSymbol}.SH`
+        : `${stockSymbol}.SZ`;
 
       let url = `http://localhost:8000/api/v1/stock/${symbol}`;
       const params = new URLSearchParams();

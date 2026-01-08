@@ -82,6 +82,9 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   const incomeTax = getVal(currentData, "income_statement.total_profit.income_tax");
   
   const interestExpense = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_expenses");
+  const interestIncome = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_income");
+  const interestPaid = getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
+  
   // EBIT Proxy: Total Profit + Interest Expense
   const ebit = totalProfit + interestExpense; 
   const taxRate = totalProfit !== 0 ? safeDiv(incomeTax, totalProfit) : 0; // Effective tax rate
@@ -119,10 +122,18 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   // --- 2. Extract Previous Year & Averages ---
   const getPrevVal = (path: string) => prevData ? getVal(prevData, path) : 0;
   
+  const prevShortTermDebt = getVal(prevData, "balance_sheet.current_liabilities.short_term_borrowings") +
+                            getVal(prevData, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
+  const prevLongTermDebt = getVal(prevData, "balance_sheet.non_current_liabilities.long_term_borrowings") +
+                           getVal(prevData, "balance_sheet.non_current_liabilities.bonds_payable.amount");
+  const prevInterestBearingDebt = prevData ? (prevShortTermDebt + prevLongTermDebt) : interestBearingDebt;
+
   const avgAssets = (totalAssets + (prevData ? getVal(prevData, "balance_sheet.assets_summary.total_assets") : totalAssets)) / 2;
   const avgEquity = (totalEquity + (prevData ? getVal(prevData, "balance_sheet.equity.total_parent_equity") : totalEquity)) / 2;
   const avgInventory = (inventory + (prevData ? getVal(prevData, "balance_sheet.current_assets.inventories") : inventory)) / 2;
   const avgReceivables = (receivables + (prevData ? getVal(prevData, "balance_sheet.current_assets.notes_and_accounts_receivable.amount") : receivables)) / 2;
+  const avgMonetaryFunds = (monetaryFunds + (prevData ? getVal(prevData, "balance_sheet.current_assets.monetary_funds") : monetaryFunds)) / 2;
+  const avgInterestBearingDebt = (interestBearingDebt + prevInterestBearingDebt) / 2;
 
   // --- 3. Helper to Add Metric ---
   const addMetric = (category: string, name: string, value: number, formatter: (v: number) => string, desc: string, formula: string) => {
@@ -167,6 +178,8 @@ const calculateMetrics = (currentData: any, prevData: any): Metric[] => {
   addMetric("Solvency & Liquidity", "Debt to Assets", safeDiv(totalLiabilities, totalAssets), formatPercent, "资产负债率", "Total Liabilities / Total Assets");
   addMetric("Solvency & Liquidity", "Debt to Equity", safeDiv(totalLiabilities, totalEquity), formatPercent, "产权比率", "Total Liabilities / Shareholders' Equity");
   addMetric("Solvency & Liquidity", "Interest Coverage", safeDiv(ebit, interestExpense), formatNumber, "已获利息倍数", "EBIT / Interest Expense");
+  addMetric("Solvency & Liquidity", "Accrued Interest Rate", safeDiv(interestExpense, avgInterestBearingDebt), formatPercent, "有息负债利率", "Interest Expense / Avg Total Debt");
+  addMetric("Solvency & Liquidity", "Cash Interest Rate", safeDiv(interestPaid, avgInterestBearingDebt), formatPercent, "现金利率", "Interest Paid (Proxy) / Avg Total Debt");
   addMetric("Solvency & Liquidity", "Operating Cash Flow Ratio", safeDiv(ocf, currentLiabilities), formatNumber, "经营现金流比率", "Operating Cash Flow / Current Liabilities");
   addMetric("Solvency & Liquidity", "NWC to Assets", safeDiv(currentAssets - currentLiabilities, totalAssets), formatPercent, "营运资金占总资产比率", "(Current Assets - Current Liabilities) / Total Assets");
   addMetric("Solvency & Liquidity", "Net Debt", interestBearingDebt - monetaryFunds, (v) => (v / 100000000).toFixed(2) + "B", "净债务 (100M)", "Interest Bearing Debt - Cash");

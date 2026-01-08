@@ -370,3 +370,13 @@ export const mapFinancingCashFlowDetail = (reports: any[]) => {
   }));
 
 };
+
+/**
+ * 14. Capex Trend (Line Chart)
+ */
+export const mapCapexTrend = (reports: any[]) => {
+  return reports.map(r => ({
+    year: r.fiscal_year,
+    "Capex": getVal(r.data, "cash_flow_statement.investing_activities.cash_paid_for_assets") / 1e8
+  }));
+};

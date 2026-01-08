@@ -5,11 +5,19 @@
 
 export interface FlagResult {
   name: string;
-  category: "Liquidity" | "Revenue" | "Cost" | "Asset" | "Debt" | "Earnings" | "Growth";
+  category:
+    | "Liquidity"
+    | "Revenue"
+    | "Cost"
+    | "Asset"
+    | "Debt"
+    | "Earnings"
+    | "Growth";
   type: "Red" | "Green" | "Info";
   status: boolean; // True if flag is triggered
   value: string;
   threshold: string;
+  logic: string;
   description: string;
 }
 
@@ -28,20 +36,36 @@ const getVal = (data: any, path: string): number => {
 const safeDiv = (num: number, den: number) => (den === 0 ? 0 : num / den);
 
 // Safe growth calculation
-const safeGrowth = (curr: number, prev: number) => prev !== 0 ? (curr - prev) / Math.abs(prev) : 0;
+const safeGrowth = (curr: number, prev: number) =>
+  prev !== 0 ? (curr - prev) / Math.abs(prev) : 0;
 
 // Main Analysis Function
 export const analyzeFlags = (reports: any[]): FlagResult[] => {
   if (!reports || reports.length < 2) return [];
 
   // Sort reports chronologically (Oldest -> Newest)
-  const sorted = [...reports].sort((a, b) => parseInt(a.fiscal_year) - parseInt(b.fiscal_year));
-  
+  const getFiscalScore = (fy: string) => {
+    const year = parseInt(fy) || 0;
+    let weight = 0.4; // Default to Annual (highest within year)
+    const lower = fy.toLowerCase();
+    
+    if (lower.includes("q1")) weight = 0.1;
+    else if (lower.includes("q2") || lower.includes("semi")) weight = 0.2;
+    else if (lower.includes("q3")) weight = 0.3;
+    else if (lower.includes("annual") || lower.includes("q4")) weight = 0.4;
+    
+    return year + weight;
+  };
+
+  const sorted = [...reports].sort(
+    (a, b) => getFiscalScore(a.fiscal_year) - getFiscalScore(b.fiscal_year)
+  );
+
   const curr = sorted[sorted.length - 1]; // Latest Year
   const prev = sorted[sorted.length - 2]; // Previous Year
-  
-  // Need 3 years for some trends? Let's stick to 2 for now, or check length
-  const prev2 = sorted.length > 2 ? sorted[sorted.length - 3] : null;
+
+  console.log("Analyzing Flags - Current Year:", curr.fiscal_year);
+  console.log("Analyzing Flags - Previous Year:", prev.fiscal_year);
 
   const flags: FlagResult[] = [];
 
@@ -49,119 +73,571 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const d = curr.data;
   const pd = prev.data;
 
-  // Balance Sheet
+  // --- Balance Sheet Data ---
   const cash = getVal(d, "balance_sheet.current_assets.monetary_funds");
-  const totalAssets = getVal(d, "balance_sheet.assets_summary.total_assets");
-  const totalDebt = getVal(d, "balance_sheet.current_liabilities.short_term_borrowings") +
-                    getVal(d, "balance_sheet.non_current_liabilities.long_term_borrowings") +
-                    getVal(d, "balance_sheet.non_current_liabilities.bonds_payable.amount");
-  const shortTermDebt = getVal(d, "balance_sheet.current_liabilities.short_term_borrowings") + 
-                        getVal(d, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
+  const tradingFinAssets = getVal(d, "balance_sheet.current_assets.trading_financial_assets") + 
+                           getVal(d, "balance_sheet.current_assets.financial_assets_fvpl.trading_financial_assets");
+  const arTotal = getVal(d, "balance_sheet.current_assets.notes_and_accounts_receivable.amount"); // Notes + AR
+  const prepayments = getVal(d, "balance_sheet.current_assets.prepayments");
+  const otherReceivables = getVal(d, "balance_sheet.current_assets.other_receivables_total.amount");
   const inventory = getVal(d, "balance_sheet.current_assets.inventories");
-  const ar = getVal(d, "balance_sheet.current_assets.notes_and_accounts_receivable.amount");
+  const cip = getVal(d, "balance_sheet.non_current_assets.construction_in_progress");
   const goodwill = getVal(d, "balance_sheet.non_current_assets.goodwill");
-  const payables = getVal(d, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount");
+  const longTermDeferredExp = getVal(d, "balance_sheet.non_current_assets.long_term_deferred_expenses");
+  const totalAssets = getVal(d, "balance_sheet.assets_summary.total_assets");
 
-  // Income Statement
+  const shortTermBorrowings = getVal(d, "balance_sheet.current_liabilities.short_term_borrowings");
+  const tradingFinLiab = getVal(d, "balance_sheet.current_liabilities.trading_financial_liabilities");
+  const payablesTotal = getVal(d, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount");
+  const otherPayables = getVal(d, "balance_sheet.current_liabilities.other_payables_total.amount");
+  const nonCurrentLiabDue1Y = getVal(d, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
+  
+  const longTermBorrowings = getVal(d, "balance_sheet.non_current_liabilities.long_term_borrowings");
+  const bondsPayable = getVal(d, "balance_sheet.non_current_liabilities.bonds_payable.amount");
+  const leaseLiab = getVal(d, "balance_sheet.non_current_liabilities.lease_liabilities");
+  const totalLiabilities = getVal(d, "balance_sheet.liabilities_summary.total_liabilities");
+  
+  const totalEquity = getVal(d, "balance_sheet.equity.total_equity");
+  const netAssets = totalEquity; 
+
+  // Calculated Debt
+  const totalDebt = shortTermBorrowings + nonCurrentLiabDue1Y + longTermBorrowings + bondsPayable;
+  const interestBearingDebt = totalDebt + leaseLiab + tradingFinLiab; 
+  const shortTermDebt = shortTermBorrowings + nonCurrentLiabDue1Y; 
+
+  // --- Income Statement Data ---
   const revenue = getVal(d, "income_statement.total_operating_revenue");
-  const interestExp = getVal(d, "income_statement.total_operating_cost.financial_expenses.interest_expenses");
-  const netIncome = getVal(d, "income_statement.net_profit.net_profit_attr_to_parent");
   const costOfSales = getVal(d, "income_statement.total_operating_cost.operating_cost");
+  const sellingExp = getVal(d, "income_statement.total_operating_cost.selling_expenses");
+  const adminExp = getVal(d, "income_statement.total_operating_cost.admin_expenses");
+  const interestExp = getVal(d, "income_statement.total_operating_cost.financial_expenses.interest_expenses");
+  const interestIncome = getVal(d, "income_statement.total_operating_cost.financial_expenses.interest_income");
+  
+  const assetImpairmentLoss = getVal(d, "income_statement.total_operating_cost.asset_impairment_loss"); 
+  const assetImpairmentLossNew = getVal(d, "income_statement.other_operating_income.asset_impairment_loss_new");
+  const creditImpairmentLoss = getVal(d, "income_statement.total_operating_cost.credit_impairment_loss") + 
+                               getVal(d, "income_statement.other_operating_income.credit_impairment_loss_new");
+  const totalAssetImpairment = Math.abs(assetImpairmentLoss) + Math.abs(assetImpairmentLossNew); 
+  const totalCreditImpairment = Math.abs(creditImpairmentLoss);
+
+  const fairValueChange = getVal(d, "income_statement.other_operating_income.fair_value_change_income");
+  const investmentIncome = getVal(d, "income_statement.other_operating_income.investment_income");
+  const assetDisposalIncome = getVal(d, "income_statement.other_operating_income.asset_disposal_income");
+  const otherIncome = getVal(d, "income_statement.other_operating_income.other_income");
+  
   const operatingProfit = getVal(d, "income_statement.operating_profit.amount");
-  const otherIncome = getVal(d, "income_statement.other_operating_income.other_income") + 
-                      getVal(d, "income_statement.other_operating_income.investment_income"); 
+  const nonOperatingRev = getVal(d, "income_statement.operating_profit.non_operating_revenue");
   const totalProfit = getVal(d, "income_statement.total_profit.amount");
+  const netProfit = getVal(d, "income_statement.net_profit.amount");
+  const netProfitParent = getVal(d, "income_statement.net_profit.net_profit_attr_to_parent");
 
-  // Cash Flow
+  // --- Cash Flow Data ---
   const ocf = getVal(d, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
+  const ocfInflow = getVal(d, "cash_flow_statement.operating_activities.subtotal_cash_inflow_operating");
+  const otherCashReceivedOp = getVal(d, "cash_flow_statement.operating_activities.other_cash_received_operating");
+  const cashPaidDivProfInt = getVal(d, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
   const capex = getVal(d, "cash_flow_statement.investing_activities.cash_paid_for_assets");
-  const fcf = ocf - capex;
 
-  // --- Previous Year Metrics ---
+  // --- Previous Year Data ---
   const prevRevenue = getVal(pd, "income_statement.total_operating_revenue");
-  const prevNetIncome = getVal(pd, "income_statement.net_profit.net_profit_attr_to_parent");
-  const prevOCF = getVal(pd, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
-  const prevAR = getVal(pd, "balance_sheet.current_assets.notes_and_accounts_receivable.amount");
-  const prevInventory = getVal(pd, "balance_sheet.current_assets.inventories");
   const prevCostOfSales = getVal(pd, "income_statement.total_operating_cost.operating_cost");
-  const prevPayables = getVal(pd, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount");
-  const prevFCF = prevOCF - getVal(pd, "cash_flow_statement.investing_activities.cash_paid_for_assets");
+  const prevInventory = getVal(pd, "balance_sheet.current_assets.inventories");
+  const prevAR = getVal(pd, "balance_sheet.current_assets.notes_and_accounts_receivable.amount"); 
+  const prevPrepayments = getVal(pd, "balance_sheet.current_assets.prepayments");
+  const prevSellingExp = getVal(pd, "income_statement.total_operating_cost.selling_expenses");
+  const prevAdminExp = getVal(pd, "income_statement.total_operating_cost.admin_expenses");
+  const prevPayables = getVal(pd, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount"); 
+  const prevCash = getVal(pd, "balance_sheet.current_assets.monetary_funds");
+  const prevTotalDebt = getVal(pd, "balance_sheet.current_liabilities.short_term_borrowings") +
+                        getVal(pd, "balance_sheet.non_current_liabilities.long_term_borrowings") +
+                        getVal(pd, "balance_sheet.non_current_liabilities.bonds_payable.amount") +
+                        getVal(pd, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y") + 
+                        getVal(pd, "balance_sheet.non_current_liabilities.lease_liabilities"); 
 
-  // --- Derived Calculations ---
-  const ebitdaProxy = totalProfit + interestExp + getVal(d, "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_fixed_assets_investment_props"); // Approx
-  const ebit = totalProfit + interestExp;
+  // --- Derived Metrics ---
+  const avgInventory = (inventory + prevInventory) / 2;
+  const avgMonetaryFunds = (cash + prevCash) / 2;
+  const avgInterestBearingDebt = (interestBearingDebt + prevTotalDebt) / 2; 
 
-  // Growth Rates (Using safeGrowth)
-  const revGrowth = safeGrowth(revenue, prevRevenue);
-  const niGrowth = safeGrowth(netIncome, prevNetIncome);
-  const ocfGrowth = safeGrowth(ocf, prevOCF);
-  const arGrowth = safeGrowth(ar, prevAR);
-  const invGrowth = safeGrowth(inventory, prevInventory);
+  const revenueGrowth = safeGrowth(revenue, prevRevenue);
+  const inventoryGrowth = safeGrowth(inventory, prevInventory);
+  const arGrowth = safeGrowth(arTotal, prevAR);
+  const sellingExpGrowth = safeGrowth(sellingExp, prevSellingExp);
+  const adminExpGrowth = safeGrowth(adminExp, prevAdminExp);
+  const prepaymentGrowth = safeGrowth(prepayments, prevPrepayments);
+  const payablesGrowth = safeGrowth(payablesTotal, prevPayables);
+  const cashGrowth = safeGrowth(cash, prevCash);
 
-  // DSO & DPO
-  const dso = safeDiv(ar * 365, revenue);
-  const prevDSO = safeDiv(prevAR * 365, prevRevenue);
-  const dpo = safeDiv(payables * 365, costOfSales);
-  const prevDPO = safeDiv(prevPayables * 365, prevCostOfSales);
-  const dpoGrowth = safeGrowth(dpo, prevDPO);
-
-  // Margins
   const grossMargin = safeDiv(revenue - costOfSales, revenue);
   const prevGrossMargin = safeDiv(prevRevenue - prevCostOfSales, prevRevenue);
+  const gmIncrease = grossMargin - prevGrossMargin;
+
+  const invTurnover = safeDiv(costOfSales, avgInventory);
+  const prevInvTurnoverApprox = safeDiv(prevCostOfSales, prevInventory);
+  const invTurnoverChange = safeGrowth(invTurnover, prevInvTurnoverApprox); 
+
+  const dso = safeDiv(arTotal * 365, revenue);
+  const prevDSO = safeDiv(prevAR * 365, prevRevenue);
+  const dpo = safeDiv(payablesTotal * 365, costOfSales);
+  const prevDPO = safeDiv(prevPayables * 365, prevCostOfSales);
+  const dpoGrowth = safeGrowth(dpo, prevDPO);
   const opMargin = safeDiv(operatingProfit, revenue);
   const prevOpMargin = safeDiv(getVal(pd, "income_statement.operating_profit.amount"), prevRevenue);
+  const niGrowth = safeGrowth(netProfitParent, getVal(pd, "income_statement.net_profit.net_profit_attr_to_parent"));
+  const ocfGrowth = safeGrowth(ocf, getVal(pd, "cash_flow_statement.operating_activities.net_cash_flow_from_operating"));
+  const fcf = ocf - capex;
+  const prevFCF = getVal(pd, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") - getVal(pd, "cash_flow_statement.investing_activities.cash_paid_for_assets");
 
+  // ==========================================
+  // 1. Profitability & Inventory Signals
+  // ==========================================
 
-  // ==========================
-  // 🔴 RED FLAGS (Risk)
-  // ==========================
+  // ID: F1
+  // Abnormal Gross Margin Expansion
+  flags.push({
+    name: "Abnormal Gross Margin Expansion",
+    category: "Cost",
+    type: "Red",
+    status: gmIncrease > 0.05 && invTurnoverChange < -0.10,
+    value: `GM Inc: ${(gmIncrease*100).toFixed(1)}%, Inv Turn Chg: ${(invTurnoverChange*100).toFixed(1)}%`,
+    threshold: "GM Inc > 5% & Inv Turn Dec > 10%",
+    logic: `Gross Margin Increase = ${(gmIncrease*100).toFixed(1)}% (> 5%) & Inventory Turnover Change = ${(invTurnoverChange*100).toFixed(1)}% (< -10%)`,
+    description: "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods."
+  });
 
-  // 1. Kangde Xin Paradox
-  const intToDebt = totalDebt > 0 ? (interestExp / totalDebt) : 0;
+  // ID: F2
+  // Inventory Divergence
+  flags.push({
+    name: "Inventory Divergence",
+    category: "Asset",
+    type: "Red",
+    status: (inventoryGrowth - revenueGrowth) > 0.20,
+    value: `Inv Growth: ${(inventoryGrowth*100).toFixed(1)}%, Rev Growth: ${(revenueGrowth*100).toFixed(1)}%`,
+    threshold: "Inv Growth > Rev Growth + 20%",
+    logic: `Gap = ${((inventoryGrowth - revenueGrowth)*100).toFixed(1)}% (> 20%)`,
+    description: "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing."
+  });
+
+  // ==========================================
+  // 2. Interest & Cash Signals
+  // ==========================================
+
+  // ID: F3
+  // High Cash Interest Rate
+  const cashInterestRate = safeDiv(cashPaidDivProfInt, avgInterestBearingDebt);
+  flags.push({
+    name: "High Cash Interest Rate",
+    category: "Debt",
+    type: "Red",
+    status: cashInterestRate > 0.05, 
+    value: `Rate: ${(cashInterestRate*100).toFixed(1)}%`,
+    threshold: "> 5% (Distressed)",
+    logic: `Cash Interest Paid / Avg Debt = ${(cashInterestRate*100).toFixed(1)}% (> 5%)`,
+    description: "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status."
+  });
+
+  // ID: F4
+  // Inverted Interest Rate
+  const depositRate = safeDiv(interestIncome, avgMonetaryFunds);
+  flags.push({
+    name: "Inverted Interest Rate",
+    category: "Liquidity",
+    type: "Red",
+    status: depositRate < 0.005,
+    value: `Yield: ${(depositRate*100).toFixed(2)}%`,
+    threshold: "< 0.5%",
+    logic: `Interest Income / Avg Cash = ${(depositRate*100).toFixed(2)}% (< 0.5%)`,
+    description: "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent."
+  });
+
+  // ID: F5
+  // High-Cash, High-Debt
+  const hchd_c1 = (safeDiv(cash, (shortTermDebt + tradingFinLiab)) >= 1.0) && (shortTermDebt > 0);
+  const hchd_c2 = (safeDiv(interestBearingDebt, totalAssets) >= 0.30);
+  const hchd_c3 = (depositRate < 0.005);
+  const hchd_c4 = (safeDiv(cashGrowth, revenueGrowth) >= 2.0) && (revenueGrowth > 0);
+  
+  const hchdCount = [hchd_c1, hchd_c2, hchd_c3, hchd_c4].filter(Boolean).length;
+
+  flags.push({
+    name: "High-Cash, High-Debt",
+    category: "Liquidity",
+    type: "Red",
+    status: hchdCount >= 2,
+    value: `Criteria Met: ${hchdCount}/4`,
+    threshold: ">= 2 Indicators",
+    logic: `1.Cash/ST Debt>=1: ${hchd_c1} | 2.Debt/Asset>=30%: ${hchd_c2} | 3.Yield<0.5%: ${hchd_c3} | 4.Cash/Rev Gr>=2: ${hchd_c4}`,
+    description: "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash."
+  });
+
+  // ==========================================
+  // 3. Non-Recurring & "One-Time" Items
+  // ==========================================
+
+  // ID: F6
+  flags.push({
+    name: "Asset Disposal Reliance",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(assetDisposalIncome, netProfit) > 0.20,
+    value: `Ratio: ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}%`,
+    threshold: "> 20% of Net Profit",
+    logic: `Asset Disposal Income / Net Profit = ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}% (> 20%)`,
+    description: "Relying on selling assets to generate profit is unsustainable and masks core business weakness."
+  });
+
+  // ID: F7
+  flags.push({
+    name: "Asset Impairment Surge",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(totalAssetImpairment, operatingProfit) > 0.20,
+    value: `Ratio: ${(safeDiv(totalAssetImpairment, operatingProfit)*100).toFixed(1)}%`,
+    threshold: "> 20% of Op Profit",
+    logic: `Asset Impairment / Op Profit = ${(safeDiv(totalAssetImpairment, operatingProfit)*100).toFixed(1)}% (> 20%)`,
+    description: "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future."
+  });
+
+  // ID: F8
+  flags.push({
+    name: "Credit Impairment Surge",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(totalCreditImpairment, operatingProfit) > 0.15,
+    value: `Ratio: ${(safeDiv(totalCreditImpairment, operatingProfit)*100).toFixed(1)}%`,
+    threshold: "> 15% of Op Profit",
+    logic: `Credit Impairment / Op Profit = ${(safeDiv(totalCreditImpairment, operatingProfit)*100).toFixed(1)}% (> 15%)`,
+    description: "Sharp deterioration in receivables quality, suggesting customer defaults."
+  });
+
+  // ID: F9
+  flags.push({
+    name: "Non-Operating Rev Dependency",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(nonOperatingRev, totalProfit) > 0.20,
+    value: `Ratio: ${(safeDiv(nonOperatingRev, totalProfit)*100).toFixed(1)}%`,
+    threshold: "> 20% of Total Profit",
+    logic: `Non-op Revenue / Total Profit = ${(safeDiv(nonOperatingRev, totalProfit)*100).toFixed(1)}% (> 20%)`,
+    description: "Earnings driven by grants/fines rather than operations are low quality."
+  });
+
+  // ID: F10
+  flags.push({
+    name: "Fair Value Reliance",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(fairValueChange, netProfit) > 0.30,
+    value: `Ratio: ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}%`,
+    threshold: "> 30% of Net Profit",
+    logic: `Fair Value Income / Net Profit = ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}% (> 30%)`,
+    description: "Profits driven by paper gains are risky and don't reflect cash generation."
+  });
+
+  // ID: F11
+  flags.push({
+    name: "Investment Income Reliance",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(investmentIncome, operatingProfit) > 0.30,
+    value: `Ratio: ${(safeDiv(investmentIncome, operatingProfit)*100).toFixed(1)}%`,
+    threshold: "> 30% of Op Profit",
+    logic: `Inv Income / Op Profit = ${(safeDiv(investmentIncome, operatingProfit)*100).toFixed(1)}% (> 30%)`,
+    description: "Reliance on trading stocks or subsidiaries rather than main product."
+  });
+
+  // ID: F12
+  flags.push({
+    name: "Other Income Reliance",
+    category: "Earnings",
+    type: "Red",
+    status: safeDiv(otherIncome, operatingProfit) > 0.30,
+    value: `Ratio: ${(safeDiv(otherIncome, operatingProfit)*100).toFixed(1)}%`,
+    threshold: "> 30% of Op Profit",
+    logic: `Other Income / Op Profit = ${(safeDiv(otherIncome, operatingProfit)*100).toFixed(1)}% (> 30%)`,
+    description: "Profit derived from 'Other Income' is often non-persistent."
+  });
+
+  // ==========================================
+  // 4. Balance Sheet Anomalies
+  // ==========================================
+
+  // ID: F13
+  // AR Bloat
+  const arToAssets = safeDiv(arTotal, totalAssets);
+  const arGrowthGap = arGrowth - revenueGrowth;
+  flags.push({
+    name: "Accounts Receivable Bloat",
+    category: "Asset",
+    type: "Red",
+    status: arToAssets > 0.30 || arGrowthGap > 0.15,
+    value: `AR/Asset: ${(arToAssets*100).toFixed(1)}%, Gap: ${(arGrowthGap*100).toFixed(1)}%`,
+    threshold: "AR/Asset > 30% OR Gap > 15%",
+    logic: `AR/Assets = ${(arToAssets*100).toFixed(1)}% (> 30%) OR (AR Gr - Rev Gr) = ${(arGrowthGap*100).toFixed(1)}% (> 15%)`,
+    description: "Receivables growing faster than sales signals channel stuffing or relaxed credit terms."
+  });
+
+  // ID: F14
+  // Excessive Inventory
+  const invToAssets = safeDiv(inventory, totalAssets);
+  const invGrowthGap = inventoryGrowth - revenueGrowth;
+  flags.push({
+    name: "Excessive Inventory",
+    category: "Asset",
+    type: "Red",
+    status: invToAssets > 0.30 || invGrowthGap > 0.15,
+    value: `Inv/Asset: ${(invToAssets*100).toFixed(1)}%, Gap: ${(invGrowthGap*100).toFixed(1)}%`,
+    threshold: "Inv/Asset > 30% OR Gap > 15%",
+    logic: `Inv/Assets = ${(invToAssets*100).toFixed(1)}% (> 30%) OR (Inv Gr - Rev Gr) = ${(invGrowthGap*100).toFixed(1)}% (> 15%)`,
+    description: "Inventory growing faster than sales often signals potential write-downs."
+  });
+
+  // ID: F15
+  // Other Receivables Anomaly
+  const otherRecToAssets = safeDiv(otherReceivables, totalAssets);
+  flags.push({
+    name: "Other Receivables Anomaly",
+    category: "Asset",
+    type: "Red",
+    status: otherRecToAssets > 0.05,
+    value: `Ratio: ${(otherRecToAssets*100).toFixed(1)}%`,
+    threshold: "> 5% of Total Assets",
+    logic: `Other Rec / Total Assets = ${(otherRecToAssets*100).toFixed(1)}% (> 5%)`,
+    description: "Hiding place for misappropriated funds or loans to shareholders."
+  });
+
+  // ID: F16
+  // Goodwill Risk
+  const goodwillToNetAssets = safeDiv(goodwill, netAssets);
+  flags.push({
+    name: "Goodwill Risk",
+    category: "Asset",
+    type: "Red",
+    status: goodwillToNetAssets > 0.20,
+    value: `Ratio: ${(goodwillToNetAssets*100).toFixed(1)}%`,
+    threshold: "> 20% of Net Assets",
+    logic: `Goodwill / Net Assets = ${(goodwillToNetAssets*100).toFixed(1)}% (> 20%)`,
+    description: "High goodwill suggests aggressive acquisitions; risk of massive write-offs."
+  });
+
+  // ID: F17
+  // CIP Trap
+  const cipToAssets = safeDiv(cip, totalAssets);
+  // Note: "stagnant for > 2 years" requires more history. We strictly implement the ratio check here.
+  flags.push({
+    name: "CIP Trap",
+    category: "Asset",
+    type: "Red",
+    status: cipToAssets > 0.15,
+    value: `Ratio: ${(cipToAssets*100).toFixed(1)}%`,
+    threshold: "> 15% of Total Assets",
+    logic: `CIP / Total Assets = ${(cipToAssets*100).toFixed(1)}% (> 15%)`,
+    description: "CIP that doesn't convert to fixed assets may be capitalized expense or fraud."
+  });
+
+  // ID: F18
+  // Deferred Expense Bloat
+  const deferredExpToAssets = safeDiv(longTermDeferredExp, totalAssets);
+  flags.push({
+    name: "Deferred Expense Bloat",
+    category: "Asset",
+    type: "Red",
+    status: deferredExpToAssets > 0.05,
+    value: `Ratio: ${(deferredExpToAssets*100).toFixed(1)}%`,
+    threshold: "> 5% of Total Assets",
+    logic: `Deferred Exp / Total Assets = ${(deferredExpToAssets*100).toFixed(1)}% (> 5%)`,
+    description: "Used to hide current expenses to artificially boost profits."
+  });
+
+  // ID: F19
+  // Other Payables Anomaly
+  const otherPayToLiab = safeDiv(otherPayables, totalLiabilities);
+  flags.push({
+    name: "Other Payables Anomaly",
+    category: "Debt",
+    type: "Red",
+    status: otherPayToLiab > 0.10,
+    value: `Ratio: ${(otherPayToLiab*100).toFixed(1)}%`,
+    threshold: "> 10% of Total Liabilities",
+    logic: `Other Payables / Total Liabilities = ${(otherPayToLiab*100).toFixed(1)}% (> 10%)`,
+    description: "Can hide off-book loans or illicit financing."
+  });
+
+  // ==========================================
+  // 5. Expense & Growth Gaps
+  // ==========================================
+
+  // ID: F20
+  // Selling Expense Efficiency
+  const sellingEffGap = revenueGrowth - 0.20;
+  flags.push({
+    name: "Selling Expense Efficiency",
+    category: "Cost",
+    type: "Red",
+    status: sellingExpGrowth < sellingEffGap && revenueGrowth > 0.1, 
+    value: `Sell Gr: ${(sellingExpGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%`,
+    threshold: "Sell Exp Gr < Rev Gr - 20%",
+    logic: `Selling Exp Growth = ${(sellingExpGrowth*100).toFixed(1)}% (< ${(sellingEffGap*100).toFixed(1)}%)`,
+    description: "Revenue skyrocketing while marketing costs stay flat is highly suspicious."
+  });
+
+  // ID: F21
+  // Admin Expense Divergence
+  const adminDivGap = adminExpGrowth - revenueGrowth;
+  flags.push({
+    name: "Admin Expense Divergence",
+    category: "Cost",
+    type: "Red",
+    status: adminDivGap > 0.15,
+    value: `Gap: ${(adminDivGap*100).toFixed(1)}%`,
+    threshold: "(Admin Gr - Rev Gr) > 15%",
+    logic: `Gap = ${(adminDivGap*100).toFixed(1)}% (> 15%)`,
+    description: "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation."
+  });
+
+  // ID: F22
+  // Prepayment Surge
+  const prepayToAssets = safeDiv(prepayments, totalAssets);
+  flags.push({
+    name: "Prepayment Surge",
+    category: "Asset",
+    type: "Red",
+    status: prepayToAssets > 0.05 || prepaymentGrowth > 0.50,
+    value: `Ratio: ${(prepayToAssets*100).toFixed(1)}%, Gr: ${(prepaymentGrowth*100).toFixed(1)}%`,
+    threshold: "> 5% Assets OR > 50% Growth",
+    logic: `Prepay/Assets = ${(prepayToAssets*100).toFixed(1)}% (> 5%) OR Growth = ${(prepaymentGrowth*100).toFixed(1)}% (> 50%)`,
+    description: "Massive prepayments are common vehicles for embezzlement or fund transfer."
+  });
+
+  // ID: F23
+  // Payables Gap
+  const payablesGap = payablesGrowth - (revenueGrowth + 0.20);
+  flags.push({
+    name: "Payables Gap",
+    category: "Liquidity",
+    type: "Red",
+    status: payablesGrowth > (revenueGrowth + 0.20),
+    value: `Pay Gr: ${(payablesGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%`,
+    threshold: "Payables Gr > Rev Gr + 20%",
+    logic: `Payables Growth = ${(payablesGrowth*100).toFixed(1)}% (> ${(revenueGrowth*100 + 20).toFixed(1)}%)`,
+    description: "Excessive payables growth signals liquidity stress—suppliers are funding the company."
+  });
+
+  // ==========================================
+  // 6. Cash Flow Quality
+  // ==========================================
+
+  // ID: F24
+  // Other Cash Received Anomaly
+  const otherCashRecRatio = safeDiv(otherCashReceivedOp, ocfInflow);
+  flags.push({
+    name: "Other Cash Received Anomaly",
+    category: "Earnings",
+    type: "Red",
+    status: otherCashRecRatio > 0.10,
+    value: `Ratio: ${(otherCashRecRatio*100).toFixed(1)}%`,
+    threshold: "> 10% of Op Inflow",
+    logic: `Other Op Cash In / Total Op Inflow = ${(otherCashRecRatio*100).toFixed(1)}% (> 10%)`,
+    description: "Often used to hide non-operating cash to inflate OCF."
+  });
+
+  // ==========================================
+  // 🟢 GREEN FLAGS (Health)
+  // ==========================================
+
+  // ID: F25
+  // Cash-Backed Profits
+  const ocfNiRatio = ocf / netProfitParent;
+  flags.push({
+    name: "Cash-Backed Profits",
+    category: "Earnings",
+    type: "Green",
+    status: ocfNiRatio > 1.1,
+    value: `Ratio: ${ocfNiRatio.toFixed(2)}`,
+    threshold: "> 1.1",
+    logic: `OCF / Net Income = ${ocfNiRatio.toFixed(2)} (threshold > 1.1)`,
+    description:
+      "Operating Cash Flow exceeds Net Income, indicating high quality of earnings.",
+  });
+
+  // ID: F26
+  // Self-Funding Capability
+  const ocfCapexRatio = ocf / capex;
+  flags.push({
+    name: "Self-Funding",
+    category: "Growth",
+    type: "Green",
+    status: ocfCapexRatio > 1.5,
+    value: `Ratio: ${ocfCapexRatio.toFixed(2)}`,
+    threshold: "> 1.5",
+    logic: `OCF / Capex = ${ocfCapexRatio.toFixed(2)} (threshold > 1.5)`,
+    description:
+      "The company generates enough cash to fully fund its capital expenditures and growth.",
+  });
+
+  // ID: F27
+  // Conservative Leverage
+  const netDebt = totalDebt - cash;
+  const ebitdaProxy = totalProfit + interestExp + getVal(d, "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_fixed_assets_investment_props");
+  const leverageRatio = netDebt / ebitdaProxy;
+  flags.push({
+    name: "Conservative Leverage",
+    category: "Debt",
+    type: "Green",
+    status: leverageRatio < 2.0 && netDebt > 0,
+    value: `Net Debt/EBITDA: ${leverageRatio.toFixed(2)}`,
+    threshold: "< 2.0x",
+    logic: `Net Debt / EBITDA = ${leverageRatio.toFixed(2)} (threshold < 2.0x)`,
+    description:
+      "Debt levels are low relative to earnings, indicating a strong balance sheet.",
+  });
+
+  // Preserved Existing Flags
+  
+  // ID: F28
+  // "Kangde Xin Paradox"
+  const intToDebt = totalDebt > 0 ? interestExp / totalDebt : 0;
+  const cashToAssets = safeDiv(cash, totalAssets);
   flags.push({
     name: "Kangde Xin Paradox",
     category: "Liquidity",
     type: "Red",
-    status: (cash / totalAssets > 0.20) && (intToDebt > 0.05),
-    value: `Cash/Assets: ${(safeDiv(cash, totalAssets)*100).toFixed(1)}%, Int/Debt: ${(intToDebt*100).toFixed(1)}%`,
+    status: cashToAssets > 0.2 && intToDebt > 0.05,
+    value: `Cash/Assets: ${(cashToAssets * 100).toFixed(1)}%, Int/Debt: ${(intToDebt * 100).toFixed(1)}%`,
     threshold: "> 20% & > 5%",
-    description: "High cash balance coexisting with high-interest debt suggests cash might be restricted or fictitious."
+    logic: `Cash/Assets = ${(cashToAssets * 100).toFixed(1)}% (threshold > 20%) & Int/Debt = ${(intToDebt * 100).toFixed(1)}% (threshold > 5%)`,
+    description:
+      "High cash balance coexisting with high-interest debt suggests cash might be restricted or fictitious.",
   });
 
-  // 2. Cash vs Profit Divergence
+  // ID: F29
+  // "Cash-Profit Divergence"
   flags.push({
     name: "Cash-Profit Divergence",
     category: "Earnings",
     type: "Red",
-    status: niGrowth > 0.10 && ocfGrowth <= 0,
-    value: `NI Growth: ${(niGrowth*100).toFixed(1)}%, OCF Growth: ${(ocfGrowth*100).toFixed(1)}%`,
+    status: niGrowth > 0.1 && ocfGrowth <= 0,
+    value: `NI Growth: ${(niGrowth * 100).toFixed(1)}%, OCF Growth: ${(ocfGrowth * 100).toFixed(1)}%`,
     threshold: "NI > 10% & OCF <= 0%",
-    description: "Profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings."
+    logic: `NI Growth = ${(niGrowth * 100).toFixed(1)}% (threshold > 10%) & OCF Growth = ${(ocfGrowth * 100).toFixed(1)}% (threshold <= 0%)`,
+    description: "Profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.",
   });
 
-  // 3. OCF/NI Ratio
+  // ID: F30
+  // "Low OCF/NI Ratio"
   flags.push({
     name: "Low OCF/NI Ratio",
     category: "Earnings",
     type: "Red",
-    status: ocf / netIncome < 0.8,
-    value: `Ratio: ${(ocf/netIncome).toFixed(2)}`,
+    status: ocf / netProfitParent < 0.8,
+    value: `Ratio: ${(ocf / netProfitParent).toFixed(2)}`,
     threshold: "< 0.8",
-    description: "Operating cash flow is significantly lower than reported net income."
+    logic: `OCF / Net Income = ${(ocf / netProfitParent).toFixed(2)} (threshold < 0.8)`,
+    description: "Operating cash flow is significantly lower than reported net income.",
   });
 
-  // 4. Aggressive Revenue Recognition
-  flags.push({
-    name: "Aggressive Revenue Rec.",
-    category: "Revenue",
-    type: "Red",
-    status: arGrowth > 2.0 * revGrowth && revGrowth > 0,
-    value: `AR Growth: ${(arGrowth*100).toFixed(1)}% vs Rev Growth: ${(revGrowth*100).toFixed(1)}%`,
-    threshold: "AR Growth > 2x Revenue Growth",
-    description: "Receivables are growing much faster than revenue, suggesting channel stuffing or delayed collections."
-  });
-
-  // 5. Rising DSO
+  // ID: F31
+  // "Rising DSO"
   flags.push({
     name: "Rising DSO",
     category: "Revenue",
@@ -169,54 +645,40 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: dso - prevDSO > 15,
     value: `Change: +${(dso - prevDSO).toFixed(0)} days`,
     threshold: "> +15 days",
-    description: "It is taking significantly longer to collect payment from customers."
+    logic: `DSO Change = ${(dso - prevDSO).toFixed(0)} days (threshold > 15 days)`,
+    description: "It is taking significantly longer to collect payment from customers.",
   });
 
-  // 6. Inventory Buildup
-  flags.push({
-    name: "Inventory Buildup",
-    category: "Asset",
-    type: "Red",
-    status: invGrowth > 1.5 * revGrowth && revGrowth > 0,
-    value: `Inv Growth: ${(invGrowth*100).toFixed(1)}% vs Rev Growth: ${(revGrowth*100).toFixed(1)}%`,
-    threshold: "Inv Growth > 1.5x Revenue Growth",
-    description: "Inventory is growing faster than sales, risking obsolescence or write-downs."
-  });
-
-  // 7. Total Accruals
+  // ID: F32
+  // "High Total Accruals"
+  const accrualAssetsRatio = (netProfitParent - ocf) / totalAssets;
   flags.push({
     name: "High Total Accruals",
     category: "Earnings",
     type: "Red",
-    status: (netIncome - ocf) / totalAssets > 0.10,
-    value: `Accruals/Assets: ${(((netIncome - ocf) / totalAssets)*100).toFixed(1)}%`,
+    status: accrualAssetsRatio > 0.1,
+    value: `Accruals/Assets: ${(accrualAssetsRatio * 100).toFixed(1)}%`,
     threshold: "> 10%",
-    description: "Earnings are driven heavily by non-cash accruals rather than cash flow."
+    logic: `(NI - OCF) / Total Assets = ${(accrualAssetsRatio * 100).toFixed(1)}% (threshold > 10%)`,
+    description: "Earnings are driven heavily by non-cash accruals rather than cash flow.",
   });
 
-  // 8. Goodwill Density
-  flags.push({
-    name: "High Goodwill",
-    category: "Asset",
-    type: "Red",
-    status: goodwill / totalAssets > 0.40,
-    value: `Goodwill/Assets: ${(goodwill/totalAssets*100).toFixed(1)}%`,
-    threshold: "> 40%",
-    description: "A large portion of assets is Goodwill, posing a risk of future impairment."
-  });
-
-  // 9. Debt Cliff
+  // ID: F33
+  // "Debt Cliff"
+  const debtCliffRatio2 = shortTermDebt / totalDebt;
   flags.push({
     name: "Debt Cliff",
     category: "Debt",
     type: "Red",
-    status: shortTermDebt / totalDebt > 0.50,
-    value: `ST Debt ratio: ${(shortTermDebt/totalDebt*100).toFixed(1)}%`,
+    status: debtCliffRatio2 > 0.5,
+    value: `ST Debt ratio: ${(debtCliffRatio2 * 100).toFixed(1)}%`,
     threshold: "> 50%",
-    description: "Reliance on short-term debt exposes the company to refinancing risks."
+    logic: `Short-term Debt / Total Debt = ${(debtCliffRatio2 * 100).toFixed(1)}% (threshold > 50%)`,
+    description: "Reliance on short-term debt exposes the company to refinancing risks.",
   });
 
-  // 10. Margin Divergence
+  // ID: F34
+  // "Margin Divergence"
   flags.push({
     name: "Margin Divergence",
     category: "Cost",
@@ -224,84 +686,35 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: grossMargin > prevGrossMargin && opMargin < prevOpMargin,
     value: `GM: Up, OM: Down`,
     threshold: "GM Rising & OM Falling",
-    description: "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification."
+    logic: `Gross Margin: ${(grossMargin * 100).toFixed(1)}% (prev: ${(prevGrossMargin * 100).toFixed(1)}%) & Operating Margin: ${(opMargin * 100).toFixed(1)}% (prev: ${(prevOpMargin * 100).toFixed(1)}%)`,
+    description: "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.",
   });
 
-  // 11. Negative FCF (New)
-  // Checking current and previous year
+  // ID: F35
+  // "Negative FCF"
   flags.push({
     name: "Negative FCF",
     category: "Liquidity",
     type: "Red",
     status: fcf < 0 && prevFCF < 0,
-    value: `Current: ${(fcf/1e8).toFixed(2)}B, Prev: ${(prevFCF/1e8).toFixed(2)}B`,
+    value: `Current: ${(fcf / 1e8).toFixed(2)}B, Prev: ${(prevFCF / 1e8).toFixed(2)}B`,
     threshold: "Negative for > 1 year",
-    description: "Free Cash Flow has been negative for consecutive periods despite any reported profits."
+    logic: `Current FCF = ${(fcf / 1e8).toFixed(2)}B & Previous FCF = ${(prevFCF / 1e8).toFixed(2)}B (threshold both < 0)`,
+    description: "Free Cash Flow has been negative for consecutive periods despite any reported profits.",
   });
 
-  // 12. Payables Stretch (New)
+  // ID: F36
+  // "Payables Stretch"
   flags.push({
     name: "Payables Stretch",
     category: "Liquidity",
     type: "Red",
-    status: dpoGrowth > 0.20,
-    value: `DPO Growth: ${(dpoGrowth*100).toFixed(1)}%`,
+    status: dpoGrowth > 0.2,
+    value: `DPO Growth: ${(dpoGrowth * 100).toFixed(1)}%`,
     threshold: "> 20% YoY",
-    description: "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash."
+    logic: `DPO Growth = ${(dpoGrowth * 100).toFixed(1)}% (threshold > 20%)`,
+    description: "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.",
   });
 
-  // 13. VAT-Revenue Gap (Removed)
-
-  // 14. Non-Core Revenue (New)
-  flags.push({
-    name: "Non-Core Revenue Dependence",
-    category: "Earnings",
-    type: "Red",
-    status: otherIncome / ebit > 0.15,
-    value: `Ratio: ${(otherIncome/ebit*100).toFixed(1)}%`,
-    threshold: "> 15% of EBIT",
-    description: "A significant portion of profit comes from non-operating sources (investment income, subsidies, etc.)."
-  });
-
-
-  // ==========================
-  // 🟢 GREEN FLAGS (Health)
-  // ==========================
-
-  // 15. Cash-Backed Profits
-  flags.push({
-    name: "Cash-Backed Profits",
-    category: "Earnings",
-    type: "Green",
-    status: ocf / netIncome > 1.1,
-    value: `Ratio: ${(ocf/netIncome).toFixed(2)}`,
-    threshold: "> 1.1",
-    description: "Operating Cash Flow exceeds Net Income, indicating high quality of earnings."
-  });
-
-  // 16. Self-Funding Capability
-  flags.push({
-    name: "Self-Funding",
-    category: "Growth",
-    type: "Green",
-    status: ocf / capex > 1.5,
-    value: `Ratio: ${(ocf/capex).toFixed(2)}`,
-    threshold: "> 1.5",
-    description: "The company generates enough cash to fully fund its capital expenditures and growth."
-  });
-
-  // 17. Conservative Leverage
-  // Net Debt = Total Debt - Cash
-  const netDebt = totalDebt - cash;
-  flags.push({
-    name: "Conservative Leverage",
-    category: "Debt",
-    type: "Green",
-    status: netDebt / ebitdaProxy < 2.0 && netDebt > 0, // Only if net debt is positive (if neg, it's super safe/cash rich)
-    value: `Net Debt/EBITDA: ${(netDebt/ebitdaProxy).toFixed(2)}`,
-    threshold: "< 2.0x",
-    description: "Debt levels are low relative to earnings, indicating a strong balance sheet."
-  });
-
-  return flags.filter(f => f.status || f.type === "Info");
+  return flags.filter((f) => f.status || f.type === "Info");
 };

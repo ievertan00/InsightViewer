@@ -19,6 +19,7 @@ import {
   mapCashFlowSummary,
   mapGrowthIndicators,
   mapRevenueVsCash,
+  mapCapexTrend,
 } from "@/lib/chartDataMapper";
 
 // --- Color Constants (from Financial Visualization.md) ---
@@ -105,6 +106,7 @@ export default function ChartsPage() {
   const [cashFlowData, setCashFlowData] = useState<any[]>([]);
   const [growthData, setGrowthData] = useState<any[]>([]);
   const [revenueVsCashData, setRevenueVsCashData] = useState<any[]>([]);
+  const [capexData, setCapexData] = useState<any[]>([]);
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
@@ -157,6 +159,7 @@ export default function ChartsPage() {
           setCashFlowData(mapCashFlowSummary(filtered));
           setGrowthData(mapGrowthIndicators(filtered));
           setRevenueVsCashData(mapRevenueVsCash(filtered));
+          setCapexData(mapCapexTrend(filtered));
         }
       } catch (e) {
         console.error("Error loading reports", e);
@@ -285,12 +288,19 @@ export default function ChartsPage() {
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
         Cash Flow & Growth
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Cash Flow Summary">
           <FlowBarChart
             data={cashFlowData}
             dataKeys={["Operating CF", "Investing CF", "Financing CF"]}
             colors={[COLORS.red, COLORS.orange, COLORS.blue]}
+          />
+        </ChartCard>
+        <ChartCard title="Capex Trend">
+          <TrendLineChart
+            data={capexData}
+            dataKeys={["Capex"]}
+            colors={[COLORS.darkBlue]}
           />
         </ChartCard>
         <ChartCard title="Revenue Growth">
