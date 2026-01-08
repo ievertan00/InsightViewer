@@ -11,7 +11,7 @@ import {
   Share2,
   Database,
   Calculator,
-  ShieldAlert,
+  Flag,
 } from "lucide-react";
 
 const navigation = [
@@ -19,7 +19,7 @@ const navigation = [
   { name: "Data Explorer", href: "/explore", icon: FileText },
   { name: "Ratios", href: "/ratios", icon: Calculator },
   { name: "Charts", href: "/charts", icon: LayoutDashboard },
-  { name: "Flags", href: "/flags", icon: ShieldAlert },
+  { name: "Flags", href: "/flags", icon: Flag },
   { name: "AI Insights", href: "/insights", icon: Zap },
   { name: "Report Generator", href: "/reports", icon: Share2 },
 ];
