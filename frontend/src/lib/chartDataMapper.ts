@@ -398,11 +398,70 @@ export const mapFinancingCashFlowDetail = (reports: any[]) => {
 };
 
 /**
- * 14. Capex Trend (Line Chart)
+ * 14. OCF vs Capex vs FCF Trend (Line Chart)
  */
 export const mapCapexTrend = (reports: any[]) => {
-  return reports.map(r => ({
-    year: r.fiscal_year,
-    "Capex": getVal(r.data, "cash_flow_statement.investing_activities.cash_paid_for_assets") / 1e8
-  }));
+  return reports.map(r => {
+    const ocf = getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
+    const capex = getVal(r.data, "cash_flow_statement.investing_activities.cash_paid_for_assets");
+    return {
+      year: r.fiscal_year,
+      "Operating CF": ocf / 1e8,
+      "Capex": capex / 1e8,
+      "Free CF": (ocf - capex) / 1e8
+    };
+  });
+};
+
+/**
+ * 15. Liquidity Ratios Trend (Line Chart)
+ */
+export const mapLiquidityTrends = (reports: any[]) => {
+  return reports.map(r => {
+    const currentAssets = getVal(r.data, "balance_sheet.current_assets.total_current_assets");
+    const currentLiabilities = getVal(r.data, "balance_sheet.current_liabilities.total_current_liabilities");
+    const inventory = getVal(r.data, "balance_sheet.current_assets.inventories");
+    const monetaryFunds = getVal(r.data, "balance_sheet.current_assets.monetary_funds");
+    const tradingAssets = getVal(r.data, "balance_sheet.current_assets.trading_financial_assets") + 
+                          getVal(r.data, "balance_sheet.current_assets.financial_assets_fvpl.trading_financial_assets");
+
+    return {
+      year: r.fiscal_year,
+      "Current Ratio": currentLiabilities ? currentAssets / currentLiabilities : 0,
+      "Quick Ratio": currentLiabilities ? (currentAssets - inventory) / currentLiabilities : 0,
+      "Cash Ratio": currentLiabilities ? (monetaryFunds + tradingAssets) / currentLiabilities : 0
+    };
+  });
+};
+
+/**
+ * 16. Working Capital Cycle (Line Chart)
+ */
+export const mapWorkingCapitalCycle = (reports: any[]) => {
+  return reports.map((r, idx) => {
+    const prev = reports[idx - 1];
+    const revenue = getVal(r.data, "income_statement.total_operating_revenue");
+    const cogs = getVal(r.data, "income_statement.total_operating_cost.operating_cost");
+    
+    // Average Balances
+    const avgInv = prev ? (getVal(r.data, "balance_sheet.current_assets.inventories") + getVal(prev.data, "balance_sheet.current_assets.inventories")) / 2 : getVal(r.data, "balance_sheet.current_assets.inventories");
+    const avgAR = prev ? (getVal(r.data, "balance_sheet.current_assets.notes_and_accounts_receivable.amount") + getVal(prev.data, "balance_sheet.current_assets.notes_and_accounts_receivable.amount")) / 2 : getVal(r.data, "balance_sheet.current_assets.notes_and_accounts_receivable.amount");
+    const avgPayables = prev ? (getVal(r.data, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount") + getVal(prev.data, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount")) / 2 : getVal(r.data, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount");
+
+    // Days Calculations (using 365 for Annual)
+    // If Quarterly/Monthly, we should adjust, but standard is often annualized.
+    // Assuming data is annualized or we use ratio. 
+    // To be precise for annual chart:
+    const dio = cogs ? (avgInv / cogs) * 365 : 0;
+    const dso = revenue ? (avgAR / revenue) * 365 : 0;
+    const dpo = cogs ? (avgPayables / cogs) * 365 : 0;
+
+    return {
+      year: r.fiscal_year,
+      "DIO": dio,
+      "DSO": dso,
+      "DPO": dpo,
+      "CCC": dio + dso - dpo // Cash Conversion Cycle
+    };
+  });
 };

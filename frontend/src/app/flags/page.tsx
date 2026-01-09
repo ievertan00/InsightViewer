@@ -215,18 +215,24 @@ export default function FlagsPage() {
                     {flag.category}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                <h3 className="font-semibold text-gray-900 text-lg mb-2">
                   {flag.name}
                 </h3>
-                <div className="text-2xl font-mono font-bold text-rose-600 mb-2">
-                  {flag.value}
-                </div>
-                <div className="text-xs text-gray-500 font-medium mb-3 bg-gray-50 p-2 rounded border border-gray-100">
-                  <span className="text-gray-400 uppercase text-[10px] block mb-1">
-                    Trigger Condition:
+                
+                <div className="mb-4">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
+                    Trigger Condition
                   </span>
-                  {flag.logic}
+                  <div className="bg-rose-50/50 p-3 rounded-lg border border-rose-100">
+                    <div className="text-sm font-bold text-rose-700">
+                      {flag.value}
+                    </div>
+                    <div className="text-[10px] text-rose-500 mt-1 font-medium italic">
+                      Logic: {flag.logic}
+                    </div>
+                  </div>
                 </div>
+
                 <p className="text-sm text-gray-600 leading-relaxed">
                   {flag.description}
                 </p>
@@ -255,18 +261,24 @@ export default function FlagsPage() {
                     {flag.category}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                <h3 className="font-semibold text-gray-900 text-lg mb-2">
                   {flag.name}
                 </h3>
-                <div className="text-2xl font-mono font-bold text-emerald-600 mb-2">
-                  {flag.value}
-                </div>
-                <div className="text-xs text-gray-500 font-medium mb-3 bg-gray-50 p-2 rounded border border-gray-100">
-                  <span className="text-gray-400 uppercase text-[10px] block mb-1">
-                    Target Criteria:
+
+                <div className="mb-4">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
+                    Target Criteria
                   </span>
-                  {flag.logic}
+                  <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
+                    <div className="text-sm font-bold text-emerald-700">
+                      {flag.value}
+                    </div>
+                    <div className="text-[10px] text-emerald-500 mt-1 font-medium italic">
+                      Logic: {flag.logic}
+                    </div>
+                  </div>
                 </div>
+
                 <p className="text-sm text-gray-600 leading-relaxed">
                   {flag.description}
                 </p>

@@ -114,7 +114,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const netAssets = totalEquity; 
 
   const totalDebt = shortTermBorrowings + nonCurrentLiabDue1Y + longTermBorrowings + bondsPayable;
-  const interestBearingDebt = totalDebt + leaseLiab + tradingFinLiab; 
+  const interestBearingDebt = totalDebt; 
   const shortTermDebt = shortTermBorrowings + nonCurrentLiabDue1Y; 
 
   // --- Income Statement & Cash Flow Data (Flows - Need Mult) ---
@@ -232,9 +232,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Asset",
     type: "Red",
     status: (inventoryGrowth - revenueGrowth) > 0.20,
-    value: `Inv Growth: ${(inventoryGrowth*100).toFixed(1)}%, Rev Growth: ${(revenueGrowth*100).toFixed(1)}%`,
+    value: `Inv Gr: ${(inventoryGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${((inventoryGrowth - revenueGrowth)*100).toFixed(1)}%`,
     threshold: "Inv Growth > Rev Growth + 20%",
-    logic: `Gap = ${((inventoryGrowth - revenueGrowth)*100).toFixed(1)}% (> 20%)`,
+    logic: `Inv Gr - Rev Gr = ${((inventoryGrowth - revenueGrowth)*100).toFixed(1)}% (Threshold: > 20%)`,
     description: "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing."
   });
 
@@ -243,7 +243,15 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F3
-  const annCashInterestPaid = cashPaidDivProfInt * flowMult;
+  const beginRE = getVal(pd, "balance_sheet.equity.undistributed_profit");
+  const endRE = getVal(d, "balance_sheet.equity.undistributed_profit");
+  const beginSurplus = getVal(pd, "balance_sheet.equity.surplus_reserves");
+  const endSurplus = getVal(d, "balance_sheet.equity.surplus_reserves");
+  const deltaSurplus = endSurplus - beginSurplus;
+  const estimatedDividends = beginRE + netProfitParent - endRE - deltaSurplus;
+  const interestPaidEstim = Math.max(0, cashPaidDivProfInt - estimatedDividends);
+
+  const annCashInterestPaid = interestPaidEstim * flowMult;
   const cashInterestRate = safeDiv(annCashInterestPaid, avgInterestBearingDebt);
   flags.push({
     name: "High Cash Interest Rate",
@@ -296,7 +304,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Asset Disposal Reliance",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(assetDisposalIncome, netProfit) > 0.20,
+    status: safeDiv(assetDisposalIncome, netProfit) > 0.20 && netProfit > 0,
     value: `Ratio: ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}%`,
     threshold: "> 20% of Net Profit",
     logic: `Asset Disposal Income / Net Profit = ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}% (> 20%)`,
@@ -308,7 +316,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Asset Impairment Surge",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(totalAssetImpairment, operatingProfit) > 0.20,
+    status: safeDiv(totalAssetImpairment, operatingProfit) > 0.20 && operatingProfit > 0,
     value: `Ratio: ${(safeDiv(totalAssetImpairment, operatingProfit)*100).toFixed(1)}%`,
     threshold: "> 20% of Op Profit",
     logic: `Asset Impairment / Op Profit = ${(safeDiv(totalAssetImpairment, operatingProfit)*100).toFixed(1)}% (> 20%)`,
@@ -320,7 +328,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Credit Impairment Surge",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(totalCreditImpairment, operatingProfit) > 0.15,
+    status: safeDiv(totalCreditImpairment, operatingProfit) > 0.15 && operatingProfit > 0,
     value: `Ratio: ${(safeDiv(totalCreditImpairment, operatingProfit)*100).toFixed(1)}%`,
     threshold: "> 15% of Op Profit",
     logic: `Credit Impairment / Op Profit = ${(safeDiv(totalCreditImpairment, operatingProfit)*100).toFixed(1)}% (> 15%)`,
@@ -332,7 +340,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Non-Operating Rev Dependency",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(nonOperatingRev, totalProfit) > 0.20,
+    status: safeDiv(nonOperatingRev, totalProfit) > 0.20 && totalProfit > 0,
     value: `Ratio: ${(safeDiv(nonOperatingRev, totalProfit)*100).toFixed(1)}%`,
     threshold: "> 20% of Total Profit",
     logic: `Non-op Revenue / Total Profit = ${(safeDiv(nonOperatingRev, totalProfit)*100).toFixed(1)}% (> 20%)`,
@@ -344,7 +352,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Fair Value Reliance",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(fairValueChange, netProfit) > 0.30,
+    status: safeDiv(fairValueChange, netProfit) > 0.30 && netProfit > 0,
     value: `Ratio: ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}%`,
     threshold: "> 30% of Net Profit",
     logic: `Fair Value Income / Net Profit = ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}% (> 30%)`,
@@ -356,7 +364,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Investment Income Reliance",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(investmentIncome, operatingProfit) > 0.30,
+    status: safeDiv(investmentIncome, operatingProfit) > 0.30 && operatingProfit > 0,
     value: `Ratio: ${(safeDiv(investmentIncome, operatingProfit)*100).toFixed(1)}%`,
     threshold: "> 30% of Op Profit",
     logic: `Inv Income / Op Profit = ${(safeDiv(investmentIncome, operatingProfit)*100).toFixed(1)}% (> 30%)`,
@@ -368,7 +376,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Other Income Reliance",
     category: "Earnings",
     type: "Red",
-    status: safeDiv(otherIncome, operatingProfit) > 0.30,
+    status: safeDiv(otherIncome, operatingProfit) > 0.30 && operatingProfit > 0,
     value: `Ratio: ${(safeDiv(otherIncome, operatingProfit)*100).toFixed(1)}%`,
     threshold: "> 30% of Op Profit",
     logic: `Other Income / Op Profit = ${(safeDiv(otherIncome, operatingProfit)*100).toFixed(1)}% (> 30%)`,
@@ -387,9 +395,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Asset",
     type: "Red",
     status: arToAssets > 0.30 || arGrowthGap > 0.15,
-    value: `AR/Asset: ${(arToAssets*100).toFixed(1)}%, Gap: ${(arGrowthGap*100).toFixed(1)}%`,
+    value: `AR/Asset: ${(arToAssets*100).toFixed(1)}%, AR Gr: ${(arGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${(arGrowthGap*100).toFixed(1)}%`,
     threshold: "AR/Asset > 30% OR Gap > 15%",
-    logic: `AR/Assets = ${(arToAssets*100).toFixed(1)}% (> 30%) OR (AR Gr - Rev Gr) = ${(arGrowthGap*100).toFixed(1)}% (> 15%)`,
+    logic: `Ratio: ${(arToAssets*100).toFixed(1)}% (> 30%) OR AR Gr - Rev Gr = ${(arGrowthGap*100).toFixed(1)}% (> 15%)`,
     description: "Receivables growing faster than sales signals channel stuffing or relaxed credit terms."
   });
 
@@ -401,9 +409,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Asset",
     type: "Red",
     status: invToAssets > 0.30 || invGrowthGap > 0.15,
-    value: `Inv/Asset: ${(invToAssets*100).toFixed(1)}%, Gap: ${(invGrowthGap*100).toFixed(1)}%`,
+    value: `Inv/Asset: ${(invToAssets*100).toFixed(1)}%, Inv Gr: ${(inventoryGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${(invGrowthGap*100).toFixed(1)}%`,
     threshold: "Inv/Asset > 30% OR Gap > 15%",
-    logic: `Inv/Assets = ${(invToAssets*100).toFixed(1)}% (> 30%) OR (Inv Gr - Rev Gr) = ${(invGrowthGap*100).toFixed(1)}% (> 15%)`,
+    logic: `Ratio: ${(invToAssets*100).toFixed(1)}% (> 30%) OR Inv Gr - Rev Gr = ${(invGrowthGap*100).toFixed(1)}% (> 15%)`,
     description: "Inventory growing faster than sales often signals potential write-downs."
   });
 
@@ -483,9 +491,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Cost",
     type: "Red",
     status: sellingExpGrowth < sellingEffGap && revenueGrowth > 0.1, 
-    value: `Sell Gr: ${(sellingExpGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%`,
+    value: `Sell Gr: ${(sellingExpGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${((sellingExpGrowth - revenueGrowth)*100).toFixed(1)}%`,
     threshold: "Sell Exp Gr < Rev Gr - 20%",
-    logic: `Selling Exp Growth = ${(sellingExpGrowth*100).toFixed(1)}% (< ${(sellingEffGap*100).toFixed(1)}%)`,
+    logic: `Sell Gr < Rev Gr - 20% (Gap: ${((sellingExpGrowth - revenueGrowth)*100).toFixed(1)}% < -20%)`,
     description: "Revenue skyrocketing while marketing costs stay flat is highly suspicious."
   });
 
@@ -496,9 +504,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Cost",
     type: "Red",
     status: adminDivGap > 0.15,
-    value: `Gap: ${(adminDivGap*100).toFixed(1)}%`,
+    value: `Admin Gr: ${(adminExpGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${(adminDivGap*100).toFixed(1)}%`,
     threshold: "(Admin Gr - Rev Gr) > 15%",
-    logic: `Gap = ${(adminDivGap*100).toFixed(1)}% (> 15%)`,
+    logic: `Admin Gr - Rev Gr = ${(adminDivGap*100).toFixed(1)}% (Threshold: > 15%)`,
     description: "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation."
   });
 
@@ -522,9 +530,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Liquidity",
     type: "Red",
     status: payablesGrowth > (revenueGrowth + 0.20),
-    value: `Pay Gr: ${(payablesGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%`,
+    value: `Pay Gr: ${(payablesGrowth*100).toFixed(1)}%, Rev Gr: ${(revenueGrowth*100).toFixed(1)}%, Gap: ${(payablesGap*100).toFixed(1)}%`,
     threshold: "Payables Gr > Rev Gr + 20%",
-    logic: `Payables Growth = ${(payablesGrowth*100).toFixed(1)}% (> ${(revenueGrowth*100 + 20).toFixed(1)}%)`,
+    logic: `Pay Gr - Rev Gr = ${(payablesGap*100).toFixed(1)}% (Threshold: > 20%)`,
     description: "Excessive payables growth signals liquidity stress—suppliers are funding the company."
   });
 
@@ -555,7 +563,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Cash-Backed Profits",
     category: "Earnings",
     type: "Green",
-    status: ocfNiRatio > 1.1,
+    status: ocfNiRatio > 1.1 && netProfitParent > 0,
     value: `Ratio: ${ocfNiRatio.toFixed(2)}`,
     threshold: "> 1.1",
     logic: `OCF / Net Income = ${ocfNiRatio.toFixed(2)} (threshold > 1.1)`,
@@ -569,7 +577,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Self-Funding",
     category: "Growth",
     type: "Green",
-    status: ocfCapexRatio > 1.5,
+    status: ocfCapexRatio > 1.5 && capex > 0,
     value: `Ratio: ${ocfCapexRatio.toFixed(2)}`,
     threshold: "> 1.5",
     logic: `OCF / Capex = ${ocfCapexRatio.toFixed(2)} (threshold > 1.5)`,
@@ -586,28 +594,12 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Conservative Leverage",
     category: "Debt",
     type: "Green",
-    status: leverageRatio < 2.0 && netDebt > 0,
+    status: leverageRatio < 2.0 && netDebt > 0 && annEbitda > 0,
     value: `Net Debt/EBITDA: ${leverageRatio.toFixed(2)}`,
     threshold: "< 2.0x",
     logic: `Net Debt / Annualized EBITDA = ${leverageRatio.toFixed(2)} (threshold < 2.0x)`,
     description:
       "Debt levels are low relative to earnings, indicating a strong balance sheet.",
-  });
-
-  // ID: F28
-  // "Kangde Xin Paradox"
-  const intToDebt = totalDebt > 0 ? annInterestExp / totalDebt : 0;
-  const cashToAssets = safeDiv(cash, totalAssets);
-  flags.push({
-    name: "Kangde Xin Paradox",
-    category: "Liquidity",
-    type: "Red",
-    status: cashToAssets > 0.2 && intToDebt > 0.05,
-    value: `Cash/Assets: ${(cashToAssets * 100).toFixed(1)}%, Int/Debt: ${(intToDebt * 100).toFixed(1)}%`,
-    threshold: "> 20% & > 5%",
-    logic: `Cash/Assets = ${(cashToAssets * 100).toFixed(1)}% (threshold > 20%) & Annualized Int/Debt = ${(intToDebt * 100).toFixed(1)}% (threshold > 5%)`,
-    description:
-      "High cash balance coexisting with high-interest debt suggests cash might be restricted or fictitious.",
   });
 
   // ID: F29
@@ -616,7 +608,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Cash-Profit Divergence",
     category: "Earnings",
     type: "Red",
-    status: niGrowth > 0.1 && ocfGrowth <= 0,
+    status: niGrowth > 0.1 && ocfGrowth <= 0 && netProfitParent > 0,
     value: `NI Growth: ${(niGrowth * 100).toFixed(1)}%, OCF Growth: ${(ocfGrowth * 100).toFixed(1)}%`,
     threshold: "NI > 10% & OCF <= 0%",
     logic: `NI Growth = ${(niGrowth * 100).toFixed(1)}% (threshold > 10%) & OCF Growth = ${(ocfGrowth * 100).toFixed(1)}% (threshold <= 0%)`,
@@ -629,7 +621,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Low OCF/NI Ratio",
     category: "Earnings",
     type: "Red",
-    status: ocf / netProfitParent < 0.8,
+    status: ocf / netProfitParent < 0.8 && netProfitParent > 0,
     value: `Ratio: ${(ocf / netProfitParent).toFixed(2)}`,
     threshold: "< 0.8",
     logic: `OCF / Net Income = ${(ocf / netProfitParent).toFixed(2)} (threshold < 0.8)`,

@@ -20,6 +20,8 @@ import {
   mapGrowthIndicators,
   mapRevenueVsCash,
   mapCapexTrend,
+  mapLiquidityTrends,
+  mapWorkingCapitalCycle,
   getFiscalYearScore,
 } from "@/lib/chartDataMapper";
 
@@ -108,6 +110,8 @@ export default function ChartsPage() {
   const [growthData, setGrowthData] = useState<any[]>([]);
   const [revenueVsCashData, setRevenueVsCashData] = useState<any[]>([]);
   const [capexData, setCapexData] = useState<any[]>([]);
+  const [liquidityData, setLiquidityData] = useState<any[]>([]);
+  const [wcCycleData, setWcCycleData] = useState<any[]>([]);
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
@@ -146,6 +150,8 @@ export default function ChartsPage() {
           setGrowthData(mapGrowthIndicators(filtered));
           setRevenueVsCashData(mapRevenueVsCash(filtered));
           setCapexData(mapCapexTrend(filtered));
+          setLiquidityData(mapLiquidityTrends(filtered));
+          setWcCycleData(mapWorkingCapitalCycle(filtered));
         }
       } catch (e) {
         console.error("Error loading reports", e);
@@ -235,7 +241,28 @@ export default function ChartsPage() {
         </ChartCard>
       </div>
 
-      {/* 2. Efficiency & Cost */}
+      {/* 2. Liquidity & Cycle Analysis */}
+      <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
+        Liquidity & Cycle Analysis
+      </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Liquidity Ratios Trend">
+          <TrendLineChart
+            data={liquidityData}
+            dataKeys={["Current Ratio", "Quick Ratio", "Cash Ratio"]}
+            colors={[COLORS.blue, COLORS.green, COLORS.orange]}
+          />
+        </ChartCard>
+        <ChartCard title="Working Capital Cycle (Days)">
+          <TrendLineChart
+            data={wcCycleData}
+            dataKeys={["DIO", "DSO", "DPO", "CCC"]}
+            colors={[COLORS.blue, COLORS.orange, COLORS.grey, COLORS.purple]}
+          />
+        </ChartCard>
+      </div>
+
+      {/* 3. Efficiency & Cost */}
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
         Efficiency & Cost Structure
       </h2>
@@ -287,11 +314,11 @@ export default function ChartsPage() {
             colors={[COLORS.red, COLORS.orange, COLORS.blue]}
           />
         </ChartCard>
-        <ChartCard title="Capex Trend">
+        <ChartCard title="OCF vs Capex vs FCF Trend">
           <TrendLineChart
             data={capexData}
-            dataKeys={["Capex"]}
-            colors={[COLORS.darkBlue]}
+            dataKeys={["Operating CF", "Capex", "Free CF"]}
+            colors={[COLORS.green, COLORS.darkBlue, COLORS.orange]}
           />
         </ChartCard>
         <ChartCard title="Revenue Growth">

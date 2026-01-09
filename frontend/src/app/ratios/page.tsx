@@ -86,7 +86,26 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   
   const interestExpense = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_expenses");
   const interestIncome = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_income");
-  const interestPaid = getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
+  
+  // Calculate Dividends using RE change formula: Div = BeginRE + NetProfit - EndRE - (EndSurplus - BeginSurplus)
+  const beginRE = prevData ? getVal(prevData, "balance_sheet.equity.undistributed_profit") : 0;
+  const endRE = getVal(currentData, "balance_sheet.equity.undistributed_profit");
+  const beginSurplus = prevData ? getVal(prevData, "balance_sheet.equity.surplus_reserves") : 0;
+  const endSurplus = getVal(currentData, "balance_sheet.equity.surplus_reserves");
+  const deltaSurplus = endSurplus - beginSurplus;
+  
+  // If prevData is missing, we can't accurately calculate the change, so we might default to proposed or 0
+  // For now, if no prevData, we assume 0 dividends derived from this method to avoid negative spikes, 
+  // or we could fallback to 'proposed_cash_dividends'.
+  let estimatedDividends = 0;
+  if (prevData) {
+      estimatedDividends = beginRE + netIncome - endRE - deltaSurplus;
+  } else {
+      estimatedDividends = getVal(currentData, "balance_sheet.equity.proposed_cash_dividends");
+  }
+  
+  const cashPaidForDivProfInt = getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
+  const interestPaid = Math.max(0, cashPaidForDivProfInt - estimatedDividends);
   
   // Annualized Flows
   const annRevenue = revenue * flowMult;
