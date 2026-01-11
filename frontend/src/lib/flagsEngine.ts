@@ -113,7 +113,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   const totalEquity = getVal(d, "balance_sheet.equity.total_equity");
   const netAssets = totalEquity; 
 
-  const totalDebt = shortTermBorrowings + nonCurrentLiabDue1Y + longTermBorrowings + bondsPayable;
+  const totalDebt = shortTermBorrowings + nonCurrentLiabDue1Y + longTermBorrowings + bondsPayable + leaseLiab;
   const interestBearingDebt = totalDebt; 
   const shortTermDebt = shortTermBorrowings + nonCurrentLiabDue1Y; 
 
@@ -243,24 +243,20 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F3
-  const beginRE = getVal(pd, "balance_sheet.equity.undistributed_profit");
-  const endRE = getVal(d, "balance_sheet.equity.undistributed_profit");
-  const beginSurplus = getVal(pd, "balance_sheet.equity.surplus_reserves");
-  const endSurplus = getVal(d, "balance_sheet.equity.surplus_reserves");
-  const deltaSurplus = endSurplus - beginSurplus;
-  const estimatedDividends = beginRE + netProfitParent - endRE - deltaSurplus;
-  const interestPaidEstim = Math.max(0, cashPaidDivProfInt - estimatedDividends);
+  const begininterestpayable = pd ? getVal(pd, "balance_sheet.current_liabilities.other_payables_total.interest_payable") : 0;
+  const endinterestpayable = getVal(d, "balance_sheet.current_liabilities.other_payables_total.interest_payable");
+  const interestPaidEstim = interestExp + begininterestpayable - endinterestpayable;
 
-  const annCashInterestPaid = interestPaidEstim * flowMult;
-  const cashInterestRate = safeDiv(annCashInterestPaid, avgInterestBearingDebt);
+  const annProxyInterestPaid = interestPaidEstim * flowMult;
+  const proxyCashInterestRate = safeDiv(annProxyInterestPaid, avgInterestBearingDebt);
   flags.push({
     name: "High Cash Interest Rate",
     category: "Debt",
     type: "Red",
-    status: cashInterestRate > 0.05, 
-    value: `Rate: ${(cashInterestRate*100).toFixed(1)}%`,
+    status: proxyCashInterestRate > 0.05, 
+    value: `Rate: ${(proxyCashInterestRate*100).toFixed(1)}%`,
     threshold: "> 5% (Distressed)",
-    logic: `Annualized Cash Interest Paid / Avg Debt = ${(cashInterestRate*100).toFixed(1)}% (> 5%)`,
+    logic: `Annualized Cash Interest Paid / Avg Debt = ${(proxyCashInterestRate*100).toFixed(1)}% (> 5%)`,
     description: "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status."
   });
 

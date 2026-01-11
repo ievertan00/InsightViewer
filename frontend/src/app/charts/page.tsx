@@ -8,6 +8,7 @@ import TrendLineChart from "@/components/charts/TrendLineChart";
 import CompositionBarChart from "@/components/charts/CompositionBarChart";
 import FlowBarChart from "@/components/charts/FlowBarChart";
 import GrowthComboChart from "@/components/charts/GrowthComboChart";
+import SankeyChart from "@/components/charts/SankeyChart";
 import {
   mapAssetStructure,
   mapLiabilityStructure,
@@ -22,6 +23,12 @@ import {
   mapCapexTrend,
   mapLiquidityTrends,
   mapWorkingCapitalCycle,
+  mapLeverageTrends,
+  mapProfitVsCashFlow,
+  mapOperatingCashFlowDetail,
+  mapInvestingCashFlowDetail,
+  mapFinancingCashFlowDetail,
+  mapSankeyData,
   getFiscalYearScore,
 } from "@/lib/chartDataMapper";
 
@@ -112,6 +119,12 @@ export default function ChartsPage() {
   const [capexData, setCapexData] = useState<any[]>([]);
   const [liquidityData, setLiquidityData] = useState<any[]>([]);
   const [wcCycleData, setWcCycleData] = useState<any[]>([]);
+  const [sankeyData, setSankeyData] = useState<any>({ nodes: [], links: [] });
+  const [leverageData, setLeverageData] = useState<any[]>([]);
+  const [profitVsCashData, setProfitVsCashData] = useState<any[]>([]);
+  const [ocfDetailData, setOcfDetailData] = useState<any[]>([]);
+  const [icfDetailData, setIcfDetailData] = useState<any[]>([]);
+  const [fcfDetailData, setFcfDetailData] = useState<any[]>([]);
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
@@ -152,9 +165,15 @@ export default function ChartsPage() {
           setCapexData(mapCapexTrend(filtered));
           setLiquidityData(mapLiquidityTrends(filtered));
           setWcCycleData(mapWorkingCapitalCycle(filtered));
+          setSankeyData(mapSankeyData(filtered));
+          setLeverageData(mapLeverageTrends(filtered));
+          setProfitVsCashData(mapProfitVsCashFlow(filtered));
+          setOcfDetailData(mapOperatingCashFlowDetail(filtered));
+          setIcfDetailData(mapInvestingCashFlowDetail(filtered));
+          setFcfDetailData(mapFinancingCashFlowDetail(filtered));
         }
       } catch (e) {
-        console.error("Error loading reports", e);
+        console.error("Error parsing reports", e);
       }
     }
   }, [filterType]);
@@ -220,6 +239,13 @@ export default function ChartsPage() {
               colors={[COLORS.blue, COLORS.red]}
             />
           </ChartCard>
+          <ChartCard title="Net Profit vs Operating Cash Flow">
+            <TrendLineChart
+              data={profitVsCashData}
+              dataKeys={["Net Profit", "Operating CF"]}
+              colors={[COLORS.blue, COLORS.red]}
+            />
+          </ChartCard>
         </div>
 
         <ChartCard title="Profit Sources Breakdown">
@@ -258,6 +284,13 @@ export default function ChartsPage() {
             data={wcCycleData}
             dataKeys={["DIO", "DSO", "DPO", "CCC"]}
             colors={[COLORS.blue, COLORS.orange, COLORS.grey, COLORS.purple]}
+          />
+        </ChartCard>
+        <ChartCard title="Equity Multiplier (Leverage)">
+          <TrendLineChart
+            data={leverageData}
+            dataKeys={["Equity Multiplier"]}
+            colors={[COLORS.lightBlue]}
           />
         </ChartCard>
       </div>
@@ -306,39 +339,67 @@ export default function ChartsPage() {
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
         Cash Flow & Growth
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Cash Flow Summary">
-          <FlowBarChart
-            data={cashFlowData}
-            dataKeys={["Operating CF", "Investing CF", "Financing CF"]}
-            colors={[COLORS.red, COLORS.orange, COLORS.blue]}
-          />
-        </ChartCard>
-        <ChartCard title="OCF vs Capex vs FCF Trend">
-          <TrendLineChart
-            data={capexData}
-            dataKeys={["Operating CF", "Capex", "Free CF"]}
-            colors={[COLORS.green, COLORS.darkBlue, COLORS.orange]}
-          />
-        </ChartCard>
-        <ChartCard title="Revenue Growth">
-          <GrowthComboChart
-            data={growthData}
-            barKey="Revenue"
-            lineKey="Revenue Growth"
-            barColor={COLORS.blue}
-            lineColor={COLORS.orange}
-          />
-        </ChartCard>
-        <ChartCard title="Net Profit Growth">
-          <GrowthComboChart
-            data={growthData}
-            barKey="Net Profit"
-            lineKey="Net Profit Growth"
-            barColor={COLORS.lightBlue}
-            lineColor={COLORS.orange}
-          />
-        </ChartCard>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ChartCard title="Cash Flow Summary">
+            <FlowBarChart
+              data={cashFlowData}
+              dataKeys={["Operating CF", "Investing CF", "Financing CF"]}
+              colors={[COLORS.red, COLORS.orange, COLORS.blue]}
+            />
+          </ChartCard>
+          <ChartCard title="OCF vs Capex vs FCF Trend">
+            <TrendLineChart
+              data={capexData}
+              dataKeys={["Operating CF", "Capex", "Free CF"]}
+              colors={[COLORS.green, COLORS.darkBlue, COLORS.orange]}
+            />
+          </ChartCard>
+          <ChartCard title="Revenue Growth">
+            <GrowthComboChart
+              data={growthData}
+              barKey="Revenue"
+              lineKey="Revenue Growth"
+              barColor={COLORS.blue}
+              lineColor={COLORS.orange}
+            />
+          </ChartCard>
+          <ChartCard title="Net Profit Growth">
+            <GrowthComboChart
+              data={growthData}
+              barKey="Net Profit"
+              lineKey="Net Profit Growth"
+              barColor={COLORS.lightBlue}
+              lineColor={COLORS.orange}
+            />
+          </ChartCard>
+        </div>
+        
+        <h3 className="text-lg font-semibold text-gray-700 mt-4">Detailed Cash Flow Breakdown</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+           <ChartCard title="Investing Cash Flow Detail">
+            <FlowBarChart
+              data={icfDetailData}
+              dataKeys={[
+                "Inv. Recovery", "Inv. Income", "Asset Disposal", "Sub. Disposal", "Other Investing In",
+                "Asset Purchase", "Inv. Payment", "Sub. Purchase", "Other Investing Out"
+              ]}
+              colors={[COLORS.lightBlue, COLORS.orange, COLORS.grey, COLORS.yellow, COLORS.darkBlue, COLORS.green, COLORS.blue, COLORS.purple, COLORS.brown]}
+              stacked={true}
+            />
+          </ChartCard>
+          <ChartCard title="Financing Cash Flow Detail">
+            <FlowBarChart
+              data={fcfDetailData}
+              dataKeys={[
+                "Inv. Received", "Borrowings Rec.", "Bond Issue", "Other Financing In",
+                "Debt Repayment", "Div/Profit/Int Paid", "Other Financing Out"
+              ]}
+              colors={[COLORS.lightBlue, COLORS.orange, COLORS.grey, COLORS.yellow, COLORS.darkBlue, COLORS.green, COLORS.blue]}
+              stacked={true}
+            />
+          </ChartCard>
+        </div>
       </div>
 
       {/* 4. Structure Analysis */}
@@ -399,6 +460,16 @@ export default function ChartsPage() {
             ]}
             colors={EQUITY_COLORS}
           />
+        </ChartCard>
+      </div>
+
+      {/* 5. Income Flow Analysis */}
+      <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
+        Income Flow Analysis (Latest Period)
+      </h2>
+      <div className="space-y-8">
+        <ChartCard title="Income Statement Sankey Diagram" height={500}>
+          <SankeyChart data={sankeyData} />
         </ChartCard>
       </div>
     </div>

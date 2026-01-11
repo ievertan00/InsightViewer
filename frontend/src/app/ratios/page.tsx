@@ -81,32 +81,33 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
 
   const operatingProfit = getVal(currentData, "income_statement.operating_profit.amount");
   const totalProfit = getVal(currentData, "income_statement.total_profit.amount");
-  const netIncome = getVal(currentData, "income_statement.net_profit.net_profit_attr_to_parent");
+  const netIncome = getVal(currentData, "income_statement.net_profit.amount");
+  const netIncomeAttrParent = getVal(currentData, "income_statement.net_profit.net_profit_attr_to_parent");
   const incomeTax = getVal(currentData, "income_statement.total_profit.income_tax");
   
   const interestExpense = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_expenses");
   const interestIncome = getVal(currentData, "income_statement.total_operating_cost.financial_expenses.interest_income");
+
+  const begininterestpayable = prevData ? getVal(prevData, "balance_sheet.current_liabilities.other_payables_total.interest_payable") : 0;
+  const endinterestpayable = getVal(currentData, "balance_sheet.current_liabilities.other_payables_total.interest_payable");
+
+  
   
   // Calculate Dividends using RE change formula: Div = BeginRE + NetProfit - EndRE - (EndSurplus - BeginSurplus)
-  const beginRE = prevData ? getVal(prevData, "balance_sheet.equity.undistributed_profit") : 0;
-  const endRE = getVal(currentData, "balance_sheet.equity.undistributed_profit");
-  const beginSurplus = prevData ? getVal(prevData, "balance_sheet.equity.surplus_reserves") : 0;
-  const endSurplus = getVal(currentData, "balance_sheet.equity.surplus_reserves");
-  const deltaSurplus = endSurplus - beginSurplus;
-  
-  // If prevData is missing, we can't accurately calculate the change, so we might default to proposed or 0
-  // For now, if no prevData, we assume 0 dividends derived from this method to avoid negative spikes, 
-  // or we could fallback to 'proposed_cash_dividends'.
-  let estimatedDividends = 0;
-  if (prevData) {
-      estimatedDividends = beginRE + netIncome - endRE - deltaSurplus;
-  } else {
-      estimatedDividends = getVal(currentData, "balance_sheet.equity.proposed_cash_dividends");
-  }
-  
-  const cashPaidForDivProfInt = getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits");
-  const interestPaid = Math.max(0, cashPaidForDivProfInt - estimatedDividends);
-  
+  const interestPaid = interestExpense + begininterestpayable - endinterestpayable;
+
+  console.log("Cash Interest Rate Logic (Flags Engine Style):", {
+    year: getVal(currentData, "fiscal_year"),
+    interestExpense,
+    beginInterestPayable: begininterestpayable,
+    endInterestPayable: endinterestpayable,
+    interestPaid,
+    // Context only (not used in calculation anymore)
+    cashPaidForDivProfInt: getVal(currentData, "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits"),
+    estimatedDividends: 0, // removed calc
+    dividendsToMinority: getVal(currentData, "cash_flow_statement.financing_activities.dividends_paid_to_minority")
+  });
+
   // Annualized Flows
   const annRevenue = revenue * flowMult;
   const annCost = costOfSales * flowMult;
@@ -123,13 +124,14 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   // Balance Sheet
   const totalAssets = getVal(currentData, "balance_sheet.assets_summary.total_assets");
   const totalLiabilities = getVal(currentData, "balance_sheet.liabilities_summary.total_liabilities");
-  const totalEquity = getVal(currentData, "balance_sheet.equity.total_parent_equity");
+  const totalEquity = getVal(currentData, "balance_sheet.equity.total_equity");
   
   const currentAssets = getVal(currentData, "balance_sheet.current_assets.total_current_assets");
   const currentLiabilities = getVal(currentData, "balance_sheet.current_liabilities.total_current_liabilities");
   
   const inventory = getVal(currentData, "balance_sheet.current_assets.inventories");
   const receivables = getVal(currentData, "balance_sheet.current_assets.notes_and_accounts_receivable.amount");
+  const payables = getVal(currentData, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount");
   const monetaryFunds = getVal(currentData, "balance_sheet.current_assets.monetary_funds");
   const tradingAssets = getVal(currentData, "balance_sheet.current_assets.trading_financial_assets") + 
                         getVal(currentData, "balance_sheet.current_assets.financial_assets_fvpl.trading_financial_assets");
@@ -158,9 +160,10 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   const prevInterestBearingDebt = prevData ? (prevShortTermDebt + prevLongTermDebt) : interestBearingDebt;
 
   const avgAssets = (totalAssets + (prevData ? getVal(prevData, "balance_sheet.assets_summary.total_assets") : totalAssets)) / 2;
-  const avgEquity = (totalEquity + (prevData ? getVal(prevData, "balance_sheet.equity.total_parent_equity") : totalEquity)) / 2;
+  const avgEquity = (totalEquity + (prevData ? getVal(prevData, "balance_sheet.equity.total_equity") : totalEquity)) / 2;
   const avgInventory = (inventory + (prevData ? getVal(prevData, "balance_sheet.current_assets.inventories") : inventory)) / 2;
   const avgReceivables = (receivables + (prevData ? getVal(prevData, "balance_sheet.current_assets.notes_and_accounts_receivable.amount") : receivables)) / 2;
+  const avgPayables = (payables + (prevData ? getVal(prevData, "balance_sheet.current_liabilities.notes_and_accounts_payable.amount") : payables)) / 2;
   const avgMonetaryFunds = (monetaryFunds + (prevData ? getVal(prevData, "balance_sheet.current_assets.monetary_funds") : monetaryFunds)) / 2;
   const avgInterestBearingDebt = (interestBearingDebt + prevInterestBearingDebt) / 2;
 
@@ -192,7 +195,6 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   // ==========================================
   // 2. Return on Investment (回报率)
   // ==========================================
-  addMetric("Return on Investment", "ROE", safeDiv(netIncome * flowMult, avgEquity), formatPercent, "净资产收益率", "Annualized Net Income / Avg Shareholders' Equity");
   addMetric("Return on Investment", "ROA", safeDiv(netIncome * flowMult, avgAssets), formatPercent, "总资产报酬率", "Annualized Net Income / Avg Total Assets");
   addMetric("Return on Investment", "ROIC", safeDiv(ebit * (1 - taxRate) * flowMult, investedCapital), formatPercent, "投入资本回报率", "Annualized EBIT * (1 - Tax Rate) / Invested Capital");
   addMetric("Return on Investment", "CFROI (Proxy)", safeDiv(annOCF, investedCapital), formatPercent, "现金流投资回报率 (Proxy)", "Annualized Operating Cash Flow / Invested Capital");
@@ -207,8 +209,7 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   addMetric("Solvency & Liquidity", "Debt to Assets", safeDiv(totalLiabilities, totalAssets), formatPercent, "资产负债率", "Total Liabilities / Total Assets");
   addMetric("Solvency & Liquidity", "Debt to Equity", safeDiv(totalLiabilities, totalEquity), formatPercent, "产权比率", "Total Liabilities / Shareholders' Equity");
   addMetric("Solvency & Liquidity", "Interest Coverage", safeDiv(annEBIT, annInterestExp), formatNumber, "已获利息倍数", "EBIT / Interest Expense");
-  addMetric("Solvency & Liquidity", "Accrued Interest Rate", safeDiv(annInterestExp, avgInterestBearingDebt), formatPercent, "有息负债利率", "Annualized Interest Expense / Avg Total Debt");
-  addMetric("Solvency & Liquidity", "Cash Interest Rate", safeDiv(annInterestPaid, avgInterestBearingDebt), formatPercent, "现金利率", "Annualized Interest Paid (Proxy) / Avg Total Debt");
+  addMetric("Solvency & Liquidity", "Proxy Interest Rate", safeDiv(annInterestPaid, avgInterestBearingDebt), formatPercent, "估算利率", "Annualized Interest Paid (proxy) / Avg Total Debt");
   addMetric("Solvency & Liquidity", "Operating Cash Flow Ratio", safeDiv(ocf, currentLiabilities), formatNumber, "经营现金流比率", "Operating Cash Flow / Current Liabilities");
   addMetric("Solvency & Liquidity", "NWC to Assets", safeDiv(currentAssets - currentLiabilities, totalAssets), formatPercent, "营运资金占总资产比率", "(Current Assets - Current Liabilities) / Total Assets");
   addMetric("Solvency & Liquidity", "Net Debt", interestBearingDebt - monetaryFunds, (v) => (v / 100000000).toFixed(2) + "B", "净债务 (100M)", "Interest Bearing Debt - Cash");
@@ -222,8 +223,10 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   
   const invTurn = safeDiv(annCost, avgInventory);
   const arTurn = safeDiv(annRevenue, avgReceivables);
+  const apTurn = safeDiv(annCost, avgPayables);
   const dio = safeDiv(365, invTurn);
   const dso = safeDiv(365, arTurn);
+  const dpo = safeDiv(365, apTurn);
 
   addMetric("Operating Efficiency", "Inventory Turnover", invTurn, formatNumber, "存货周转率", "Annualized COGS / Avg Inventory");
   addMetric("Operating Efficiency", "Days Inventory Outstanding", dio, formatDays, "存货周转天数", "365 / Annualized Inventory Turnover");
@@ -231,6 +234,8 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   addMetric("Operating Efficiency", "Days Sales Outstanding", dso, formatDays, "应收账款周转天数", "365 / Annualized AR Turnover");
   addMetric("Operating Efficiency", "Total Asset Turnover", safeDiv(annRevenue, avgAssets), formatNumber, "总资产周转率", "Annualized Revenue / Avg Total Assets");
   addMetric("Operating Efficiency", "Operating Cycle", dio + dso, formatDays, "营业周期", "DIO + DSO");
+  addMetric("Operating Efficiency", "Cash Conversion Cycle", dio + dso - dpo, formatDays, "现金转换周期", "DIO + DSO - DPO");
+
   addMetric("Operating Efficiency", "Working Capital", currentAssets - currentLiabilities, (v) => (v / 100000000).toFixed(2) + "B", "营运资金 (100M)", "Current Assets - Current Liabilities");
 
   // ==========================================
@@ -248,12 +253,12 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   // ==========================================
   if (prevData) {
       const prevRevenue = getVal(prevData, "income_statement.total_operating_revenue");
-      const prevNetIncome = getVal(prevData, "income_statement.net_profit.net_profit_attr_to_parent");
+      const prevNetIncome = getVal(prevData, "income_statement.net_profit.net_profit");
       const prevOCF = getVal(prevData, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
 
-      addMetric("Growth Indicators", "Revenue Growth", safeDiv(revenue - prevRevenue, prevRevenue), formatPercent, "营收增长率", "(Current - Prev) / Prev");
-      addMetric("Growth Indicators", "Net Profit Growth", safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)), formatPercent, "净利润增长率", "(Current - Prev) / |Prev|");
-      addMetric("Growth Indicators", "OCF Growth", safeDiv(ocf - prevOCF, Math.abs(prevOCF)), formatPercent, "经营现金流增长率", "(Current - Prev) / |Prev|");
+      addMetric("Growth Indicators", "Revenue Growth", safeDiv(revenue - prevRevenue, prevRevenue), formatPercent, "营收增长率", "(Current Revenue - Prev Revenue) / Prev Revenue");
+      addMetric("Growth Indicators", "Net Profit Growth", safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)), formatPercent, "净利润增长率", "(Current Net Income - Prev Net Income) / |Prev Net Income|");
+      addMetric("Growth Indicators", "OCF Growth", safeDiv(ocf - prevOCF, Math.abs(prevOCF)), formatPercent, "经营现金流增长率", "(Current OCF - Prev OCF) / |Prev OCF|");
   } else {
       addMetric("Growth Indicators", "Revenue Growth", 0, () => "-", "Requires prev period data", "N/A");
       addMetric("Growth Indicators", "Net Profit Growth", 0, () => "-", "Requires prev period data", "N/A");

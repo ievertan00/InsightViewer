@@ -465,3 +465,127 @@ export const mapWorkingCapitalCycle = (reports: any[]) => {
     };
   });
 };
+
+/**
+ * 17. Leverage Trends (Equity Multiplier)
+ */
+export const mapLeverageTrends = (reports: any[]) => {
+  return reports.map(r => {
+    const assets = getVal(r.data, "balance_sheet.assets_summary.total_assets");
+    const equity = getVal(r.data, "balance_sheet.equity.total_equity");
+    return {
+      year: r.fiscal_year,
+      "Equity Multiplier": equity ? assets / equity : 0
+    };
+  });
+};
+
+/**
+ * 18. Net Profit vs Operating Cash Flow (Line Chart)
+ */
+export const mapProfitVsCashFlow = (reports: any[]) => {
+  return reports.map(r => ({
+    year: r.fiscal_year,
+    "Net Profit": getVal(r.data, "income_statement.net_profit.net_profit_attr_to_parent") / 1e8,
+    "Operating CF": getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") / 1e8
+  }));
+};
+
+/**
+ * 19. Sankey Data (Snapshot of latest Annual report)
+ * Maps Income Statement flow: Revenue -> Costs/Expenses -> Profit
+ */
+export const mapSankeyData = (reports: any[]) => {
+  if (!reports || reports.length === 0) return { nodes: [], links: [] };
+  
+  // Find the last "Annual" report. Reports are assumed sorted by date ascending.
+  // We search backwards.
+  let targetReport = null;
+  for (let i = reports.length - 1; i >= 0; i--) {
+    const r = reports[i];
+    const fy = r.fiscal_year || "";
+    const pt = r.period_type || "";
+    // Check if it's explicitly annual or contains "Annual" in year string
+    // Assuming standard naming like "2023 Annual Report" or period_type "Annual"
+    if (pt === "Annual" || fy.toLowerCase().includes("annual")) {
+      targetReport = r;
+      break;
+    }
+  }
+
+  // Fallback to the very last report if no Annual report found
+  if (!targetReport) {
+    targetReport = reports[reports.length - 1];
+  }
+
+  const data = targetReport.data;
+
+  const revenue = getVal(data, "income_statement.total_operating_revenue") / 1e8;
+  const operatingCost = getVal(data, "income_statement.total_operating_cost.operating_cost") / 1e8;
+  const grossProfit = revenue - operatingCost;
+  
+  const taxAndSurcharge = getVal(data, "income_statement.total_operating_cost.taxes_and_surcharges") / 1e8;
+  const sellingExp = getVal(data, "income_statement.total_operating_cost.selling_expenses") / 1e8;
+  const adminExp = getVal(data, "income_statement.total_operating_cost.admin_expenses") / 1e8;
+  const rdExp = getVal(data, "income_statement.total_operating_cost.rd_expenses") / 1e8;
+  const finExp = getVal(data, "income_statement.total_operating_cost.financial_expenses.amount") / 1e8;
+  const assetImpairment = (getVal(data, "income_statement.total_operating_cost.asset_impairment_loss") + getVal(data, "income_statement.total_operating_cost.credit_impairment_loss")) / 1e8;
+  
+  const totalOpExp = taxAndSurcharge + sellingExp + adminExp + rdExp + finExp + assetImpairment;
+  // const operatingProfit = grossProfit - totalOpExp; // Approximation for flow visualization
+
+  // For Sankey, we need positive flows. If Operating Profit is negative, visualization gets tricky.
+  // We'll assume standard positive flows for the main path, or handle negatives by just showing them as "losses" if possible,
+  // but standard Sankey libraries usually expect positive link values.
+  
+  // Nodes
+  const nodes = [
+    { name: "Total Revenue" },      // 0
+    { name: "Operating Cost" },     // 1
+    { name: "Gross Profit" },       // 2
+    { name: "Operating Expenses" }, // 3
+    { name: "Operating Profit" },   // 4
+    { name: "Income Tax" },         // 5
+    { name: "Net Profit" }          // 6
+  ];
+
+  // Simplified Links
+  // Revenue -> Cost
+  // Revenue -> Gross Profit
+  const links = [];
+
+  if (revenue > 0) {
+    if (operatingCost > 0) links.push({ source: 0, target: 1, value: operatingCost });
+    if (grossProfit > 0) links.push({ source: 0, target: 2, value: grossProfit });
+  }
+
+  // Gross Profit -> Operating Expenses
+  // Gross Profit -> Operating Profit
+  if (grossProfit > 0) {
+    if (totalOpExp > 0) links.push({ source: 2, target: 3, value: totalOpExp });
+    // Note: This calculated Operating Profit might differ slightly from actual if we missed some income items (investment income etc.)
+    // For visual simplicity, we just pass the remainder.
+    const remainder = grossProfit - totalOpExp;
+    if (remainder > 0) links.push({ source: 2, target: 4, value: remainder });
+  }
+
+  // Operating Profit -> Income Tax
+  // Operating Profit -> Net Profit
+  // (Ignoring non-operating items for simplicity in this V1)
+  const incomeTax = getVal(data, "income_statement.income_tax_expenses") / 1e8;
+  // We use the remainder from above to maintain flow continuity, or we check actual values.
+  // Sankey flow needs Input = Output for intermediate nodes usually.
+  
+  // Let's rely on the previous target value "remainder" to split.
+  // But if we want to show *actual* Net Profit, we might have a disconnect if "Operating Profit" node value != actual Operating Profit.
+  // Let's just flow the 'remainder' into Tax and Net Profit.
+  
+  const opProfitNodeValue = (grossProfit - totalOpExp);
+  if (opProfitNodeValue > 0) {
+    if (incomeTax > 0) links.push({ source: 4, target: 5, value: incomeTax });
+    const netProfitCalc = opProfitNodeValue - incomeTax;
+    if (netProfitCalc > 0) links.push({ source: 4, target: 6, value: netProfitCalc });
+  }
+
+  return { nodes, links };
+};
