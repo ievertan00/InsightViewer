@@ -70,6 +70,8 @@ INCOME_STATEMENT_MAP = {
     "利润总额": "total_profit.amount",
     "减:所得税费用": "total_profit.income_tax",
     "所得税费用": "total_profit.income_tax",
+    "所得税": "total_profit.income_tax",
+    "减:所得税": "total_profit.income_tax",
     "未确认投资损失": "total_profit.unconfirmed_investment_loss",
     "影响净利润的其他项目": "total_profit.other_items_affecting_net_profit",
     "净利润差额(合计平衡项目2)": "total_profit.net_profit_difference",
@@ -80,6 +82,7 @@ INCOME_STATEMENT_MAP = {
     "持续经营净利润": "net_profit.net_profit_continuing_ops",
     "终止经营净利润": "net_profit.net_profit_discontinued_ops",
     "归属于母公司所有者的净利润": "net_profit.net_profit_attr_to_parent",
+    "归属于母公司股东的净利润": "net_profit.net_profit_attr_to_parent",
     "少数股东损益": "net_profit.minority_interest_income",
     "被合并方在合并前实现利润": "net_profit.profit_from_merged_party_before_merger",
     "扣除非经常性损益后的净利润": "net_profit.net_profit_deducting_non_recurring",
@@ -100,6 +103,7 @@ INCOME_STATEMENT_MAP = {
     "七、综合收益总额": "total_comprehensive_income.amount",
     "综合收益总额": "total_comprehensive_income.amount",
     "归属于母公司所有者的综合收益总额": "total_comprehensive_income.attr_to_parent",
+    "归属于母公司普通股股东综合收益总额": "total_comprehensive_income.attr_to_parent",
     "归属于少数股东的综合收益总额": "total_comprehensive_income.attr_to_minority",
     "以摊余成本计量的金融资产终止确认收益": "total_comprehensive_income.derecognition_income_amortized_cost",
 }
@@ -369,6 +373,7 @@ CASH_FLOW_MAP = {
 
     # Overall Cash Change
     "汇率变动对现金及现金等价物的影响": "cash_increase.exchange_rate_effect",
+    "汇率变动对现金的影响": "cash_increase.exchange_rate_effect",
     "现金及现金等价物净增加额其他项目": "cash_increase.increase_other_items",
     "现金及现金等价物净增加额平衡项目": "cash_increase.increase_balance_items",
     "现金及现金等价物净增加额": "cash_increase.net_increase_cash_and_equivalents",

@@ -31,4 +31,6 @@ def upload_financial_report(file: UploadFile = File(...)):
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON file content.")
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Upload failed for file {filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Parsing error: {str(e)}")

@@ -8,11 +8,13 @@ from app.models.schemas import (
 )
 from app.core.mappings import INCOME_STATEMENT_MAP, BALANCE_SHEET_MAP, CASH_FLOW_MAP
 
-def detect_sheet_type(sheet_name: str, content_sample: str) -> Optional[str]:
+def detect_sheet_type(sheet_name: str, content_sample: str, filename: str = "") -> Optional[str]:
     """Detects if a sheet is Income, Balance, or Cash Flow."""
     name = sheet_name.lower()
     content = content_sample
+    fname = filename.lower()
     
+    # 1. Check Sheet Name
     if "利润" in name or "损益" in name or "income" in name:
         return "income_statement"
     if "资产负债" in name or "balance" in name:
@@ -20,7 +22,7 @@ def detect_sheet_type(sheet_name: str, content_sample: str) -> Optional[str]:
     if "现金" in name or "cash" in name:
         return "cash_flow_statement"
     
-    # Fallback to content check (Relaxed Logic)
+    # 2. Check Content (Relaxed Logic)
     if "营业收入" in content or "营业总收入" in content:
         return "income_statement"
     if "资产" in content and "负债" in content:
@@ -29,6 +31,14 @@ def detect_sheet_type(sheet_name: str, content_sample: str) -> Optional[str]:
     if "流动资产" in content:
         return "balance_sheet"
     if "经营活动" in content or "现金流量" in content:
+        return "cash_flow_statement"
+        
+    # 3. Fallback: Check Filename (Critical for separated files or encoding issues)
+    if "利润" in fname or "income" in fname:
+        return "income_statement"
+    if "资产负债" in fname or "balance" in fname:
+        return "balance_sheet"
+    if "现金" in fname or "cash" in fname:
         return "cash_flow_statement"
         
     return None
@@ -162,8 +172,11 @@ def normalize_name(name: str) -> str:
     name = name.replace("合计", "")
     name = re.sub(r"[\(（].*?[\)）]", "", name)
     
-    # 5. Remove specific punctuation and all remaining whitespace
-    name = re.sub(r"[\s :：\-、]", "", name)
+    # 5. Remove specific punctuation
+    name = re.sub(r"[:：\-、]", "", name)
+    
+    # 6. Remove ALL whitespace (including NBSP, fullwidth, etc.)
+    name = "".join(name.split())
     
     return name
 
@@ -262,54 +275,60 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
         company_name = clean_filename.strip()
     
     for sheet_name in wb.sheetnames:
-        sheet = wb[sheet_name]
-        
-        # 1. Detect Type
-        # Sample first few rows for content check
-        sample_content = ""
-        for r in sheet.iter_rows(max_row=20, values_only=True):
-            sample_content += " ".join([str(x) for x in r if x])
+        try:
+            sheet = wb[sheet_name]
             
-        sheet_type = detect_sheet_type(sheet_name, sample_content)
-        if not sheet_type:
-            continue
-            
-        # 2. Find Header
-        header_idx, years_map = find_header_row(sheet)
-        if header_idx == -1 or not years_map:
-            print(f"Skipping sheet {sheet_name}: No header/years found.")
-            continue
-            
-        # 3. Select Mapping
-        mapping = {}
-        if sheet_type == "income_statement":
-            mapping = INCOME_STATEMENT_MAP
-        elif sheet_type == "balance_sheet":
-            mapping = BALANCE_SHEET_MAP
-        elif sheet_type == "cash_flow_statement":
-            mapping = CASH_FLOW_MAP
-            
-        # 4. Parse Rows
-        parsed_years_data, skipped = parse_sheet_data(sheet, header_idx, years_map, mapping)
-        
-        if skipped:
-            all_warnings.append(f"Sheet '{sheet_name}': Skipped {len(skipped)} rows due to no matching mapping: {', '.join(skipped)}")
-        
-        # 5. Merge into Aggregated Data
-        for year, data in parsed_years_data.items():
-            # Post-process totals for this year's data
-            post_process_totals(sheet_type, data)
-
-            if year not in aggregated_data:
-                aggregated_data[year] = {}
-            
-            # Init specific report section if not exists
-            if sheet_type not in aggregated_data[year]:
-                aggregated_data[year][sheet_type] = {}
+            # 1. Detect Type
+            # Sample first few rows for content check
+            sample_content = ""
+            for r in sheet.iter_rows(max_row=20, values_only=True):
+                sample_content += " ".join([str(x) for x in r if x])
                 
-            # Merge data (naive merge, assumes structure is built by parse_sheet_data)
-            # Since parse_sheet_data returns the full nested dict for that sheet, we can just assign/update
-            aggregated_data[year][sheet_type] = data
+            sheet_type = detect_sheet_type(sheet_name, sample_content, filename)
+            if not sheet_type:
+                continue
+                
+            # 2. Find Header
+            header_idx, years_map = find_header_row(sheet)
+            if header_idx == -1 or not years_map:
+                print(f"Skipping sheet {sheet_name}: No header/years found.")
+                continue
+                
+            # 3. Select Mapping
+            mapping = {}
+            if sheet_type == "income_statement":
+                mapping = INCOME_STATEMENT_MAP
+            elif sheet_type == "balance_sheet":
+                mapping = BALANCE_SHEET_MAP
+            elif sheet_type == "cash_flow_statement":
+                mapping = CASH_FLOW_MAP
+                
+            # 4. Parse Rows
+            parsed_years_data, skipped = parse_sheet_data(sheet, header_idx, years_map, mapping)
+            
+            if skipped:
+                all_warnings.append(f"Sheet '{sheet_name}': Skipped {len(skipped)} rows due to no matching mapping: {', '.join(skipped)}")
+            
+            # 5. Merge into Aggregated Data
+            for year, data in parsed_years_data.items():
+                # Post-process totals for this year's data
+                post_process_totals(sheet_type, data)
+
+                if year not in aggregated_data:
+                    aggregated_data[year] = {}
+                
+                # Init specific report section if not exists
+                if sheet_type not in aggregated_data[year]:
+                    aggregated_data[year][sheet_type] = {}
+                    
+                # Merge data (naive merge, assumes structure is built by parse_sheet_data)
+                # Since parse_sheet_data returns the full nested dict for that sheet, we can just assign/update
+                aggregated_data[year][sheet_type] = data
+                
+        except Exception as e:
+            logger.error(f"Error parsing sheet '{sheet_name}' in file '{filename}': {e}", exc_info=True)
+            all_warnings.append(f"Sheet '{sheet_name}': Critical parsing error: {str(e)}")
+            continue
 
     # 6. Construct Final Report Objects
     reports_list = []
