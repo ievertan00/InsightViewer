@@ -201,62 +201,79 @@ export default function UploadPage() {
 
       const reportData = await response.json();
 
-      if (isAppendMode) {
-        const existingName = localStorage.getItem(
-          "insight_viewer_company_name"
-        );
-        const newName = reportData.company_meta?.name;
+      const existingName = localStorage.getItem("insight_viewer_company_name");
+      const newName = reportData.company_meta?.name;
 
-        if (existingName && newName && existingName !== newName) {
-          alert(
-            `Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`
-          );
-          setIsProcessingPaste(false);
-          return;
-        }
+      if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
+        setPasteError(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+        setIsProcessingPaste(false);
+        return;
       }
 
-      if (
-        reportData.company_meta?.name &&
-        (!isAppendMode || !localStorage.getItem("insight_viewer_company_name"))
-      ) {
-        localStorage.setItem(
-          "insight_viewer_company_name",
-          reportData.company_meta.name
-        );
+      if (newName && newName !== "Unknown" && (!isAppendMode || !existingName)) {
+        localStorage.setItem("insight_viewer_company_name", newName);
         window.dispatchEvent(new Event("companyNameUpdate"));
       }
 
       if (reportData.reports) {
         let finalReports = reportData.reports;
         if (isAppendMode) {
-          const existingReportsStr = localStorage.getItem(
-            "insight_viewer_reports"
-          );
+          const existingReportsStr = localStorage.getItem("insight_viewer_reports");
           if (existingReportsStr) {
             try {
               const existingReports = JSON.parse(existingReportsStr);
               if (Array.isArray(existingReports)) {
-                finalReports = [...existingReports, ...reportData.reports];
+                // Use backend API to properly merge reports
+                const existingReportData = {
+                  company_meta: {
+                    name: localStorage.getItem("insight_viewer_company_name") || "Unknown",
+                    stock_code: null,
+                    currency: "CNY"
+                  },
+                  reports: existingReports,
+                  parsing_warnings: []
+                };
+
+                const mergeFormData = new FormData();
+                mergeFormData.append('existing_reports_json', JSON.stringify(existingReportData));
+                mergeFormData.append('new_reports_json', JSON.stringify(reportData));
+
+                const mergeResponse = await fetch("http://localhost:8000/api/v1/merge-reports", {
+                  method: "POST",
+                  body: mergeFormData,
+                });
+
+                if (!mergeResponse.ok) {
+                  const errorData = await mergeResponse.json();
+                  throw new Error(errorData.detail || "Failed to merge reports");
+                }
+
+                const mergedData = await mergeResponse.json();
+                finalReports = mergedData.reports;
               }
             } catch (e) {
-              console.error("Failed to parse existing reports", e);
+              console.error("Failed to merge reports via API, falling back to client-side merge:", e);
+              const existingReports = JSON.parse(existingReportsStr);
+              if (Array.isArray(existingReports)) {
+                finalReports = mergeReportsByFiscalYear(existingReports, reportData.reports);
+              }
             }
           }
         }
 
-        finalReports.sort(
-          (a: any, b: any) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year)
-        );
+        finalReports.sort((a: any, b: any) => {
+          const yearA = parseInt(a.fiscal_year.split(" ")[0]);
+          const yearB = parseInt(b.fiscal_year.split(" ")[0]);
+          return yearB - yearA;
+        });
 
-        localStorage.setItem(
-          "insight_viewer_reports",
-          JSON.stringify(finalReports)
-        );
-        localStorage.setItem(
-          "insight_viewer_last_update",
-          new Date().toISOString()
-        );
+        localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
+        localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
+
+        // Show warnings if any
+        if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
+          setWarningMessage(`Import completed with warnings:\n\n${reportData.parsing_warnings.join("\n")}`);
+        }
 
         setProgress(100);
         setJsonContent(""); // Clear input
@@ -736,6 +753,71 @@ Template:
     }
   };
 
+  // Helper function to merge reports by fiscal year, combining different report types
+  const mergeReportsByFiscalYear = (existingReports: any[], newReports: any[]) => {
+    // Create a map of existing reports by fiscal year
+    const reportMap: { [key: string]: any } = {};
+
+    // Add existing reports to the map
+    existingReports.forEach((report: any) => {
+      const fiscalYearKey = report.fiscal_year;
+      if (!reportMap[fiscalYearKey]) {
+        reportMap[fiscalYearKey] = { ...report };
+      } else {
+        // Merge data if fiscal year already exists
+        if (report.data?.income_statement && !reportMap[fiscalYearKey].data?.income_statement) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            income_statement: report.data.income_statement
+          };
+        }
+        if (report.data?.balance_sheet && !reportMap[fiscalYearKey].data?.balance_sheet) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            balance_sheet: report.data.balance_sheet
+          };
+        }
+        if (report.data?.cash_flow_statement && !reportMap[fiscalYearKey].data?.cash_flow_statement) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            cash_flow_statement: report.data.cash_flow_statement
+          };
+        }
+      }
+    });
+
+    // Add new reports to the map, merging with existing ones if needed
+    newReports.forEach((report: any) => {
+      const fiscalYearKey = report.fiscal_year;
+      if (!reportMap[fiscalYearKey]) {
+        reportMap[fiscalYearKey] = { ...report };
+      } else {
+        // Merge the new report data with existing report data
+        if (report.data?.income_statement) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            income_statement: report.data.income_statement
+          };
+        }
+        if (report.data?.balance_sheet) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            balance_sheet: report.data.balance_sheet
+          };
+        }
+        if (report.data?.cash_flow_statement) {
+          reportMap[fiscalYearKey].data = {
+            ...reportMap[fiscalYearKey].data,
+            cash_flow_statement: report.data.cash_flow_statement
+          };
+        }
+      }
+    });
+
+    // Convert map back to array
+    return Object.values(reportMap);
+  };
+
   const processFiles = async () => {
     if (files.length === 0) return;
 
@@ -745,116 +827,117 @@ Template:
     setProgress(10);
 
     try {
-      let allReports: any[] = [];
-      let allWarnings: string[] = [];
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          const formData = new FormData();
-          formData.append("file", file);
+      const response = await fetch("http://localhost:8000/api/v1/bulk-upload", {
+        method: "POST",
+        body: formData,
+      });
 
-          const response = await fetch("http://localhost:8000/api/v1/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `Failed to parse ${file.name}`);
-          }
-
-          const reportData = await response.json();
-          
-          if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-              allWarnings = [...allWarnings, ...reportData.parsing_warnings];
-          }
-
-          if (isAppendMode) {
-            const existingName = localStorage.getItem(
-              "insight_viewer_company_name"
-            );
-            const newName = reportData.company_meta?.name;
-
-            if (existingName && newName && existingName !== newName) {
-              allWarnings.push(`Skipped ${file.name}: Company name mismatch ('${newName}' vs existing '${existingName}').`);
-              continue;
-            }
-          }
-
-          if (
-            reportData.company_meta?.name &&
-            (!isAppendMode ||
-              !localStorage.getItem("insight_viewer_company_name"))
-          ) {
-            localStorage.setItem(
-              "insight_viewer_company_name",
-              reportData.company_meta.name
-            );
-            window.dispatchEvent(new Event("companyNameUpdate"));
-          }
-          
-          if (reportData.reports && reportData.reports.length > 0) {
-            allReports = [...allReports, ...reportData.reports];
-          } else {
-            allWarnings.push(`File ${file.name} processed but contained no valid reports (check sheet names/structure).`);
-          }
-        } catch (fileErr: any) {
-          console.error(`Error processing file ${file.name}:`, fileErr);
-          allWarnings.push(`Error processing ${file.name}: ${fileErr.message || "Unknown error"}`);
-        }
-        setProgress(10 + Math.round(((i + 1) / files.length) * 80));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Bulk upload failed");
       }
 
-      if (allReports.length === 0) {
-        setUploadError(
-          "No valid data could be extracted. Please check the file format."
-        );
+      const reportData = await response.json();
+      setProgress(70);
+
+      if (reportData.reports.length === 0 && reportData.parsing_warnings.length > 0) {
+        setUploadError("Could not extract any valid reports from the provided files.");
+        setWarningMessage(`Errors/Warnings encountered:\n\n${reportData.parsing_warnings.join("\n")}`);
         setIsProcessingUpload(false);
         return;
       }
-      
-      if (allWarnings.length > 0) {
-          setWarningMessage(`Import completed with warnings:\n\n${allWarnings.join("\n")}`);
+
+      if (reportData.reports.length === 0) {
+        setUploadError("No valid data could be extracted. Please check the file format.");
+        setIsProcessingUpload(false);
+        return;
       }
 
-      let finalReports = allReports;
+      // Handle company name consistency
+      const existingName = localStorage.getItem("insight_viewer_company_name");
+      const newName = reportData.company_meta?.name;
+
+      if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
+        setUploadError(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+        setIsProcessingUpload(false);
+        return;
+      }
+
+      if (newName && newName !== "Unknown" && (!isAppendMode || !existingName)) {
+        localStorage.setItem("insight_viewer_company_name", newName);
+        window.dispatchEvent(new Event("companyNameUpdate"));
+      }
+
+      let finalReports = reportData.reports;
+
       if (isAppendMode) {
-        const existingReportsStr = localStorage.getItem(
-          "insight_viewer_reports"
-        );
+        const existingReportsStr = localStorage.getItem("insight_viewer_reports");
         if (existingReportsStr) {
           try {
             const existingReports = JSON.parse(existingReportsStr);
             if (Array.isArray(existingReports)) {
-              finalReports = [...existingReports, ...allReports];
+              // Use backend API to properly merge reports
+              const existingReportData = {
+                company_meta: {
+                  name: localStorage.getItem("insight_viewer_company_name") || "Unknown",
+                  stock_code: null,
+                  currency: "CNY"
+                },
+                reports: existingReports,
+                parsing_warnings: []
+              };
+
+              const mergeFormData = new FormData();
+              mergeFormData.append('existing_reports_json', JSON.stringify(existingReportData));
+              mergeFormData.append('new_reports_json', JSON.stringify(reportData));
+
+              const mergeResponse = await fetch("http://localhost:8000/api/v1/merge-reports", {
+                method: "POST",
+                body: mergeFormData,
+              });
+
+              if (!mergeResponse.ok) {
+                const errorData = await mergeResponse.json();
+                throw new Error(errorData.detail || "Failed to merge reports");
+              }
+
+              const mergedData = await mergeResponse.json();
+              finalReports = mergedData.reports;
             }
           } catch (e) {
-            console.error("Failed to parse existing reports", e);
+            console.error("Failed to merge reports via API, falling back to client-side merge:", e);
+            const existingReports = JSON.parse(existingReportsStr);
+            if (Array.isArray(existingReports)) {
+              finalReports = mergeReportsByFiscalYear(existingReports, reportData.reports);
+            }
           }
         }
       }
 
-      finalReports.sort(
-        (a: any, b: any) => parseInt(b.fiscal_year) - parseInt(a.fiscal_year)
-      );
-      localStorage.setItem(
-        "insight_viewer_reports",
-        JSON.stringify(finalReports)
-      );
-      localStorage.setItem(
-        "insight_viewer_last_update",
-        new Date().toISOString()
-      );
+      finalReports.sort((a: any, b: any) => {
+        const yearA = parseInt(a.fiscal_year.split(" ")[0]);
+        const yearB = parseInt(b.fiscal_year.split(" ")[0]);
+        return yearB - yearA;
+      });
+
+      localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
+      localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
+
+      if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
+        setWarningMessage(`Import completed with warnings:\n\n${reportData.parsing_warnings.join("\n")}`);
+      }
 
       setProgress(100);
       setFiles([]); // Clear processed files
       setIsProcessingUpload(false);
     } catch (err: any) {
       console.error(err);
-      setUploadError(
-        err.message || "An error occurred while communicating with the backend."
-      );
+      setUploadError(err.message || "An error occurred while communicating with the backend.");
       setIsProcessingUpload(false);
     }
   };

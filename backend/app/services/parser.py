@@ -184,6 +184,81 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def merge_data_recursive(existing_data: Dict, new_data: Dict):
+    """
+    Recursively merges two dictionaries. 
+    If a key exists in both and both values are dicts, it recurses.
+    Otherwise, it updates the existing value if the new value is not 0 or None.
+    """
+    for key, value in new_data.items():
+        if isinstance(value, dict) and key in existing_data and isinstance(existing_data[key], dict):
+            merge_data_recursive(existing_data[key], value)
+        else:
+            # For non-dict values or keys not in existing_data
+            if value != 0 and value is not None:
+                existing_data[key] = value
+
+def merge_standardized_reports(existing_report: StandardizedReport, new_report: StandardizedReport) -> StandardizedReport:
+    """
+    Merges two StandardizedReport objects, combining reports by fiscal year.
+    If both reports have data for the same fiscal year, the new report's data will be merged with the existing data.
+    """
+    # Create a map of existing reports by fiscal year
+    report_map = {}
+
+    # Add existing reports to the map
+    for report in existing_report.reports:
+        fiscal_year = report.fiscal_year
+        report_map[fiscal_year] = report
+
+    # Add new reports to the map, merging with existing ones if needed
+    for new_report_obj in new_report.reports:
+        fiscal_year = new_report_obj.fiscal_year
+        if fiscal_year in report_map:
+            # Merge the new report data with existing report data
+            existing_report_data = report_map[fiscal_year].data
+            new_report_data = new_report_obj.data
+
+            # Convert to dict for recursive merge
+            merged_data_dict = existing_report_data.model_dump()
+            new_data_dict = new_report_data.model_dump()
+
+            merge_data_recursive(merged_data_dict, new_data_dict)
+
+            # Update the existing report's data with merged data
+            report_map[fiscal_year].data = FinancialReportData(**merged_data_dict)
+        else:
+            # If fiscal year doesn't exist, add the new report
+            report_map[fiscal_year] = new_report_obj
+
+    # Convert map back to list
+    merged_reports = list(report_map.values())
+
+    # Sort reports by year descending
+    merged_reports.sort(key=lambda x: x.fiscal_year, reverse=True)
+
+    # Use company meta from the new report (assuming it's more up-to-date)
+    return StandardizedReport(
+        company_meta=new_report.company_meta,
+        reports=merged_reports,
+        parsing_warnings=existing_report.parsing_warnings + new_report.parsing_warnings
+    )
+
+    # Convert map back to list
+    merged_reports = list(report_map.values())
+
+    # Sort reports by year descending
+    merged_reports.sort(key=lambda x: x.fiscal_year, reverse=True)
+
+    # Use company meta from the new report (assuming it's more up-to-date)
+    # Or you could implement logic to merge company meta if needed
+    return StandardizedReport(
+        company_meta=new_report.company_meta,
+        reports=merged_reports,
+        parsing_warnings=existing_report.parsing_warnings + new_report.parsing_warnings
+    )
+
 def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping: Dict) -> Tuple[Dict[str, Dict], List[str]]:
     """
     Parses rows and returns a dict keyed by YEAR containing the structured data.
