@@ -128,18 +128,23 @@ def post_process_totals(sheet_type: str, data: Dict):
                 if opt.get("amount", 0) == 0:
                     opt["amount"] = opt.get("interest_payable", 0) + opt.get("dividends_payable", 0) + opt.get("other_payables", 0)
 
-def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping: Dict) -> Dict[str, Dict]:
+def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping: Dict) -> Tuple[Dict[str, Dict], List[str]]:
     """
     Parses rows and returns a dict keyed by YEAR containing the structured data.
-    Result: { "2023": { "total_operating_revenue": { ... } }, "2022": ... }
+    Result: ({ "2023": { "total_operating_revenue": { ... } }, ... }, [skipped_rows])
     """
     results_by_year = { item['year']: {} for item in years_map }
+    skipped_rows = []
     
     # Iterate rows starting after header
     for row in sheet.iter_rows(min_row=header_row_idx + 2, values_only=True):
         # Assume Column A (index 0) is the Account Name
         # TODO: Make this dynamic if Account Name isn't col 0
-        account_name = str(row[0]).strip() if row[0] else ""
+        raw_account_name = row[0]
+        if not raw_account_name:
+            continue # Skip completely empty account name rows
+            
+        account_name = str(raw_account_name).strip()
         
         # Clean account name (remove spaces, special chars for matching)
         clean_name = re.sub(r"\s+", "", account_name)
@@ -166,12 +171,18 @@ def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping:
                                 num_val = 0.0
                             else:
                                 num_val = float(raw_val)
+                        elif raw_val is None:
+                            num_val = 0.0
                     except ValueError:
                         num_val = 0.0
                         
                     set_nested_value(results_by_year[year], target_path, num_val)
+        else:
+            # Row name not in mapping, add to exceptions
+            if account_name:
+                skipped_rows.append(account_name)
                     
-    return results_by_year
+    return results_by_year, skipped_rows
 
 def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
     """
@@ -182,10 +193,19 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
     # Initialize container for aggregated year data
     # Structure: { "2023": { "income_statement": {}, "balance_sheet": {}, ... } }
     aggregated_data = {}
+    all_warnings = []
     
-    # Company Meta (Mock/Extraction)
-    # Try to extract from first sheet title or filename
-    company_name = filename.split('.')[0]
+    # Company Meta Extraction
+    # Expected format: "CompanyName_ReportType.xlsx" or "CompanyName-ReportType.xlsx"
+    clean_filename = filename.rsplit('.', 1)[0]
+    
+    company_name = "Unknown"
+    if '_' in clean_filename:
+        company_name = clean_filename.split('_')[0].strip()
+    elif '-' in clean_filename:
+        company_name = clean_filename.split('-')[0].strip()
+    else:
+        company_name = clean_filename.strip()
     
     for sheet_name in wb.sheetnames:
         sheet = wb[sheet_name]
@@ -216,7 +236,10 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
             mapping = CASH_FLOW_MAP
             
         # 4. Parse Rows
-        parsed_years_data = parse_sheet_data(sheet, header_idx, years_map, mapping)
+        parsed_years_data, skipped = parse_sheet_data(sheet, header_idx, years_map, mapping)
+        
+        if skipped:
+            all_warnings.append(f"Sheet '{sheet_name}': Skipped {len(skipped)} rows due to no matching mapping: {', '.join(skipped[:5])}{'...' if len(skipped) > 5 else ''}")
         
         # 5. Merge into Aggregated Data
         for year, data in parsed_years_data.items():
@@ -270,5 +293,6 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
     
     return StandardizedReport(
         company_meta=CompanyMeta(name=company_name),
-        reports=reports_list
+        reports=reports_list,
+        parsing_warnings=all_warnings
     )

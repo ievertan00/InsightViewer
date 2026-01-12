@@ -490,3 +490,4 @@ class CompanyMeta(BaseModel):
 class StandardizedReport(BaseModel):
     company_meta: CompanyMeta = Field(default_factory=CompanyMeta)
     reports: List[Report] = Field(default_factory=list)
+    parsing_warnings: List[str] = Field(default_factory=list)

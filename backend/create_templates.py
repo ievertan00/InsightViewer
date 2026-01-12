@@ -27,10 +27,16 @@ def create_template(filename, sheet_name, mapping_dict):
     center_align = Alignment(horizontal='center')
 
     # Instructions
-    ws.append(["Note: The date header (Row 2) supports: '2023 Annual', '2023 Q1', '2023-01'"])
+    note_text = ("Note:\n"
+                 "Date Header Formatting (Row 2): The system supports the following date formats: 'YYYY Annual' (e.g., 2023 Annual), 'YYYY QX' (e.g., 2023 Q1), and 'YYYY-MM' (e.g., 2023-01).\n"
+                 "Data Alignment: All Account Names must be situated in Column A, with their corresponding numerical values populated in the subsequent columns.\n"
+                 "Template Synchronization: Ensure that the account names in uploaded files strictly match the nomenclature used in the master templates. You are not required to provide data for every account item listed in the template; incomplete sets will be handled accordingly.")
+    ws.append([note_text])
     ws.merge_cells('A1:D1')
-    ws['A1'].font = Font(italic=True, color="FF0000")
-    
+    ws['A1'].font = Font(italic=True, color="FF0000", size=10)
+    ws['A1'].alignment = Alignment(wrap_text=True, vertical='top')
+    ws.row_dimensions[1].height = 110 # Adjust height to fit the multi-line note
+
     # Headers
     headers = ["报表项目 (Account Name)", "2024 Annual", "2023 Annual", "2022 Annual"]
     ws.append(headers)
@@ -86,7 +92,11 @@ def create_template(filename, sheet_name, mapping_dict):
     for key in final_keys:
         ws.append([key])
 
-    save_path = os.path.join("StandardTemplates", filename)
+    # Save to frontend public folder for download
+    public_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "public", "templates")
+    os.makedirs(public_dir, exist_ok=True)
+    
+    save_path = os.path.join(public_dir, filename)
     wb.save(save_path)
     print(f"Created {save_path}")
 
@@ -94,8 +104,13 @@ if __name__ == "__main__":
     # Ensure we are running from backend root or handle paths
     sys.path.append(os.getcwd())
     
+    # Try import, assuming running from backend root "python create_templates.py" (via python -m backend.create_templates or similar)
+    # But usually this script is standalone.
+    # The previous Read showed we add 'app' to sys.path.
+    
     from app.core.mappings import INCOME_STATEMENT_MAP, BALANCE_SHEET_MAP, CASH_FLOW_MAP
     
-    create_template("Standard_Income_Statement.xlsx", "Income Statement", INCOME_STATEMENT_MAP)
-    create_template("Standard_Balance_Sheet.xlsx", "Balance Sheet", BALANCE_SHEET_MAP)
-    create_template("Standard_Cash_Flow.xlsx", "Cash Flow Statement", CASH_FLOW_MAP)
+    # Standardized Naming Convention
+    create_template("[Company_Name]_Standard_Income_Statement.xlsx", "Income Statement", INCOME_STATEMENT_MAP)
+    create_template("[Company_Name]_Standard_Balance_Sheet.xlsx", "Balance Sheet", BALANCE_SHEET_MAP)
+    create_template("[Company_Name]_Standard_Cash_Flow.xlsx", "Cash Flow Statement", CASH_FLOW_MAP)

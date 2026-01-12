@@ -140,7 +140,8 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   const shortTermDebt = getVal(currentData, "balance_sheet.current_liabilities.short_term_borrowings") +
                         getVal(currentData, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
   const longTermDebt = getVal(currentData, "balance_sheet.non_current_liabilities.long_term_borrowings") +
-                       getVal(currentData, "balance_sheet.non_current_liabilities.bonds_payable.amount");
+                       getVal(currentData, "balance_sheet.non_current_liabilities.bonds_payable.amount") +
+                       getVal(currentData, "balance_sheet.non_current_liabilities.lease_liabilities");
   const interestBearingDebt = shortTermDebt + longTermDebt;
   const investedCapital = totalEquity + interestBearingDebt;
 
@@ -156,7 +157,8 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   const prevShortTermDebt = getVal(prevData, "balance_sheet.current_liabilities.short_term_borrowings") +
                             getVal(prevData, "balance_sheet.current_liabilities.non_current_liabilities_due_within_1y");
   const prevLongTermDebt = getVal(prevData, "balance_sheet.non_current_liabilities.long_term_borrowings") +
-                           getVal(prevData, "balance_sheet.non_current_liabilities.bonds_payable.amount");
+                           getVal(prevData, "balance_sheet.non_current_liabilities.bonds_payable.amount") +
+                           getVal(prevData, "balance_sheet.non_current_liabilities.lease_liabilities");
   const prevInterestBearingDebt = prevData ? (prevShortTermDebt + prevLongTermDebt) : interestBearingDebt;
 
   const avgAssets = (totalAssets + (prevData ? getVal(prevData, "balance_sheet.assets_summary.total_assets") : totalAssets)) / 2;

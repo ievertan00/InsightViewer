@@ -736,6 +736,7 @@ Template:
 
     try {
       let allReports: any[] = [];
+      let allWarnings: string[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -753,6 +754,10 @@ Template:
         }
 
         const reportData = await response.json();
+        
+        if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
+            allWarnings = [...allWarnings, ...reportData.parsing_warnings];
+        }
 
         if (isAppendMode) {
           const existingName = localStorage.getItem(
@@ -792,6 +797,10 @@ Template:
         );
         setIsProcessingUpload(false);
         return;
+      }
+      
+      if (allWarnings.length > 0) {
+          alert(`Import completed with warnings:\n\n${allWarnings.join("\n")}`);
       }
 
       let finalReports = allReports;
@@ -1046,7 +1055,7 @@ Template:
           <div className="flex space-x-3 text-xs mb-4 text-center">
             <span className="text-gray-400">Templates:</span>
             <a
-              href="/templates/Standard_Income_Statement.xlsx"
+              href="/templates/[Company_Name]_Standard_Income_Statement.xlsx"
               download
               className="text-primary hover:underline"
             >
@@ -1054,7 +1063,7 @@ Template:
             </a>
             <span className="text-gray-300">|</span>
             <a
-              href="/templates/Standard_Balance_Sheet.xlsx"
+              href="/templates/[Company_Name]_Standard_Balance_Sheet.xlsx"
               download
               className="text-primary hover:underline"
             >
@@ -1062,7 +1071,7 @@ Template:
             </a>
             <span className="text-gray-300">|</span>
             <a
-              href="/templates/Standard_Cash_Flow.xlsx"
+              href="/templates/[Company_Name]_Standard_Cash_Flow.xlsx"
               download
               className="text-primary hover:underline"
             >
