@@ -302,8 +302,8 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     type: "Red",
     status: safeDiv(assetDisposalIncome, netProfit) > 0.20 && netProfit > 0,
     value: `Ratio: ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}%`,
-    threshold: "> 20% of Net Profit",
-    logic: `Asset Disposal Income / Net Profit = ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}% (> 20%)`,
+    threshold: "> 20% of Total Net Profit",
+    logic: `Asset Disposal Income / Total Net Profit = ${(safeDiv(assetDisposalIncome, netProfit)*100).toFixed(1)}% (> 20%)`,
     description: "Relying on selling assets to generate profit is unsustainable and masks core business weakness."
   });
 
@@ -350,8 +350,8 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     type: "Red",
     status: safeDiv(fairValueChange, netProfit) > 0.30 && netProfit > 0,
     value: `Ratio: ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}%`,
-    threshold: "> 30% of Net Profit",
-    logic: `Fair Value Income / Net Profit = ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}% (> 30%)`,
+    threshold: "> 30% of Total Net Profit",
+    logic: `Fair Value Income / Total Net Profit = ${(safeDiv(fairValueChange, netProfit)*100).toFixed(1)}% (> 30%)`,
     description: "Profits driven by paper gains are risky and don't reflect cash generation."
   });
 
@@ -554,17 +554,17 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
   // ==========================================
 
   // ID: F25
-  const ocfNiRatio = ocf / netProfitParent;
+  const ocfNiRatio = ocf / netProfit;
   flags.push({
     name: "Cash-Backed Profits",
     category: "Earnings",
     type: "Green",
-    status: ocfNiRatio > 1.1 && netProfitParent > 0,
+    status: ocfNiRatio > 1.1 && netProfit > 0,
     value: `Ratio: ${ocfNiRatio.toFixed(2)}`,
     threshold: "> 1.1",
-    logic: `OCF / Net Income = ${ocfNiRatio.toFixed(2)} (threshold > 1.1)`,
+    logic: `OCF / Total Net Profit = ${ocfNiRatio.toFixed(2)} (threshold > 1.1)`,
     description:
-      "Operating Cash Flow exceeds Net Income, indicating high quality of earnings.",
+      "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.",
   });
 
   // ID: F26
@@ -600,15 +600,16 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
 
   // ID: F29
   // "Cash-Profit Divergence"
+  const totalNiGrowth = safeGrowth(netProfit, getVal(pd, "income_statement.net_profit.amount"));
   flags.push({
     name: "Cash-Profit Divergence",
     category: "Earnings",
     type: "Red",
-    status: niGrowth > 0.1 && ocfGrowth <= 0 && netProfitParent > 0,
-    value: `NI Growth: ${(niGrowth * 100).toFixed(1)}%, OCF Growth: ${(ocfGrowth * 100).toFixed(1)}%`,
+    status: totalNiGrowth > 0.1 && ocfGrowth <= 0 && netProfit > 0,
+    value: `NI Growth: ${(totalNiGrowth * 100).toFixed(1)}%, OCF Growth: ${(ocfGrowth * 100).toFixed(1)}%`,
     threshold: "NI > 10% & OCF <= 0%",
-    logic: `NI Growth = ${(niGrowth * 100).toFixed(1)}% (threshold > 10%) & OCF Growth = ${(ocfGrowth * 100).toFixed(1)}% (threshold <= 0%)`,
-    description: "Profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.",
+    logic: `Total NI Growth = ${(totalNiGrowth * 100).toFixed(1)}% (threshold > 10%) & OCF Growth = ${(ocfGrowth * 100).toFixed(1)}% (threshold <= 0%)`,
+    description: "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.",
   });
 
   // ID: F30
@@ -617,11 +618,11 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     name: "Low OCF/NI Ratio",
     category: "Earnings",
     type: "Red",
-    status: ocf / netProfitParent < 0.8 && netProfitParent > 0,
-    value: `Ratio: ${(ocf / netProfitParent).toFixed(2)}`,
+    status: ocf / netProfit < 0.8 && netProfit > 0,
+    value: `Ratio: ${(ocf / netProfit).toFixed(2)}`,
     threshold: "< 0.8",
-    logic: `OCF / Net Income = ${(ocf / netProfitParent).toFixed(2)} (threshold < 0.8)`,
-    description: "Operating cash flow is significantly lower than reported net income.",
+    logic: `OCF / Total Net Profit = ${(ocf / netProfit).toFixed(2)} (threshold < 0.8)`,
+    description: "Operating cash flow is significantly lower than reported total net income.",
   });
 
   // ID: F31
@@ -640,7 +641,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
 
   // ID: F32
   // "High Total Accruals"
-  const annAccruals = (annNetProfitParent - annOCF);
+  const annAccruals = (netProfit * flowMult - annOCF);
   const accrualAssetsRatio = annAccruals / totalAssets;
   flags.push({
     name: "High Total Accruals",
@@ -649,7 +650,7 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     status: accrualAssetsRatio > 0.1,
     value: `Accruals/Assets: ${(accrualAssetsRatio * 100).toFixed(1)}%`,
     threshold: "> 10%",
-    logic: `Annualized (NI - OCF) / Total Assets = ${(accrualAssetsRatio * 100).toFixed(1)}% (threshold > 10%)`,
+    logic: `Annualized (Total NI - OCF) / Total Assets = ${(accrualAssetsRatio * 100).toFixed(1)}% (threshold > 10%)`,
     description: "Earnings are driven heavily by non-cash accruals rather than cash flow.",
   });
 

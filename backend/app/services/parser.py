@@ -9,11 +9,17 @@ from app.models.schemas import (
 from app.core.mappings import INCOME_STATEMENT_MAP, BALANCE_SHEET_MAP, CASH_FLOW_MAP
 
 def detect_sheet_type(sheet_name: str, content_sample: str, filename: str = "") -> Optional[str]:
-    """Detects if a sheet is Income, Balance, or Cash Flow."""
+    """Detects if a sheet is Income, Balance, or Cash Flow.
+    Strictly prefers Consolidated statements (合并) and ignores Parent statements (母公司).
+    """
     name = sheet_name.lower()
     content = content_sample
     fname = filename.lower()
     
+    # 0. STRICT FILTER: Ignore Parent Company Statements
+    if "母公司" in name or "parent" in name:
+        return None
+
     # 1. Check Sheet Name
     if "利润" in name or "损益" in name or "income" in name:
         return "income_statement"

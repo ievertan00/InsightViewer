@@ -91,9 +91,6 @@ const calculateMetrics = (currentData: any, prevData: any, periodType: string = 
   const begininterestpayable = prevData ? getVal(prevData, "balance_sheet.current_liabilities.other_payables_total.interest_payable") : 0;
   const endinterestpayable = getVal(currentData, "balance_sheet.current_liabilities.other_payables_total.interest_payable");
 
-  
-  
-  // Calculate Dividends using RE change formula: Div = BeginRE + NetProfit - EndRE - (EndSurplus - BeginSurplus)
   const interestPaid = interestExpense + begininterestpayable - endinterestpayable;
 
   console.log("Cash Interest Rate Logic (Flags Engine Style):", {
@@ -274,14 +271,14 @@ const calculateDupont = (currentReport: any, prevReport: any): DupontMetrics => 
     if (!currentReport) return { roe: 0, netMargin: 0, assetTurnover: 0, equityMultiplier: 0 };
 
     const revenue = getVal(currentReport.data, "income_statement.total_operating_revenue");
-    const netIncome = getVal(currentReport.data, "income_statement.net_profit.net_profit_attr_to_parent");
+    const netIncome = getVal(currentReport.data, "income_statement.net_profit.amount");
 
     const curAssets = getVal(currentReport.data, "balance_sheet.assets_summary.total_assets");
     const preAssets = prevReport ? getVal(prevReport.data, "balance_sheet.assets_summary.total_assets") : curAssets;
     const avgAssets = (curAssets + preAssets) / 2;
 
-    const curEquity = getVal(currentReport.data, "balance_sheet.equity.total_parent_equity");
-    const preEquity = prevReport ? getVal(prevReport.data, "balance_sheet.equity.total_parent_equity") : curEquity;
+    const curEquity = getVal(currentReport.data, "balance_sheet.equity.total_equity");
+    const preEquity = prevReport ? getVal(prevReport.data, "balance_sheet.equity.total_equity") : curEquity;
     const avgEquity = (curEquity + preEquity) / 2;
 
     const netMargin = safeDiv(netIncome, revenue);

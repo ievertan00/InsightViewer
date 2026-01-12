@@ -4,10 +4,11 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.schemas import StandardizedReport
-from app.api import upload, stock
+from app.api import upload, stock, report
 
 # Load .env file
-load_dotenv()
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 # Configure Logging
 logging.basicConfig(
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(upload.router, prefix="/api/v1", tags=["upload"])
 app.include_router(stock.router, prefix="/api/v1", tags=["stock"])
+app.include_router(report.router, prefix="/api/v1", tags=["report"])
 
 @app.get("/")
 def read_root():
