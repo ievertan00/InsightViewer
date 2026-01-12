@@ -22,6 +22,7 @@ export default function UploadPage() {
   const [isProcessingPaste, setIsProcessingPaste] = useState(false);
   const [isProcessingUpload, setIsProcessingUpload] = useState(false);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   const [progress, setProgress] = useState(0);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export default function UploadPage() {
     e.preventDefault();
     setIsDragging(false);
     setUploadError(null);
+    setWarningMessage(null);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFiles = Array.from(e.dataTransfer.files);
@@ -70,6 +72,7 @@ export default function UploadPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
+    setWarningMessage(null);
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
       const validFiles = selectedFiles.filter(
@@ -106,6 +109,7 @@ export default function UploadPage() {
 
     setIsFetchingStock(true);
     setSearchError(null);
+    setWarningMessage(null);
     setProgress(30);
 
     try {
@@ -149,10 +153,7 @@ export default function UploadPage() {
           "insight_viewer_last_update",
           new Date().toISOString()
         );
-
-        setTimeout(() => {
-          router.push("/explore");
-        }, 800);
+        setIsFetchingStock(false);
       } else {
         setSearchError(
           "No financial reports found for this symbol in the selected period."
@@ -180,6 +181,7 @@ export default function UploadPage() {
 
     setIsProcessingPaste(true);
     setPasteError(null);
+    setWarningMessage(null);
     setProgress(20);
 
     try {
@@ -257,9 +259,8 @@ export default function UploadPage() {
         );
 
         setProgress(100);
-        setTimeout(() => {
-          router.push("/explore");
-        }, 800);
+        setJsonContent(""); // Clear input
+        setIsProcessingPaste(false);
       } else {
         setPasteError("The pasted JSON is valid but contains no report data.");
         setIsProcessingPaste(false);
@@ -727,11 +728,20 @@ Template:
     setTimeout(() => setShowCopiedMessage(false), 3000); // Hide after 3 seconds
   };
 
+  const copyWarningMessage = () => {
+    if (warningMessage) {
+      navigator.clipboard.writeText(warningMessage);
+      setShowCopiedMessage(true);
+      setTimeout(() => setShowCopiedMessage(false), 3000);
+    }
+  };
+
   const processFiles = async () => {
     if (files.length === 0) return;
 
     setIsProcessingUpload(true);
     setUploadError(null);
+    setWarningMessage(null);
     setProgress(10);
 
     try {
@@ -740,53 +750,58 @@ Template:
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const formData = new FormData();
-        formData.append("file", file);
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
 
-        const response = await fetch("http://localhost:8000/api/v1/upload", {
-          method: "POST",
-          body: formData,
-        });
+          const response = await fetch("http://localhost:8000/api/v1/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || `Failed to parse ${file.name}`);
-        }
-
-        const reportData = await response.json();
-        
-        if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-            allWarnings = [...allWarnings, ...reportData.parsing_warnings];
-        }
-
-        if (isAppendMode) {
-          const existingName = localStorage.getItem(
-            "insight_viewer_company_name"
-          );
-          const newName = reportData.company_meta?.name;
-
-          if (existingName && newName && existingName !== newName) {
-            alert(
-              `Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`
-            );
-            setIsProcessingUpload(false);
-            return;
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `Failed to parse ${file.name}`);
           }
-        }
 
-        if (
-          reportData.company_meta?.name &&
-          (!isAppendMode ||
-            !localStorage.getItem("insight_viewer_company_name"))
-        ) {
-          localStorage.setItem(
-            "insight_viewer_company_name",
-            reportData.company_meta.name
-          );
-          window.dispatchEvent(new Event("companyNameUpdate"));
-        }
-        if (reportData.reports) {
-          allReports = [...allReports, ...reportData.reports];
+          const reportData = await response.json();
+          
+          if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
+              allWarnings = [...allWarnings, ...reportData.parsing_warnings];
+          }
+
+          if (isAppendMode) {
+            const existingName = localStorage.getItem(
+              "insight_viewer_company_name"
+            );
+            const newName = reportData.company_meta?.name;
+
+            if (existingName && newName && existingName !== newName) {
+              allWarnings.push(`Skipped ${file.name}: Company name mismatch ('${newName}' vs existing '${existingName}').`);
+              continue;
+            }
+          }
+
+          if (
+            reportData.company_meta?.name &&
+            (!isAppendMode ||
+              !localStorage.getItem("insight_viewer_company_name"))
+          ) {
+            localStorage.setItem(
+              "insight_viewer_company_name",
+              reportData.company_meta.name
+            );
+            window.dispatchEvent(new Event("companyNameUpdate"));
+          }
+          
+          if (reportData.reports && reportData.reports.length > 0) {
+            allReports = [...allReports, ...reportData.reports];
+          } else {
+            allWarnings.push(`File ${file.name} processed but contained no valid reports (check sheet names/structure).`);
+          }
+        } catch (fileErr: any) {
+          console.error(`Error processing file ${file.name}:`, fileErr);
+          allWarnings.push(`Error processing ${file.name}: ${fileErr.message || "Unknown error"}`);
         }
         setProgress(10 + Math.round(((i + 1) / files.length) * 80));
       }
@@ -800,7 +815,7 @@ Template:
       }
       
       if (allWarnings.length > 0) {
-          alert(`Import completed with warnings:\n\n${allWarnings.join("\n")}`);
+          setWarningMessage(`Import completed with warnings:\n\n${allWarnings.join("\n")}`);
       }
 
       let finalReports = allReports;
@@ -833,9 +848,8 @@ Template:
       );
 
       setProgress(100);
-      setTimeout(() => {
-        router.push("/explore");
-      }, 800);
+      setFiles([]); // Clear processed files
+      setIsProcessingUpload(false);
     } catch (err: any) {
       console.error(err);
       setUploadError(
@@ -1091,6 +1105,33 @@ Template:
           </label>
         </div>
       </div>
+
+      {warningMessage && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 shadow-sm space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-yellow-800 flex items-center">
+              <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
+              Import Warnings
+            </h3>
+            <button
+              onClick={copyWarningMessage}
+              className="text-xs text-yellow-700 hover:text-yellow-900 font-medium underline"
+            >
+              Copy Warnings
+            </button>
+          </div>
+          <div className="relative">
+            <textarea
+              readOnly
+              className="w-full h-32 p-4 border border-yellow-200 rounded-lg font-mono text-xs bg-yellow-50/50 text-yellow-800 focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 resize-none"
+              value={warningMessage}
+            />
+          </div>
+          <p className="text-xs text-yellow-600">
+            These rows were skipped because they did not match the template. Please review your file or the template.
+          </p>
+        </div>
+      )}
 
       {files.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">

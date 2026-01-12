@@ -20,12 +20,15 @@ def detect_sheet_type(sheet_name: str, content_sample: str) -> Optional[str]:
     if "现金" in name or "cash" in name:
         return "cash_flow_statement"
     
-    # Fallback to content check
-    if "营业收入" in content and "净利润" in content:
+    # Fallback to content check (Relaxed Logic)
+    if "营业收入" in content or "营业总收入" in content:
         return "income_statement"
-    if "资产总计" in content and "负债合计" in content:
+    if "资产" in content and "负债" in content:
+        # "资产总计" or "流动资产" usually appear
         return "balance_sheet"
-    if "经营活动" in content and "现金流量" in content:
+    if "流动资产" in content:
+        return "balance_sheet"
+    if "经营活动" in content or "现金流量" in content:
         return "cash_flow_statement"
         
     return None
@@ -128,6 +131,46 @@ def post_process_totals(sheet_type: str, data: Dict):
                 if opt.get("amount", 0) == 0:
                     opt["amount"] = opt.get("interest_payable", 0) + opt.get("dividends_payable", 0) + opt.get("other_payables", 0)
 
+def normalize_name(name: str) -> str:
+    """
+    Normalizes account name by removing:
+    1. Whitespace
+    2. Serial numbers (e.g., "一、", "1、", "(一)", "（一）")
+    3. Accounting prefixes (e.g., "加：", "减：", "其中：")
+    4. Suffixes/Keywords like "净额"
+    5. Special characters (spaces, :, -, 、)
+    
+    This ensures "一、加：经营活动产生的现金流量净额 : " matches "经营活动产生的现金流量".
+    """
+    if not name:
+        return ""
+        
+    # 1. Strip whitespace
+    name = name.strip()
+    
+    # 2. Remove serial numbers
+    # Matches (一) or （一）
+    name = re.sub(r"^[（\(][一二三四五六七八九十\d]+[）\)]", "", name)
+    # Matches 一、 or 1、 or 1.
+    name = re.sub(r"^[一二三四五六七八九十\d]+[、\.]", "", name)
+    
+    # 3. Remove accounting prefixes: 加, 减, 其中 (and optional colon)
+    name = re.sub(r"^(加|减|其中)[：:]?", "", name)
+    
+    # 4. Remove keywords like "净额" and "合计" and content in parentheses
+    name = name.replace("净额", "")
+    name = name.replace("合计", "")
+    name = re.sub(r"[\(（].*?[\)）]", "", name)
+    
+    # 5. Remove specific punctuation and all remaining whitespace
+    name = re.sub(r"[\s :：\-、]", "", name)
+    
+    return name
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping: Dict) -> Tuple[Dict[str, Dict], List[str]]:
     """
     Parses rows and returns a dict keyed by YEAR containing the structured data.
@@ -136,21 +179,29 @@ def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping:
     results_by_year = { item['year']: {} for item in years_map }
     skipped_rows = []
     
+    # Pre-calculate normalized mapping keys to improve performance and matching
+    # Note: If multiple keys normalize to the same string, the last one wins.
+    # Given the specificity of the mapping, this is generally acceptable.
+    normalized_mapping = {}
+    for k, v in mapping.items():
+        norm_k = normalize_name(k)
+        if norm_k:
+            normalized_mapping[norm_k] = v
+
     # Iterate rows starting after header
     for row in sheet.iter_rows(min_row=header_row_idx + 2, values_only=True):
         # Assume Column A (index 0) is the Account Name
-        # TODO: Make this dynamic if Account Name isn't col 0
         raw_account_name = row[0]
         if not raw_account_name:
             continue # Skip completely empty account name rows
             
         account_name = str(raw_account_name).strip()
         
-        # Clean account name (remove spaces, special chars for matching)
-        clean_name = re.sub(r"\s+", "", account_name)
+        # Clean account name using the new normalization logic
+        clean_name = normalize_name(account_name)
         
-        if clean_name in mapping:
-            target_path = mapping[clean_name]
+        if clean_name in normalized_mapping:
+            target_path = normalized_mapping[clean_name]
             
             # Extract value for each year column
             for year_info in years_map:
@@ -180,7 +231,10 @@ def parse_sheet_data(sheet, header_row_idx: int, years_map: List[Dict], mapping:
         else:
             # Row name not in mapping, add to exceptions
             if account_name:
-                skipped_rows.append(account_name)
+                log_msg = f"Mismatch: Raw='{account_name}' -> Normalized='{clean_name}' not found in mapping."
+                logger.info(log_msg)
+                # Store more detail for the warning report
+                skipped_rows.append(f"{account_name} (norm: {clean_name})")
                     
     return results_by_year, skipped_rows
 
@@ -213,7 +267,7 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
         # 1. Detect Type
         # Sample first few rows for content check
         sample_content = ""
-        for r in sheet.iter_rows(max_row=10, values_only=True):
+        for r in sheet.iter_rows(max_row=20, values_only=True):
             sample_content += " ".join([str(x) for x in r if x])
             
         sheet_type = detect_sheet_type(sheet_name, sample_content)
@@ -239,7 +293,7 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
         parsed_years_data, skipped = parse_sheet_data(sheet, header_idx, years_map, mapping)
         
         if skipped:
-            all_warnings.append(f"Sheet '{sheet_name}': Skipped {len(skipped)} rows due to no matching mapping: {', '.join(skipped[:5])}{'...' if len(skipped) > 5 else ''}")
+            all_warnings.append(f"Sheet '{sheet_name}': Skipped {len(skipped)} rows due to no matching mapping: {', '.join(skipped)}")
         
         # 5. Merge into Aggregated Data
         for year, data in parsed_years_data.items():

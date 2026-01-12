@@ -6,7 +6,7 @@ from app.models.schemas import StandardizedReport
 router = APIRouter()
 
 @router.post("/upload", response_model=StandardizedReport)
-async def upload_financial_report(file: UploadFile = File(...)):
+def upload_financial_report(file: UploadFile = File(...)):
     """
     Uploads a file (Excel or JSON) and returns a normalized, CAS-aligned JSON structure.
     """
@@ -15,7 +15,7 @@ async def upload_financial_report(file: UploadFile = File(...)):
     if not filename.endswith(('.xlsx', '.xls', '.json')):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload .xlsx, .xls, or .json")
     
-    content = await file.read()
+    content = file.file.read()
 
     try:
         if filename.endswith('.json'):
