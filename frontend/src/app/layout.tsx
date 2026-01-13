@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,11 +20,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-background text-foreground antialiased`}>
-        <Sidebar />
-        <Header />
-        <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)]">
-          {children}
-        </main>
+        <LanguageProvider>
+          <Sidebar />
+          <Header />
+          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)]">
+            {children}
+          </main>
+        </LanguageProvider>
       </body>
     </html>
   );

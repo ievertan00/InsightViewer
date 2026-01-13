@@ -13,23 +13,26 @@ import {
   Calculator,
   Flag,
 } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
-const navigation = [
-  { name: "Data Import", href: "/import", icon: Database },
-  { name: "Data Explorer", href: "/explore", icon: FileText },
-  { name: "Ratios", href: "/ratios", icon: Calculator },
-  { name: "Charts", href: "/charts", icon: LayoutDashboard },
-  { name: "Flags", href: "/flags", icon: Flag },
-  { name: "AI Insights", href: "/insights", icon: Zap },
-  { name: "Report Generator", href: "/reports", icon: Share2 },
-];
 export default function Sidebar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const navigation = [
+    { name: t('dataImport'), href: "/import", icon: Database },
+    { name: t('dataExplorer'), href: "/explore", icon: FileText },
+    { name: t('ratios'), href: "/ratios", icon: Calculator },
+    { name: t('charts'), href: "/charts", icon: LayoutDashboard },
+    { name: t('flags'), href: "/flags", icon: Flag },
+    { name: t('aiInsights'), href: "/insights", icon: Zap },
+    { name: t('reportGenerator'), href: "/reports", icon: Share2 },
+  ];
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-gray-200 transition-transform hidden md:block">
       <div className="flex h-16 items-center justify-center border-b border-gray-200 bg-primary text-white">
-        <span className="text-xl font-bold">Insight Viewer</span>
+        <span className="text-xl font-bold">{t('insightViewer')}</span>
       </div>
       <div className="py-4">
         <ul className="space-y-2">
@@ -37,7 +40,7 @@ export default function Sidebar() {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
-              <li key={item.name}>
+              <li key={item.href}>
                 <Link
                   href={item.href}
                   className={clsx(

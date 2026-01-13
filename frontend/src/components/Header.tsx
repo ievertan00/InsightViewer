@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import { User, Settings, Bell, Menu, Landmark } from "lucide-react";
 import { usePathname } from "next/navigation";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Header() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check for company name in localStorage periodically or on mount
@@ -40,11 +43,12 @@ export default function Header() {
                     <span className="text-sm font-semibold text-primary">{companyName}</span>
                 </div>
             ) : (
-                <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
+                <h2 className="text-lg font-semibold text-gray-800">{t('dashboard')}</h2>
             )}
         </div>
       </div>
       <div className="flex items-center space-x-4">
+        <LanguageSwitcher />
         <button className="p-2 text-gray-500 hover:text-primary transition-colors">
           <Bell className="w-5 h-5" />
         </button>
@@ -55,7 +59,7 @@ export default function Header() {
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
             U
           </div>
-          <span className="text-sm font-medium text-gray-700">User</span>
+          <span className="text-sm font-medium text-gray-700">{t('user')}</span>
         </div>
       </div>
     </header>
