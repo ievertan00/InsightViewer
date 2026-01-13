@@ -19,6 +19,7 @@ import {
   formatDays 
 } from "@/lib/formatters";
 import { getFiscalYearScore } from "@/lib/chartDataMapper";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // --- Types ---
 interface Metric {
@@ -63,7 +64,8 @@ const getVal = (data: any, path: string) => {
 const calculateMetrics = (
   currentData: any,
   prevData: any,
-  periodType: string = "Annual"
+  periodType: string = "Annual",
+  t: (key: string) => string
 ): Metric[] => {
   if (!currentData) return [];
 
@@ -155,24 +157,6 @@ const calculateMetrics = (
 
   const interestPaid =
     interestExpense + begininterestpayable - endinterestpayable;
-
-  console.log("Cash Interest Rate Logic (Flags Engine Style):", {
-    year: getVal(currentData, "fiscal_year"),
-    interestExpense,
-    beginInterestPayable: begininterestpayable,
-    endInterestPayable: endinterestpayable,
-    interestPaid,
-    // Context only (not used in calculation anymore)
-    cashPaidForDivProfInt: getVal(
-      currentData,
-      "cash_flow_statement.financing_activities.cash_paid_for_dividends_and_profits"
-    ),
-    estimatedDividends: 0, // removed calc
-    dividendsToMinority: getVal(
-      currentData,
-      "cash_flow_statement.financing_activities.dividends_paid_to_minority"
-    ),
-  });
 
   // Annualized Flows
   const annRevenue = revenue * flowMult;
@@ -351,21 +335,21 @@ const calculateMetrics = (
 
   // --- 3. Helper to Add Metric ---
   const addMetric = (
-    category: string,
-    name: string,
+    categoryKey: string,
+    nameKey: string,
     value: number,
     formatter: (v: number) => string,
-    desc: string,
+    descKey: string,
     formula: string
   ) => {
     metrics.push({
-      category,
-      name,
+      category: t(categoryKey),
+      name: t(nameKey),
       value: formatter(value),
       rawValue: value,
       trend: "stable",
       change: "-",
-      description: desc,
+      description: t(descKey),
       formula: formula,
     });
   };
@@ -374,7 +358,7 @@ const calculateMetrics = (
   // 1. Profitability & Margins (盈利能力)
   // ==========================================
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Gross Margin",
     safeDiv(grossProfit, revenue),
     formatPercent,
@@ -382,7 +366,7 @@ const calculateMetrics = (
     "(Revenue - COGS) / Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Net Profit Margin",
     safeDiv(netIncome, revenue),
     formatPercent,
@@ -390,7 +374,7 @@ const calculateMetrics = (
     "Net Income / Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Cost of Sales Ratio",
     safeDiv(costOfSales, revenue),
     formatPercent,
@@ -398,7 +382,7 @@ const calculateMetrics = (
     "COGS / Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Expense of Sales Ratio",
     safeDiv(sellingExp + adminExp + financeExp, revenue),
     formatPercent,
@@ -406,7 +390,7 @@ const calculateMetrics = (
     "(Selling + Admin + Finance Exp) / Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "EBIT Margin",
     safeDiv(ebit, revenue),
     formatPercent,
@@ -414,7 +398,7 @@ const calculateMetrics = (
     "EBIT / Total Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Operating Margin",
     safeDiv(operatingProfit, revenue),
     formatPercent,
@@ -422,7 +406,7 @@ const calculateMetrics = (
     "Operating Income / Total Revenue"
   );
   addMetric(
-    "Profitability & Margins",
+    "profitabilityMargins",
     "Asset Impairment Ratio",
     safeDiv(assetImpairment, revenue),
     formatPercent,
@@ -434,7 +418,7 @@ const calculateMetrics = (
   // 2. Return on Investment (回报率)
   // ==========================================
   addMetric(
-    "Return on Investment",
+    "returnOnInvestment",
     "ROA",
     safeDiv(netIncome * flowMult, avgAssets),
     formatPercent,
@@ -442,7 +426,7 @@ const calculateMetrics = (
     "Annualized Net Income / Avg Total Assets"
   );
   addMetric(
-    "Return on Investment",
+    "returnOnInvestment",
     "ROIC",
     safeDiv(ebit * (1 - taxRate) * flowMult, investedCapital),
     formatPercent,
@@ -450,7 +434,7 @@ const calculateMetrics = (
     "Annualized EBIT * (1 - Tax Rate) / Invested Capital"
   );
   addMetric(
-    "Return on Investment",
+    "returnOnInvestment",
     "CFROI (Proxy)",
     safeDiv(annOCF, investedCapital),
     formatPercent,
@@ -458,7 +442,7 @@ const calculateMetrics = (
     "Annualized Operating Cash Flow / Invested Capital"
   );
   addMetric(
-    "Return on Investment",
+    "returnOnInvestment",
     "CROIC",
     safeDiv(fcf * flowMult, investedCapital),
     formatPercent,
@@ -470,7 +454,7 @@ const calculateMetrics = (
   // 3. Solvency & Liquidity (偿债能力)
   // ==========================================
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Current Ratio",
     safeDiv(currentAssets, currentLiabilities),
     formatNumber,
@@ -478,7 +462,7 @@ const calculateMetrics = (
     "Current Assets / Current Liabilities"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Quick Ratio",
     safeDiv(currentAssets - inventory, currentLiabilities),
     formatNumber,
@@ -486,7 +470,7 @@ const calculateMetrics = (
     "(Current Assets - Inventory) / Current Liabilities"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Cash Ratio",
     safeDiv(monetaryFunds + tradingAssets, currentLiabilities),
     formatNumber,
@@ -494,7 +478,7 @@ const calculateMetrics = (
     "(Cash + Cash Equiv) / Current Liabilities"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Debt to Assets",
     safeDiv(totalLiabilities, totalAssets),
     formatPercent,
@@ -502,7 +486,7 @@ const calculateMetrics = (
     "Total Liabilities / Total Assets"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Debt to Equity",
     safeDiv(totalLiabilities, totalEquity),
     formatPercent,
@@ -510,7 +494,7 @@ const calculateMetrics = (
     "Total Liabilities / Shareholders' Equity"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Interest Coverage",
     safeDiv(annEBIT, annInterestExp),
     formatNumber,
@@ -518,7 +502,7 @@ const calculateMetrics = (
     "EBIT / Interest Expense"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Proxy Interest Rate",
     safeDiv(annInterestPaid, avgInterestBearingDebt),
     formatPercent,
@@ -526,7 +510,7 @@ const calculateMetrics = (
     "Annualized Interest Paid (proxy) / Avg Total Debt"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Operating Cash Flow Ratio",
     safeDiv(ocf, currentLiabilities),
     formatNumber,
@@ -534,7 +518,7 @@ const calculateMetrics = (
     "Operating Cash Flow / Current Liabilities"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "NWC to Assets",
     safeDiv(currentAssets - currentLiabilities, totalAssets),
     formatPercent,
@@ -542,7 +526,7 @@ const calculateMetrics = (
     "(Current Assets - Current Liabilities) / Total Assets"
   );
   addMetric(
-    "Solvency & Liquidity",
+    "solvencyLiquidity",
     "Net Debt",
     interestBearingDebt - monetaryFunds,
     formatLargeNumber,
@@ -554,7 +538,7 @@ const calculateMetrics = (
   // 4. Operating Efficiency (营运能力)
   // ==========================================
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Selling Expense Ratio",
     safeDiv(sellingExp, revenue),
     formatPercent,
@@ -562,7 +546,7 @@ const calculateMetrics = (
     "Selling Expenses / Revenue"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Admin Expense Ratio",
     safeDiv(adminExp, revenue),
     formatPercent,
@@ -570,7 +554,7 @@ const calculateMetrics = (
     "Administrative Expenses / Revenue"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "R&D Expense Ratio",
     safeDiv(rdExp, revenue),
     formatPercent,
@@ -586,7 +570,7 @@ const calculateMetrics = (
   const dpo = safeDiv(365, apTurn);
 
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Inventory Turnover",
     invTurn,
     formatNumber,
@@ -594,7 +578,7 @@ const calculateMetrics = (
     "Annualized COGS / Avg Inventory"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Days Inventory Outstanding",
     dio,
     formatDays,
@@ -602,7 +586,7 @@ const calculateMetrics = (
     "365 / Annualized Inventory Turnover"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "AR Turnover",
     arTurn,
     formatNumber,
@@ -610,7 +594,7 @@ const calculateMetrics = (
     "Annualized Revenue / Avg AR"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Days Sales Outstanding",
     dso,
     formatDays,
@@ -618,7 +602,7 @@ const calculateMetrics = (
     "365 / Annualized AR Turnover"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Total Asset Turnover",
     safeDiv(annRevenue, avgAssets),
     formatNumber,
@@ -626,7 +610,7 @@ const calculateMetrics = (
     "Annualized Revenue / Avg Total Assets"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Operating Cycle",
     dio + dso,
     formatDays,
@@ -634,7 +618,7 @@ const calculateMetrics = (
     "DIO + DSO"
   );
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Cash Conversion Cycle",
     dio + dso - dpo,
     formatDays,
@@ -643,7 +627,7 @@ const calculateMetrics = (
   );
 
   addMetric(
-    "Operating Efficiency",
+    "operatingEfficiency",
     "Working Capital",
     currentAssets - currentLiabilities,
     formatLargeNumber,
@@ -655,7 +639,7 @@ const calculateMetrics = (
   // 5. Cash Flow Quality (现金流质量)
   // ==========================================
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "OCF to Revenue",
     safeDiv(ocf, revenue),
     formatPercent,
@@ -663,7 +647,7 @@ const calculateMetrics = (
     "Operating Cash Flow / Revenue"
   );
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "OCF to Operating Income",
     safeDiv(ocf, operatingProfit),
     formatPercent,
@@ -671,7 +655,7 @@ const calculateMetrics = (
     "Operating Cash Flow / Operating Income"
   );
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "Free Cash Flow (FCFF)",
     fcf,
     formatLargeNumber,
@@ -679,7 +663,7 @@ const calculateMetrics = (
     "OCF - Capex (Simplified)"
   );
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "Cash Collection Ratio",
     safeDiv(salesCash, revenue),
     formatPercent,
@@ -687,7 +671,7 @@ const calculateMetrics = (
     "Cash Received from Sales / Revenue"
   );
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "OCF to Debt",
     safeDiv(annOCF, totalLiabilities),
     formatPercent,
@@ -695,7 +679,7 @@ const calculateMetrics = (
     "Annualized Operating Cash Flow / Total Liabilities"
   );
   addMetric(
-    "Cash Flow Quality",
+    "cashFlowQuality",
     "OCF to Capex",
     safeDiv(ocf, capex),
     formatPercent,
@@ -721,7 +705,7 @@ const calculateMetrics = (
     );
 
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "Revenue Growth",
       safeDiv(revenue - prevRevenue, prevRevenue),
       formatPercent,
@@ -729,7 +713,7 @@ const calculateMetrics = (
       "(Current Revenue - Prev Revenue) / Prev Revenue"
     );
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "Net Profit Growth",
       safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)),
       formatPercent,
@@ -737,7 +721,7 @@ const calculateMetrics = (
       "(Current Net Income - Prev Net Income) / |Prev Net Income|"
     );
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "OCF Growth",
       safeDiv(ocf - prevOCF, Math.abs(prevOCF)),
       formatPercent,
@@ -746,7 +730,7 @@ const calculateMetrics = (
     );
   } else {
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "Revenue Growth",
       0,
       () => "-",
@@ -754,7 +738,7 @@ const calculateMetrics = (
       "N/A"
     );
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "Net Profit Growth",
       0,
       () => "-",
@@ -762,7 +746,7 @@ const calculateMetrics = (
       "N/A"
     );
     addMetric(
-      "Growth Indicators",
+      "growthIndicators",
       "OCF Growth",
       0,
       () => "-",
@@ -819,6 +803,7 @@ const calculateDupont = (
 // --- Component ---
 
 export default function KeyRatiosPage() {
+  const { t } = useLanguage();
   const [reports, setReports] = useState<any[]>([]);
   const [years, setYears] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -896,7 +881,8 @@ export default function KeyRatiosPage() {
     const currentMetrics = calculateMetrics(
       currentReport.data,
       prevYearReport?.data,
-      currentPeriodType
+      currentPeriodType,
+      t
     );
     const currentDupont = calculateDupont(currentReport, prevYearReport);
 
@@ -919,7 +905,8 @@ export default function KeyRatiosPage() {
         comparisonMetrics = calculateMetrics(
           comparisonReport.data,
           targetPrevReport?.data,
-          comparisonReport.period_type
+          comparisonReport.period_type,
+          t
         );
         comparisonDupont = calculateDupont(comparisonReport, targetPrevReport);
       }
@@ -936,7 +923,8 @@ export default function KeyRatiosPage() {
         comparisonMetrics = calculateMetrics(
           comparisonReport.data,
           prevPrevReport?.data,
-          comparisonReport.period_type
+          comparisonReport.period_type,
+          t
         );
         comparisonDupont = calculateDupont(comparisonReport, prevPrevReport);
       }
@@ -948,7 +936,8 @@ export default function KeyRatiosPage() {
       comparisonMetrics = calculateMetrics(
         comparisonReport.data,
         null,
-        comparisonReport.period_type
+        comparisonReport.period_type,
+        t
       );
       comparisonDupont = calculateDupont(comparisonReport, null);
     }
@@ -988,24 +977,24 @@ export default function KeyRatiosPage() {
       period: selectedYear,
       comparePeriod: comparisonReport?.fiscal_year,
     });
-  }, [selectedYear, reports, comparisonMode, targetReports, targetMeta]);
+  }, [selectedYear, reports, comparisonMode, targetReports, targetMeta, t]);
 
   const categories = [
-    "Profitability & Margins",
-    "Return on Investment",
-    "Solvency & Liquidity",
-    "Operating Efficiency",
-    "Cash Flow Quality",
-    "Growth Indicators",
+    t("profitabilityMargins"),
+    t("returnOnInvestment"),
+    t("solvencyLiquidity"),
+    t("operatingEfficiency"),
+    t("cashFlowQuality"),
+    t("growthIndicators"),
   ];
 
   return (
     <div className="space-y-6 pb-20">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financial Ratios</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('ratiosTitle')}</h1>
           <p className="text-gray-500">
-            Advanced financial performance metrics and ratio analysis.
+            {t('ratiosDesc')}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -1038,14 +1027,14 @@ export default function KeyRatiosPage() {
       {dupontData && (
         <div className="bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
           <p className="text-xs text-gray-400 flex items-center flex-wrap">
-            Analyzing{" "}
+            {t('analyzing')}{" "}
             <span className="font-medium text-gray-600 mx-1">
               {dupontData.period}
             </span>
             {dupontData.comparePeriod ? (
               <>
                 <span className="mx-1">
-                  {comparisonMode === "Target" ? "vs Target" : "vs"}
+                  {comparisonMode === "Target" ? t('vs') + " " + t('target') : t('vs')}
                 </span>
                 <span className="font-medium text-gray-600">
                   {comparisonMode === "Target" && targetMeta
@@ -1054,7 +1043,7 @@ export default function KeyRatiosPage() {
                 </span>
                 {comparisonMode !== "Target" && (
                   <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] uppercase font-bold tracking-wide">
-                    {comparisonMode === "YoY" ? "YoY" : "Seq"}
+                    {comparisonMode === "YoY" ? t('yoy') : t('sequential')}
                   </span>
                 )}
               </>
@@ -1065,7 +1054,7 @@ export default function KeyRatiosPage() {
             )}
           </p>
           <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold hidden sm:block">
-            Standardized Financial Analysis
+            {t('standardizedAnalysis')}
           </div>
         </div>
       )}
@@ -1075,17 +1064,17 @@ export default function KeyRatiosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">
-                DuPont Identity (ROE Decomposition)
+                {t('dupontIdentity')}
               </h2>
             </div>
             <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 hidden sm:block">
-              ROE = Net Margin × Asset Turnover × Fin. Leverage
+              {t('roeFormula')}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex flex-col items-center justify-center text-center">
               <span className="text-sm text-blue-600 font-medium mb-1">
-                Return on Equity
+                {t('returnOnEquity')}
               </span>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-3xl font-bold text-blue-900">
@@ -1098,7 +1087,7 @@ export default function KeyRatiosPage() {
                 )}
               </div>
               <span className="text-xs text-blue-400 mt-2">
-                Owner Value Creation
+                {t('ownerValueCreation')}
               </span>
             </div>
             <div className="flex items-center justify-center text-gray-300">
@@ -1107,7 +1096,7 @@ export default function KeyRatiosPage() {
             <div className="grid grid-cols-3 col-span-2 gap-4">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  Profitability
+                  {t('profitability')}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1119,11 +1108,11 @@ export default function KeyRatiosPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-gray-400 mt-2">Net Margin</div>
+                <div className="text-xs text-gray-400 mt-2">{t('netMargin')}</div>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  Efficiency
+                  {t('efficiency')}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1135,11 +1124,11 @@ export default function KeyRatiosPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-gray-400 mt-2">Asset Turnover</div>
+                <div className="text-xs text-gray-400 mt-2">{t('assetTurnover')}</div>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  Leverage
+                  {t('leverage')}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1152,7 +1141,7 @@ export default function KeyRatiosPage() {
                   )}
                 </div>
                 <div className="text-xs text-gray-400 mt-2">
-                  Equity Multiplier
+                  {t('equityMultiplier')}
                 </div>
               </div>
             </div>
@@ -1173,12 +1162,12 @@ export default function KeyRatiosPage() {
               <table className="w-full text-left">
                 <thead className="bg-gray-50/20 text-xs text-gray-400 uppercase tracking-wider font-medium">
                   <tr>
-                    <th className="px-6 py-3">Metric</th>
-                    <th className="px-4 py-3 text-right">Current</th>
+                    <th className="px-6 py-3">{t('metric')}</th>
+                    <th className="px-4 py-3 text-right">{t('current')}</th>
                     <th className="px-4 py-3 text-right whitespace-nowrap">
-                      {comparisonMode === "Target" ? "Target" : "Previous"}
+                      {comparisonMode === "Target" ? t('target') : t('previous')}
                     </th>
-                    <th className="px-4 py-3 text-right">Diff</th>
+                    <th className="px-4 py-3 text-right">{t('diff')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -1249,7 +1238,7 @@ export default function KeyRatiosPage() {
                         colSpan={4}
                         className="px-6 py-4 text-center text-gray-400 text-sm"
                       >
-                        No data available
+                        {t('noData')}
                       </td>
                     </tr>
                   )}

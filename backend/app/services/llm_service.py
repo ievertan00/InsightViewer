@@ -30,8 +30,20 @@ Generate a financial analysis report based on the provided JSON context.
             return base_prompt + "\n**Profile: Executive Summary**\nFocus on high-level strategic insights, top risks, and bottom-line health. Be concise."
         elif profile == "forensic_deep_dive":
             return base_prompt + "\n**Profile: Forensic Deep Dive**\nFocus on anomalies, red flags, accounting discrepancies, and specific risk vectors. Be skeptical and technical."
-        else: # health_check
+        elif profile == "health_check":
             return base_prompt + "\n**Profile: Health Check**\nProvide a balanced educational overview of profitability, solvency, and efficiency. Explain what the numbers mean."
+        elif profile == "comprehensive_analysis":
+            return base_prompt + """
+**Profile: Comprehensive Analysis (One for All)**
+Combine the following perspectives into a single, structured report:
+1.  **Executive Summary:** Start with high-level strategic insights and bottom-line health.
+2.  **Financial Health Check:** Provide a balanced overview of profitability, solvency, and efficiency.
+3.  **Forensic Deep Dive:** Investigate anomalies, red flags, and risk vectors.
+
+Structure the report clearly with sections for each perspective.
+"""
+        else: # Default fallback
+            return base_prompt + "\n**Profile: Standard Analysis**\nProvide a general financial analysis."
 
     def _format_user_message(self, context: AnalysisContext) -> str:
         return f"""

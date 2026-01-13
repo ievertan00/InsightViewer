@@ -11,9 +11,11 @@ import {
   Info,
 } from "lucide-react";
 import clsx from "clsx";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function UploadPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
 
@@ -102,7 +104,7 @@ export default function UploadPage() {
     if (!stockSymbol) return;
 
     // Validation: 6-digit number
-    if (!/^\d{6}$/.test(stockSymbol)) {
+    if (!/^V{6}$/.test(stockSymbol)) {
       setSearchError("Stock Code must be a 6-digit number.");
       return;
     }
@@ -130,7 +132,7 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to fetch stock data");
+        throw new Error(errorData.detail || t('fetchError'));
       }
 
       const data = await response.json();
@@ -156,7 +158,7 @@ export default function UploadPage() {
         setIsFetchingStock(false);
       } else {
         setSearchError(
-          "No financial reports found for this symbol in the selected period."
+          t('noData')
         );
         setIsFetchingStock(false);
       }
@@ -175,7 +177,7 @@ export default function UploadPage() {
     try {
       JSON.parse(jsonContent);
     } catch (e) {
-      setPasteError("Input must be valid JSON format only.");
+      setPasteError(t('parseError'));
       return;
     }
 
@@ -272,7 +274,7 @@ export default function UploadPage() {
 
         // Show warnings if any
         if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-          setWarningMessage(`Import completed with warnings:\n\n${reportData.parsing_warnings.join("\n")}`);
+          setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
         }
 
         setProgress(100);
@@ -285,7 +287,7 @@ export default function UploadPage() {
     } catch (e: any) {
       console.error(e);
       setPasteError(
-        e.message || "Invalid JSON format. Please check your syntax."
+        e.message || t('parseError')
       );
       setIsProcessingPaste(false);
     }
@@ -839,7 +841,7 @@ Template:
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Bulk upload failed");
+        throw new Error(errorData.detail || t('uploadError'));
       }
 
       const reportData = await response.json();
@@ -847,7 +849,7 @@ Template:
 
       if (reportData.reports.length === 0 && reportData.parsing_warnings.length > 0) {
         setUploadError("Could not extract any valid reports from the provided files.");
-        setWarningMessage(`Errors/Warnings encountered:\n\n${reportData.parsing_warnings.join("\n")}`);
+        setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
         setIsProcessingUpload(false);
         return;
       }
@@ -929,7 +931,7 @@ Template:
       localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
 
       if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-        setWarningMessage(`Import completed with warnings:\n\n${reportData.parsing_warnings.join("\n")}`);
+        setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
       }
 
       setProgress(100);
@@ -937,7 +939,7 @@ Template:
       setIsProcessingUpload(false);
     } catch (err: any) {
       console.error(err);
-      setUploadError(err.message || "An error occurred while communicating with the backend.");
+      setUploadError(err.message || t('uploadError'));
       setIsProcessingUpload(false);
     }
   };
@@ -945,22 +947,22 @@ Template:
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Data Import</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('importTitle')}</h1>
         <p className="text-gray-500">
-          Search by Stock Symbol or upload Excel/JSON files.
+          {t('importDesc')}
         </p>
       </div>
 
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-4">
         <h2 className="font-semibold text-blue-900 flex items-center">
           <Info className="w-5 h-5 mr-2 text-blue-600" />
-          How to Import Data Correctly
+          {t('howToImport')}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
           <div>
-            <h3 className="font-bold mb-2">1. Search A-Share</h3>
-            <p className="mb-2">For Chinese A-Share companies only.</p>
+            <h3 className="font-bold mb-2">1. {t('searchAShare')}</h3>
+            <p className="mb-2">{t('searchAShareDesc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
               <li>Enter 6-digit code (e.g., 600519).</li>
               <li>Set Start/End years (e.g., 2020-2023).</li>
@@ -968,10 +970,10 @@ Template:
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">2. Paste JSON</h3>
-            <p className="mb-2">For structured data from LLMs.</p>
+            <h3 className="font-bold mb-2">2. {t('pasteJson')}</h3>
+            <p className="mb-2">{t('pasteJsonDesc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>Use the "Copy LLM Prompt" button.</li>
+              <li>Use the "{t('copyLlmPrompt')}" button.</li>
               <li>Paste the prompt into DeepSeek/ChatGPT/Claude.</li>
               <li>Upload your Excel/PDF/Image to the LLM.</li>
               <li>Paste the JSON response here.</li>
@@ -979,8 +981,8 @@ Template:
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">3. Upload Excel</h3>
-            <p className="mb-2">For custom financial models.</p>
+            <h3 className="font-bold mb-2">3. {t('uploadExcel')}</h3>
+            <p className="mb-2">{t('uploadExcelDesc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
               <li>Download standard templates below.</li>
               <li>
@@ -997,7 +999,7 @@ Template:
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
             1
           </span>
-          Search A-Share
+          {t('searchAShare')}
         </h3>
         {searchError && (
           <div className="text-sm text-red-600 flex items-center bg-red-50 p-2 rounded-md">
@@ -1037,7 +1039,7 @@ Template:
             {isFetchingStock ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}
-            {isFetchingStock ? "Fetching..." : "Fetch Data"}
+            {isFetchingStock ? "Fetching..." : t('fetchData')}
           </button>
         </div>
         <p className="text-xs text-gray-400">
@@ -1060,13 +1062,13 @@ Template:
             <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
               2
             </span>
-            Paste JSON Data
+            {t('pasteJson')}
           </h3>
           <button
             onClick={copyLlmPrompt}
             className="text-xs text-primary hover:text-blue-800 font-medium underline"
           >
-            Copy LLM Prompt Template
+            {t('copyLlmPrompt')}
           </button>
         </div>
         {pasteError && (
@@ -1077,7 +1079,7 @@ Template:
         )}
         <textarea
           className="w-full h-32 p-4 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          placeholder='{"company_meta": {...}, "reports": [...]}'
+          placeholder='{"company_meta": {...}, "reports": [...] }'
           value={jsonContent}
           onChange={(e) => setJsonContent(e.target.value)}
         />
@@ -1089,7 +1091,7 @@ Template:
               onChange={(e) => setIsAppendMode(e.target.checked)}
               className="rounded text-primary focus:ring-primary"
             />
-            <span>Add to existing data</span>
+            <span>{t('addToExisting')}</span>
           </label>
           <button
             onClick={handleJsonPaste}
@@ -1099,7 +1101,7 @@ Template:
             {isProcessingPaste ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}
-            {isProcessingPaste ? "Processing..." : "Load & Process JSON"}
+            {isProcessingPaste ? t('processing') : t('loadProcessJson')}
           </button>
         </div>
       </div>
@@ -1118,7 +1120,7 @@ Template:
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
             3
           </span>
-          Drag & Drop Reports
+          {t('dragDropTitle')}
         </h3>
 
         {uploadError && (
@@ -1146,7 +1148,7 @@ Template:
             )}
           />
           <p className="text-sm text-gray-500 mb-2 text-center">
-            Drag and drop your Excel or JSON files here
+            {t('dragDropDesc')}
           </p>
           
           <div className="flex space-x-3 text-xs mb-4 text-center">
@@ -1177,7 +1179,7 @@ Template:
           </div>
 
           <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors z-10 relative">
-            Browse Files
+            {t('browseFiles')}
             <input
               type="file"
               className="hidden"
@@ -1194,7 +1196,7 @@ Template:
           <div className="flex justify-between items-center">
             <h3 className="font-semibold text-yellow-800 flex items-center">
               <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
-              Import Warnings
+              {t('importWarnings')}
             </h3>
             <button
               onClick={copyWarningMessage}
@@ -1219,7 +1221,7 @@ Template:
       {files.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
           <h3 className="font-semibold text-gray-800">
-            Selected Files ({files.length})
+            {t('selectedFiles')} ({files.length})
           </h3>
           <div className="space-y-2">
             {files.map((file, idx) => (
@@ -1241,7 +1243,7 @@ Template:
                     onClick={() => removeFile(idx)}
                     className="text-red-500 hover:text-red-700 text-sm"
                   >
-                    Remove
+                    {t('remove')}
                   </button>
                 )}
               </div>
@@ -1253,7 +1255,7 @@ Template:
               <div className="flex-1 mr-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-primary font-medium">
-                    Processing...
+                    {t('processing')}
                   </span>
                   <span className="text-gray-500">{progress}%</span>
                 </div>
@@ -1276,7 +1278,7 @@ Template:
                   onChange={(e) => setIsAppendMode(e.target.checked)}
                   className="rounded text-primary focus:ring-primary"
                 />
-                <span>Add to existing data</span>
+                <span>{t('addToExisting')}</span>
               </label>
               <button
                 onClick={processFiles}
@@ -1291,7 +1293,7 @@ Template:
                 {isProcessingUpload && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                {isProcessingUpload ? "Parsing..." : "Start Processing"}
+                {isProcessingUpload ? t('parsing') : t('startProcessing')}
               </button>
             </div>
           </div>
@@ -1307,7 +1309,7 @@ Template:
             : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
-        Copied to clipboard
+        {t('copiedToClipboard')}
       </div>
     </div>
   );

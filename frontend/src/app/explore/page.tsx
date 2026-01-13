@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Search, Database, ArrowRight, Eye, EyeOff, Filter, Check, Calendar } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // Helper to flatten nested object keys into a readable format
 const formatKey = (key: string) => {
@@ -491,6 +492,7 @@ const flattenReports = (reports: any[]) => {
 };
 
 export default function DataPage() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [displayRows, setDisplayRows] = useState<any[]>([]);
   const [years, setYears] = useState<string[]>([]);
@@ -603,7 +605,7 @@ export default function DataPage() {
   };
 
   if (loading) {
-      return <div className="p-8 text-center text-gray-500">Loading data...</div>;
+      return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
   }
 
   if (displayRows.length === 0) {
@@ -612,10 +614,10 @@ export default function DataPage() {
               <div className="p-4 bg-gray-100 rounded-full">
                   <Database className="w-8 h-8 text-gray-400" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">No Data Found</h2>
-              <p className="text-gray-500 max-w-md">It looks like you haven't fetched any financial reports yet.</p>
+              <h2 className="text-xl font-semibold text-gray-900">{t('noDataFound')}</h2>
+              <p className="text-gray-500 max-w-md">{t('noData')}</p>
               <Link href="/import" className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-blue-900 transition-colors flex items-center">
-                  Get Financial Data <ArrowRight className="ml-2 w-4 h-4" />
+                  {t('getFinancialData')} <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
           </div>
       );
@@ -625,8 +627,8 @@ export default function DataPage() {
     <div className="space-y-6" onClick={() => { setShowFilterDropdown(false); setShowTypeDropdown(false); }}>
       <div className="flex justify-between items-center">
         <div>
-            <h1 className="text-2xl font-bold text-gray-900">Financial Data Explorer</h1>
-            {lastUpdate && <p className="text-xs text-gray-500 mt-1">Last updated: {lastUpdate}</p>}
+            <h1 className="text-2xl font-bold text-gray-900">{t('explorerTitle')}</h1>
+            {lastUpdate && <p className="text-xs text-gray-500 mt-1">{t('note')}: {lastUpdate}</p>}
         </div>
         
         <div className="flex items-center space-x-3">
@@ -636,7 +638,7 @@ export default function DataPage() {
                 className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-all ${annualOnly ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
             >
                 <Calendar className="w-4 h-4 mr-2" />
-                Annual Only
+                {t('annualOnly')}
             </button>
 
             {/* Hide Zeros Toggle */}
@@ -645,7 +647,7 @@ export default function DataPage() {
                 className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-all ${hideZeros ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
             >
                 {hideZeros ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                {hideZeros ? "Zeros Hidden" : "Hide Zeros"}
+                {hideZeros ? t('zerosHidden') : t('hideZeros')}
             </button>
 
             {/* Filter Type Dropdown */}
@@ -655,7 +657,7 @@ export default function DataPage() {
                     className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showTypeDropdown ? 'border-primary text-primary bg-blue-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
                     <Filter className="w-4 h-4 mr-2" />
-                    Sheet ({selectedTypes.size})
+                    {t('sheet')} ({selectedTypes.size})
                 </button>
                 {showTypeDropdown && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 flex flex-col p-2 space-y-1">
@@ -682,13 +684,13 @@ export default function DataPage() {
                     className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showFilterDropdown ? 'border-primary text-primary bg-blue-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
                     <Filter className="w-4 h-4 mr-2" />
-                    Items ({selectedItems.size})
+                    {t('items')} ({selectedItems.size})
                 </button>
                 {showFilterDropdown && (
                     <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[400px] flex flex-col">
                         <div className="p-3 border-b border-gray-100 flex justify-between bg-gray-50 rounded-t-lg">
-                            <button onClick={() => setSelectedItems(new Set(allItems.map(i => i.id)))} className="text-xs text-primary font-medium hover:underline">Select All</button>
-                            <button onClick={() => setSelectedItems(new Set())} className="text-xs text-red-500 font-medium hover:underline">Deselect All</button>
+                            <button onClick={() => setSelectedItems(new Set(allItems.map(i => i.id)))} className="text-xs text-primary font-medium hover:underline">{t('selectAll')}</button>
+                            <button onClick={() => setSelectedItems(new Set())} className="text-xs text-red-500 font-medium hover:underline">{t('deselectAll')}</button>
                         </div>
                         <div className="overflow-y-auto flex-1 p-2 space-y-1">
                             {allItems.map(item => (
@@ -713,7 +715,7 @@ export default function DataPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input 
                     type="text" 
-                    placeholder="Search accounts..." 
+                    placeholder={t('search')}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -740,8 +742,8 @@ export default function DataPage() {
             <table className="w-full text-left border-collapse table-auto">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                  <th className="py-3 px-6 font-semibold w-[300px] min-w-[300px]">Line Item</th>
-                  <th className="py-3 px-6 font-semibold w-[150px] min-w-[150px]">Type</th>
+                  <th className="py-3 px-6 font-semibold w-[300px] min-w-[300px]">{t('lineItem')}</th>
+                  <th className="py-3 px-6 font-semibold w-[150px] min-w-[150px]">{t('type')}</th>
                   {filteredYears.map(year => (
                       <th key={year} className="py-3 px-6 font-semibold text-right whitespace-nowrap min-w-[120px]">{year}</th>
                   ))}
@@ -772,8 +774,8 @@ export default function DataPage() {
             </table>
         </div>
         <div className="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between">
-            <span>Showing {filteredData.length} records</span>
-            <span>Source: Browser Storage (Standardized)</span>
+            <span>{t('showingRecords')} {filteredData.length}</span>
+            <span>{t('source')}: Browser Storage (Standardized)</span>
         </div>
       </div>
     </div>

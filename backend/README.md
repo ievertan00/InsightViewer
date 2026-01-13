@@ -11,11 +11,13 @@ It handles the parsing, normalization, and analysis of Chinese financial reports
 ## Setup
 
 1.  Navigate to the `backend` directory:
+
     ```bash
     cd backend
     ```
 
 2.  Create a virtual environment (recommended):
+
     ```bash
     python -m venv venv
     # Windows:
