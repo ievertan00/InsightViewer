@@ -18,9 +18,17 @@ interface GrowthComboChartProps {
   lineKey: string;
   barColor: string;
   lineColor: string;
+  barUnit?: string;
 }
 
-export default function GrowthComboChart({ data, barKey, lineKey, barColor, lineColor }: GrowthComboChartProps) {
+export default function GrowthComboChart({ 
+  data, 
+  barKey, 
+  lineKey, 
+  barColor, 
+  lineColor, 
+  barUnit = "" 
+}: GrowthComboChartProps) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart
@@ -39,6 +47,7 @@ export default function GrowthComboChart({ data, barKey, lineKey, barColor, line
             tick={{ fill: '#6b7280', fontSize: 12 }} 
             axisLine={false}
             tickLine={false}
+            tickFormatter={(val) => `${val.toFixed(0)}${barUnit}`}
         />
         <YAxis 
             yAxisId="right"
@@ -52,7 +61,7 @@ export default function GrowthComboChart({ data, barKey, lineKey, barColor, line
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             formatter={(value: number, name: string) => {
                 if (name === lineKey) return [`${value.toFixed(2)}%`, name];
-                return [value.toFixed(2), name];
+                return [`${value.toFixed(2)}${barUnit}`, name];
             }}
         />
         <Legend 

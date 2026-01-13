@@ -59,9 +59,12 @@ def find_header_row(sheet, max_rows=30) -> Tuple[int, List[Dict[str, Any]]]:
     header_row_index = -1
     years_map = []
     
-    # Heuristic 1: Look for regex dates (2019, 2020-12, 2020.12, 2023年1月)
-    # Matches: 2023, 2023-01, 2023.01, 202301, 2023年, 2023年1月
-    date_pattern = re.compile(r"20\d{2}(?:[-\./年]\d{1,2}(?:月)?)?|20\d{4}")
+    # Heuristic 1: Look for regex dates (2019, 2020-12, 2020.12, 2023年1月, 2023 Q1, 202301)
+    # Matches: 
+    # 1. Standard/Delimited: 2023-01, 2023.01, 2023年1月
+    # 2. Compact: 202301 (6 digits)
+    # 3. Year only: 2023
+    date_pattern = re.compile(r"(20\d{2})[-\./年](\d{1,2})(?:月)?|(20\d{4})|(20\d{2})")
     
     for r_idx, row in enumerate(sheet.iter_rows(min_row=1, max_row=max_rows, values_only=True)):
         current_row_years = []
@@ -69,16 +72,49 @@ def find_header_row(sheet, max_rows=30) -> Tuple[int, List[Dict[str, Any]]]:
         
         for c_idx, cell_value in enumerate(row):
             str_val = str(cell_value).strip() if cell_value else ""
-            # Simple check first
             if "20" in str_val:
+                # Basic Year Check
                 year_match = date_pattern.search(str_val)
                 if year_match:
-                    year_str = year_match.group(0)
-                    # Basic cleanup
-                    year_str = year_str.replace("年", "-").replace("月", "")
-                    if year_str.endswith("-"): year_str = year_str[:-1]
+                    # Detect Quarter Info BEFORE stripping
+                    is_quarterly = False
+                    q_suffix = ""
                     
-                    current_row_years.append({"col_idx": c_idx, "year": year_str})
+                    # Regex for Quarters: Q1, Q2, 1st Quarter, 一季度, etc.
+                    q_match = re.search(r"(?:Q|q|Quarter|季度)[ \.\-_]?([1-4一二三四])", str_val)
+                    if not q_match:
+                         # Try "1st Quarter" style
+                         q_match = re.search(r"(1st|2nd|3rd|4th)[ \-_]?(?:Quarter|Q)", str_val, re.IGNORECASE)
+                    
+                    if q_match:
+                        # Extract Quarter Number
+                        q_raw = q_match.group(1) if len(q_match.groups()) > 0 else q_match.group(0)
+                        q_num = ""
+                        if q_raw in ['1', '一', '1st']: q_num = "Q1"
+                        elif q_raw in ['2', '二', '2nd']: q_num = "Q2"
+                        elif q_raw in ['3', '三', '3rd']: q_num = "Q3"
+                        elif q_raw in ['4', '四', '4th']: q_num = "Q4"
+                        
+                        if q_num:
+                            is_quarterly = True
+                            q_suffix = " " + q_num
+                    
+                    # Determine normalized year/month string
+                    final_year_key = ""
+                    g1, g2, g3, g4 = year_match.groups()
+                    
+                    if g1 and g2: # YYYY-MM style (delimited)
+                        month = g2.zfill(2)
+                        final_year_key = f"{g1}-{month}"
+                    elif g3: # YYYYMM style (6 digits)
+                        final_year_key = f"{g3[:4]}-{g3[4:]}"
+                    elif g4: # YYYY style
+                        final_year_key = g4
+                    
+                    # Append Quarter if detected (usually annual/quarterly mix)
+                    final_year_key += q_suffix
+                    
+                    current_row_years.append({"col_idx": c_idx, "year": final_year_key})
                     found_date = True
         
         if found_date:
@@ -244,23 +280,13 @@ def merge_standardized_reports(existing_report: StandardizedReport, new_report: 
     # Sort reports by year descending
     merged_reports.sort(key=lambda x: x.fiscal_year, reverse=True)
 
-    # Use company meta from the new report (assuming it's more up-to-date)
+    # Determine best Company Meta (prefer not "Unknown")
+    final_meta = new_report.company_meta
+    if final_meta.name == "Unknown" and existing_report.company_meta.name != "Unknown":
+        final_meta = existing_report.company_meta
+
     return StandardizedReport(
-        company_meta=new_report.company_meta,
-        reports=merged_reports,
-        parsing_warnings=existing_report.parsing_warnings + new_report.parsing_warnings
-    )
-
-    # Convert map back to list
-    merged_reports = list(report_map.values())
-
-    # Sort reports by year descending
-    merged_reports.sort(key=lambda x: x.fiscal_year, reverse=True)
-
-    # Use company meta from the new report (assuming it's more up-to-date)
-    # Or you could implement logic to merge company meta if needed
-    return StandardizedReport(
-        company_meta=new_report.company_meta,
+        company_meta=final_meta,
         reports=merged_reports,
         parsing_warnings=existing_report.parsing_warnings + new_report.parsing_warnings
     )
@@ -428,10 +454,14 @@ def parse_excel_file(file_content: bytes, filename: str) -> StandardizedReport:
         
         # Determine period type based on year string format
         # e.g., "2023-01", "2023.12" -> Monthly
-        # "2023" -> Annual
+        # "2023", "2023 Q1" -> Check content
         p_type = "Annual"
-        if "-" in year or "." in year:
-            p_type = "Monthly"
+        if "Q" in year: # Matches "2023 Q1"
+             p_type = "Quarterly"
+        elif "-" in year or "." in year:
+             # If "2023-01", it's Monthly.
+             # Note: "2023 Q1" (if hyphen used differently) might conflict but our Q regex outputs Space+Q
+             p_type = "Monthly"
         elif len(year) == 6 and year.isdigit(): # 202301
             p_type = "Monthly"
             

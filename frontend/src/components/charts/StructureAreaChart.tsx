@@ -15,9 +15,10 @@ interface StructureAreaChartProps {
   data: any[];
   dataKeys: string[];
   colors: string[];
+  unit?: string;
 }
 
-export default function StructureAreaChart({ data, dataKeys, colors }: StructureAreaChartProps) {
+export default function StructureAreaChart({ data, dataKeys, colors, unit = "" }: StructureAreaChartProps) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
@@ -35,11 +36,11 @@ export default function StructureAreaChart({ data, dataKeys, colors }: Structure
             tick={{ fill: '#6b7280', fontSize: 12 }} 
             axisLine={false}
             tickLine={false}
-            tickFormatter={(val) => val.toFixed(0)}
+            tickFormatter={(val) => `${val.toFixed(0)}${unit}`}
         />
         <Tooltip 
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            formatter={(value: number, name: string) => [value.toFixed(2), name]}
+            formatter={(value: number, name: string) => [`${value.toFixed(2)}${unit}`, name]}
         />
         <Legend 
             verticalAlign="bottom" 

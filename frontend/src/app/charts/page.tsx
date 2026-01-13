@@ -200,7 +200,7 @@ export default function ChartsPage() {
             ))}
           </div>
           <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-            Unit: 100 Million CNY
+            Unit: Million CNY
           </div>
         </div>
       </div>
@@ -224,6 +224,7 @@ export default function ChartsPage() {
               data={revenueVsCashData}
               dataKeys={["Revenue", "Cash From Sales"]}
               colors={[COLORS.blue, COLORS.red]}
+              unit="M"
             />
           </ChartCard>
           <ChartCard title="Net Profit vs Operating Cash Flow">
@@ -231,6 +232,7 @@ export default function ChartsPage() {
               data={profitVsCashData}
               dataKeys={["Net Profit", "Operating CF"]}
               colors={[COLORS.blue, COLORS.red]}
+              unit="M"
             />
           </ChartCard>
         </div>
@@ -250,6 +252,7 @@ export default function ChartsPage() {
               "Non-op Expense",
             ]}
             colors={PROFIT_SOURCE_COLORS}
+            unit="M"
           />
         </ChartCard>
       </div>
@@ -271,6 +274,7 @@ export default function ChartsPage() {
             data={wcCycleData}
             dataKeys={["DIO", "DSO", "DPO", "CCC"]}
             colors={[COLORS.blue, COLORS.orange, COLORS.grey, COLORS.purple]}
+            unit=" Days"
           />
         </ChartCard>
         <ChartCard title="Debt-to-Asset Ratio & Delta">
@@ -335,6 +339,7 @@ export default function ChartsPage() {
               data={cashFlowData}
               dataKeys={["Operating CF", "Investing CF", "Financing CF"]}
               colors={[COLORS.red, COLORS.orange, COLORS.blue]}
+              unit="M"
             />
           </ChartCard>
           <ChartCard title="OCF vs Capex vs FCF Trend">
@@ -342,6 +347,7 @@ export default function ChartsPage() {
               data={capexData}
               dataKeys={["Operating CF", "Capex", "Free CF"]}
               colors={[COLORS.green, COLORS.darkBlue, COLORS.orange]}
+              unit="M"
             />
           </ChartCard>
           <ChartCard title="Revenue Growth">
@@ -351,6 +357,7 @@ export default function ChartsPage() {
               lineKey="Revenue Growth"
               barColor={COLORS.blue}
               lineColor={COLORS.orange}
+              barUnit="M"
             />
           </ChartCard>
           <ChartCard title="Net Profit Growth">
@@ -360,8 +367,9 @@ export default function ChartsPage() {
               lineKey="Net Profit Growth"
               barColor={COLORS.lightBlue}
               lineColor={COLORS.orange}
-                      />
-                    </ChartCard>
+              barUnit="M"
+            />
+          </ChartCard>
         </div>
       </div>
 
@@ -387,6 +395,7 @@ export default function ChartsPage() {
               "Other Assets",
             ]}
             colors={ASSET_COLORS}
+            unit="M"
           />
         </ChartCard>
         <ChartCard title="Liability Structure">
@@ -404,6 +413,7 @@ export default function ChartsPage() {
               "Other Liabilities",
             ]}
             colors={LIABILITY_COLORS}
+            unit="M"
           />
         </ChartCard>
         <ChartCard title="Equity Structure">
@@ -421,6 +431,7 @@ export default function ChartsPage() {
               "Minority Interests & Other",
             ]}
             colors={EQUITY_COLORS}
+            unit="M"
           />
         </ChartCard>
       </div>

@@ -26,31 +26,28 @@ export default function FlagsPage() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setAllReports(parsed);
 
-          // Initial selection: Latest Annual report
-          const annuals = parsed.filter((r: any) =>
-            r.fiscal_year.toLowerCase().includes("annual")
-          );
-
           // Helper to sort by year
           const sortReports = (reports: any[]) => {
             return [...reports].sort((a, b) => {
               const yearA = parseInt(a.fiscal_year) || 0;
               const yearB = parseInt(b.fiscal_year) || 0;
+              // If years are same, prefer Annual > Q4 > Q3 > Q2 > Q1
+              if (yearA === yearB) {
+                  const priority: Record<string, number> = { "Annual": 10, "Q4": 4, "Q3": 3, "Q2": 2, "Q1": 1 };
+                  const pA = a.period_type || "Annual";
+                  const pB = b.period_type || "Annual";
+                  // Note: simple fallback, actual strings might differ
+                  return (priority[pB] || 0) - (priority[pA] || 0);
+              }
               return yearA - yearB;
             });
           };
 
-          const sortedAnnuals = sortReports(annuals);
-
-          if (sortedAnnuals.length > 0) {
-            setSelectedYear(
-              sortedAnnuals[sortedAnnuals.length - 1].fiscal_year
-            );
-          } else {
-            const sortedAll = sortReports(parsed);
-            if (sortedAll.length > 0) {
-              setSelectedYear(sortedAll[sortedAll.length - 1].fiscal_year);
-            }
+          const sortedAll = sortReports(parsed);
+          
+          if (sortedAll.length > 0) {
+             // Default to the very latest report
+             setSelectedYear(sortedAll[sortedAll.length - 1].fiscal_year);
           }
         }
       } catch (e) {
@@ -60,14 +57,19 @@ export default function FlagsPage() {
     setLoading(false);
   }, []);
 
-  // Compute available annual years for dropdown
+  // Compute available years for dropdown (All reports)
   const availableYears = useMemo(() => {
     return allReports
-      .filter((r) => r.fiscal_year.toLowerCase().includes("annual"))
-      .sort(
-        (a, b) =>
-          (parseInt(b.fiscal_year) || 0) - (parseInt(a.fiscal_year) || 0)
-      )
+      .sort((a, b) => {
+          // Sort Descending for dropdown
+          const yearA = parseInt(a.fiscal_year) || 0;
+          const yearB = parseInt(b.fiscal_year) || 0;
+          if (yearA === yearB) {
+               // Secondary sort by period type if needed, but year is main driver
+               return 0; 
+          }
+          return yearB - yearA;
+      })
       .map((r) => r.fiscal_year);
   }, [allReports]);
 
@@ -79,11 +81,26 @@ export default function FlagsPage() {
     if (!targetReport) return;
 
     const targetYearInt = parseInt(selectedYear) || 0;
-
+    
+    // Select relevant reports for trend analysis (Current + Historical)
+    // We want reports that are:
+    // 1. Same period type (e.g., Compare 2023 Q1 with 2022 Q1) OR Annual history
+    // For simplicity in this MVP, we just take all reports up to the selected year 
+    // and let the flags engine sort/pick the "Previous" one.
+    
     const relevantReports = allReports.filter((r) => {
-      const isAnnual = r.fiscal_year.toLowerCase().includes("annual");
       const year = parseInt(r.fiscal_year) || 0;
-      return isAnnual && year <= targetYearInt;
+      
+      // If selected is "2023 Q1", we want "2022 Q1" ideally.
+      // The flags engine currently picks the *immediately preceding* report in the array.
+      // So we pass all historical reports and let the engine handle it, 
+      // OR we pre-filter to only include the specific period type history.
+      
+      // Better approach for Flags Engine: 
+      // Pass EVERYTHING <= Target Year.
+      // The engine sorts by `getFiscalScore`.
+      
+      return year <= targetYearInt;
     });
 
     const results = analyzeFlags(relevantReports);
@@ -143,7 +160,7 @@ export default function FlagsPage() {
               disabled={availableYears.length === 0}
             >
               {availableYears.length === 0 ? (
-                <option>No Annual Data</option>
+                <option>No Data</option>
               ) : (
                 availableYears.map((year) => (
                   <option key={year} value={year}>

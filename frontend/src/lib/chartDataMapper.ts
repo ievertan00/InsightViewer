@@ -99,17 +99,17 @@ export const aggregations = {
 export const mapAssetStructure = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Cash & Equiv Etc": aggregations.cashAndEquivalents(r.data) / 1e8,
-    "Receivables Etc": aggregations.receivables(r.data) / 1e8,
-    "Prepayments": getVal(r.data, "balance_sheet.current_assets.prepayments") / 1e8,
-    "Inventory": getVal(r.data, "balance_sheet.current_assets.inventories") / 1e8,
-    "Other Current Assets": getVal(r.data, "balance_sheet.current_assets.other_current_assets") / 1e8,
-    "Long-term Equity Invest": getVal(r.data, "balance_sheet.non_current_assets.long_term_equity_investments") / 1e8,
-    "Goodwill": getVal(r.data, "balance_sheet.non_current_assets.goodwill") / 1e8,
-    "Fixed Assets": getVal(r.data, "balance_sheet.non_current_assets.fixed_assets") / 1e8,
-    "Construction In Progress": getVal(r.data, "balance_sheet.non_current_assets.construction_in_progress") / 1e8,
-    "Right-of-use Assets": getVal(r.data, "balance_sheet.non_current_assets.right_of_use_assets") / 1e8,
-    "Intangible Assets": getVal(r.data, "balance_sheet.non_current_assets.intangible_assets") / 1e8,
+    "Cash & Equiv Etc": aggregations.cashAndEquivalents(r.data) / 1e6,
+    "Receivables Etc": aggregations.receivables(r.data) / 1e6,
+    "Prepayments": getVal(r.data, "balance_sheet.current_assets.prepayments") / 1e6,
+    "Inventory": getVal(r.data, "balance_sheet.current_assets.inventories") / 1e6,
+    "Other Current Assets": getVal(r.data, "balance_sheet.current_assets.other_current_assets") / 1e6,
+    "Long-term Equity Invest": getVal(r.data, "balance_sheet.non_current_assets.long_term_equity_investments") / 1e6,
+    "Goodwill": getVal(r.data, "balance_sheet.non_current_assets.goodwill") / 1e6,
+    "Fixed Assets": getVal(r.data, "balance_sheet.non_current_assets.fixed_assets") / 1e6,
+    "Construction In Progress": getVal(r.data, "balance_sheet.non_current_assets.construction_in_progress") / 1e6,
+    "Right-of-use Assets": getVal(r.data, "balance_sheet.non_current_assets.right_of_use_assets") / 1e6,
+    "Intangible Assets": getVal(r.data, "balance_sheet.non_current_assets.intangible_assets") / 1e6,
     "Other Assets": (getVal(r.data, "balance_sheet.assets_summary.total_assets") - 
                     (aggregations.cashAndEquivalents(r.data) + 
                      aggregations.receivables(r.data) + 
@@ -121,7 +121,7 @@ export const mapAssetStructure = (reports: any[]) => {
                      getVal(r.data, "balance_sheet.non_current_assets.fixed_assets") +
                      getVal(r.data, "balance_sheet.non_current_assets.construction_in_progress") +
                      getVal(r.data, "balance_sheet.non_current_assets.right_of_use_assets") +
-                     getVal(r.data, "balance_sheet.non_current_assets.intangible_assets"))) / 1e8
+                     getVal(r.data, "balance_sheet.non_current_assets.intangible_assets"))) / 1e6
   }));
 };
 
@@ -131,14 +131,14 @@ export const mapAssetStructure = (reports: any[]) => {
 export const mapLiabilityStructure = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Interest-bearing Debt": aggregations.interestBearingDebt(r.data) / 1e8,
-    "Payables Etc": aggregations.payables(r.data) / 1e8,
-    "Prepayments Received Etc": aggregations.prepaymentsReceived(r.data) / 1e8,
-    "Payroll Payable Etc": aggregations.payrollPayable(r.data) / 1e8,
-    "Taxes Payable": getVal(r.data, "balance_sheet.current_liabilities.taxes_payable") / 1e8,
-    "Other Payables": getVal(r.data, "balance_sheet.current_liabilities.other_payables_total.other_payables") / 1e8,
-    "Lease Liabilities": getVal(r.data, "balance_sheet.non_current_liabilities.lease_liabilities") / 1e8,
-    "Long-term Payables": getVal(r.data, "balance_sheet.non_current_liabilities.long_term_payables") / 1e8,
+    "Interest-bearing Debt": aggregations.interestBearingDebt(r.data) / 1e6,
+    "Payables Etc": aggregations.payables(r.data) / 1e6,
+    "Prepayments Received Etc": aggregations.prepaymentsReceived(r.data) / 1e6,
+    "Payroll Payable Etc": aggregations.payrollPayable(r.data) / 1e6,
+    "Taxes Payable": getVal(r.data, "balance_sheet.current_liabilities.taxes_payable") / 1e6,
+    "Other Payables": getVal(r.data, "balance_sheet.current_liabilities.other_payables_total.other_payables") / 1e6,
+    "Lease Liabilities": getVal(r.data, "balance_sheet.non_current_liabilities.lease_liabilities") / 1e6,
+    "Long-term Payables": getVal(r.data, "balance_sheet.non_current_liabilities.long_term_payables") / 1e6,
     "Other Liabilities": (getVal(r.data, "balance_sheet.liabilities_summary.total_liabilities") - 
                          (aggregations.interestBearingDebt(r.data) + 
                           aggregations.payables(r.data) + 
@@ -147,7 +147,7 @@ export const mapLiabilityStructure = (reports: any[]) => {
                           getVal(r.data, "balance_sheet.current_liabilities.taxes_payable") + 
                           getVal(r.data, "balance_sheet.current_liabilities.other_payables_total.other_payables") + 
                           getVal(r.data, "balance_sheet.non_current_liabilities.lease_liabilities") + 
-                          getVal(r.data, "balance_sheet.non_current_liabilities.long_term_payables"))) / 1e8
+                          getVal(r.data, "balance_sheet.non_current_liabilities.long_term_payables"))) / 1e6
   }));
 };
 
@@ -157,19 +157,19 @@ export const mapLiabilityStructure = (reports: any[]) => {
 export const mapEquityStructure = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Paid-in Capital": getVal(r.data, "balance_sheet.equity.paid_in_capital") / 1e8,
-    "Other Equity Instruments": getVal(r.data, "balance_sheet.equity.other_equity_instruments.amount") / 1e8,
-    "Capital Reserves": getVal(r.data, "balance_sheet.equity.capital_reserves") / 1e8,
-    "Other Comprehensive Income": getVal(r.data, "balance_sheet.equity.other_comprehensive_income") / 1e8,
-    "Treasury Stock": getVal(r.data, "balance_sheet.equity.treasury_stock") / 1e8,
-    "Special Reserves": getVal(r.data, "balance_sheet.equity.special_reserves") / 1e8,
-    "Surplus Reserves": getVal(r.data, "balance_sheet.equity.surplus_reserves") / 1e8,
-    "Undistributed Profit": getVal(r.data, "balance_sheet.equity.undistributed_profit") / 1e8,
+    "Paid-in Capital": getVal(r.data, "balance_sheet.equity.paid_in_capital") / 1e6,
+    "Other Equity Instruments": getVal(r.data, "balance_sheet.equity.other_equity_instruments.amount") / 1e6,
+    "Capital Reserves": getVal(r.data, "balance_sheet.equity.capital_reserves") / 1e6,
+    "Other Comprehensive Income": getVal(r.data, "balance_sheet.equity.other_comprehensive_income") / 1e6,
+    "Treasury Stock": getVal(r.data, "balance_sheet.equity.treasury_stock") / 1e6,
+    "Special Reserves": getVal(r.data, "balance_sheet.equity.special_reserves") / 1e6,
+    "Surplus Reserves": getVal(r.data, "balance_sheet.equity.surplus_reserves") / 1e6,
+    "Undistributed Profit": getVal(r.data, "balance_sheet.equity.undistributed_profit") / 1e6,
     "Minority Interests & Other": (getVal(r.data, "balance_sheet.equity.total_equity") - 
                                   (getVal(r.data, "balance_sheet.equity.paid_in_capital") + 
                                    getVal(r.data, "balance_sheet.equity.capital_reserves") + 
                                    getVal(r.data, "balance_sheet.equity.surplus_reserves") + 
-                                   getVal(r.data, "balance_sheet.equity.undistributed_profit"))) / 1e8
+                                   getVal(r.data, "balance_sheet.equity.undistributed_profit"))) / 1e6
   }));
 };
 
@@ -243,15 +243,15 @@ export const mapCostStructure = (reports: any[]) => {
 export const mapProfitSources = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Main Business Profit": aggregations.mainBusinessProfit(r.data) / 1e8,
-    "Finance Expense": -getVal(r.data, "income_statement.total_operating_cost.financial_expenses.amount") / 1e8,
-    "Impairment Loss": -(getVal(r.data, "income_statement.total_operating_cost.asset_impairment_loss") + getVal(r.data, "income_statement.total_operating_cost.credit_impairment_loss")) / 1e8,
-    "Fair Value Change": getVal(r.data, "income_statement.other_operating_income.fair_value_change_income") / 1e8,
-    "Investment Income": getVal(r.data, "income_statement.other_operating_income.investment_income") / 1e8,
-    "Asset Disposal": getVal(r.data, "income_statement.other_operating_income.asset_disposal_income") / 1e8,
-    "Other Income": getVal(r.data, "income_statement.other_operating_income.other_income") / 1e8,
-    "Non-op Revenue": getVal(r.data, "income_statement.operating_profit.non_operating_revenue") / 1e8,
-    "Non-op Expense": -getVal(r.data, "income_statement.operating_profit.non_operating_expenses") / 1e8
+    "Main Business Profit": aggregations.mainBusinessProfit(r.data) / 1e6,
+    "Finance Expense": -getVal(r.data, "income_statement.total_operating_cost.financial_expenses.amount") / 1e6,
+    "Impairment Loss": -(getVal(r.data, "income_statement.total_operating_cost.asset_impairment_loss") + getVal(r.data, "income_statement.total_operating_cost.credit_impairment_loss")) / 1e6,
+    "Fair Value Change": getVal(r.data, "income_statement.other_operating_income.fair_value_change_income") / 1e6,
+    "Investment Income": getVal(r.data, "income_statement.other_operating_income.investment_income") / 1e6,
+    "Asset Disposal": getVal(r.data, "income_statement.other_operating_income.asset_disposal_income") / 1e6,
+    "Other Income": getVal(r.data, "income_statement.other_operating_income.other_income") / 1e6,
+    "Non-op Revenue": getVal(r.data, "income_statement.operating_profit.non_operating_revenue") / 1e6,
+    "Non-op Expense": -getVal(r.data, "income_statement.operating_profit.non_operating_expenses") / 1e6
   }));
 };
 
@@ -261,9 +261,9 @@ export const mapProfitSources = (reports: any[]) => {
 export const mapCashFlowSummary = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Operating CF": getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") / 1e8,
-    "Investing CF": getVal(r.data, "cash_flow_statement.investing_activities.net_cash_flow_from_investing") / 1e8,
-    "Financing CF": getVal(r.data, "cash_flow_statement.financing_activities.net_cash_flow_from_financing") / 1e8
+    "Operating CF": getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") / 1e6,
+    "Investing CF": getVal(r.data, "cash_flow_statement.investing_activities.net_cash_flow_from_investing") / 1e6,
+    "Financing CF": getVal(r.data, "cash_flow_statement.financing_activities.net_cash_flow_from_financing") / 1e6
   }));
 };
 
@@ -273,8 +273,8 @@ export const mapCashFlowSummary = (reports: any[]) => {
 export const mapRevenueVsCash = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Revenue": getVal(r.data, "income_statement.total_operating_revenue") / 1e8,
-    "Cash From Sales": getVal(r.data, "cash_flow_statement.operating_activities.cash_received_from_goods_and_services") / 1e8
+    "Revenue": getVal(r.data, "income_statement.total_operating_revenue") / 1e6,
+    "Cash From Sales": getVal(r.data, "cash_flow_statement.operating_activities.cash_received_from_goods_and_services") / 1e6
   }));
 };
 
@@ -291,9 +291,9 @@ export const mapGrowthIndicators = (reports: any[]) => {
 
     return {
       year: r.fiscal_year,
-      "Revenue": rev / 1e8,
+      "Revenue": rev / 1e6,
       "Revenue Growth": prevRev ? ((rev - prevRev) / prevRev) * 100 : 0,
-      "Net Profit": net / 1e8,
+      "Net Profit": net / 1e6,
       "Net Profit Growth": prevNet ? ((net - prevNet) / Math.abs(prevNet)) * 100 : 0
     };
   });
@@ -308,9 +308,9 @@ export const mapCapexTrend = (reports: any[]) => {
     const capex = getVal(r.data, "cash_flow_statement.investing_activities.cash_paid_for_assets");
     return {
       year: r.fiscal_year,
-      "Operating CF": ocf / 1e8,
-      "Capex": capex / 1e8,
-      "Free CF": (ocf - capex) / 1e8
+      "Operating CF": ocf / 1e6,
+      "Capex": capex / 1e6,
+      "Free CF": (ocf - capex) / 1e6
     };
   });
 };
@@ -400,7 +400,7 @@ export const mapDebtToAssetDelta = (reports: any[]) => {
 export const mapProfitVsCashFlow = (reports: any[]) => {
   return reports.map(r => ({
     year: r.fiscal_year,
-    "Net Profit": getVal(r.data, "income_statement.net_profit.net_profit_attr_to_parent") / 1e8,
-    "Operating CF": getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") / 1e8
+    "Net Profit": getVal(r.data, "income_statement.net_profit.net_profit_attr_to_parent") / 1e6,
+    "Operating CF": getVal(r.data, "cash_flow_statement.operating_activities.net_cash_flow_from_operating") / 1e6
   }));
 };
