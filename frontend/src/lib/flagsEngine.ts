@@ -1,7 +1,4 @@
-/**
- * flagsEngine.ts
- * Logic engine to evaluate financial health flags based on standardized reports.
- */
+import { formatLargeNumber } from "./formatters";
 
 export interface FlagResult {
   name: string;
@@ -688,9 +685,9 @@ export const analyzeFlags = (reports: any[]): FlagResult[] => {
     category: "Liquidity",
     type: "Red",
     status: annFCF < 0 && annPrevFCF < 0,
-    value: `Current: ${(annFCF / 1e8).toFixed(2)}B, Prev: ${(annPrevFCF / 1e8).toFixed(2)}B`,
+    value: `Current: ${formatLargeNumber(annFCF)}, Prev: ${formatLargeNumber(annPrevFCF)}`,
     threshold: "Negative for > 1 period",
-    logic: `Annualized Current FCF = ${(annFCF / 1e8).toFixed(2)}B & Annualized Previous FCF = ${(annPrevFCF / 1e8).toFixed(2)}B (threshold both < 0)`,
+    logic: `Annualized Current FCF = ${formatLargeNumber(annFCF)} & Annualized Previous FCF = ${formatLargeNumber(annPrevFCF)} (threshold both < 0)`,
     description: "Free Cash Flow has been negative for consecutive periods despite any reported profits.",
   });
 

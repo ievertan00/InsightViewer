@@ -284,6 +284,7 @@ export default function ChartsPage() {
             lineKey="Debt Ratio Delta"
             barColor={COLORS.lightBlue}
             lineColor={COLORS.orange}
+            barUnit="%"
           />
         </ChartCard>
       </div>
