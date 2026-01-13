@@ -458,30 +458,77 @@ export default function DataPage() {
                       const value = obj[key];
                       const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
                       
-                      const uniqueId = `${typeLabel}-${currentPath}`;
-  
-                      const processItem = (val: number | any) => {
-                          if (!flattened[uniqueId]) {
-                              let accountName = t(formatKey(key)); // Use t() for translation
-                              const itemLevel = currentPath.split('.').length;
-  
-                              if (itemLevel === 4) {
-                                  accountName = `- ${accountName}`;
-                              }
-  
-                              flattened[uniqueId] = { 
-                                  account: accountName, 
-                                  type: typeLabel, 
-                                  originalKey: currentPath,
-                                  orderKey: currentPath, 
-                                  id: uniqueId,
-                                  itemLevel: itemLevel
-                              };
-                          }
-                          flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
-                      };
-  
-                      if (typeof value === 'object' && value !== null) {
+                                            const uniqueId = `${typeLabel}-${currentPath}`;
+                      
+                        
+                      
+                                            const processItem = (val: number | any) => {
+                      
+                                                if (!flattened[uniqueId]) {
+                      
+                                                    let accountName = t(formatKey(key)); // Use t() for translation
+                      
+                                                    
+                      
+                                                    // Default level based on depth
+                      
+                                                    let itemLevel = currentPath.split('.').length;
+                      
+                      
+                      
+                                                    // Override Levels based on specific keys (English & Chinese context handled by t())
+                      
+                                                    // L2 Overrides
+                      
+                                                    if ([
+                      
+                                                        "Total Assets", "Total Liabilities", "Total Equity", 
+                                                        "资产总计", "负债合计", "所有者权益合计", "股东权益合计",
+                                                        "Total Current Assets", "Total Non Current Assets", 
+                      
+                                                        "Total Current Liabilities", "Total Non Current Liabilities",
+                      
+                                                        "Net Cash Flow From Operating", "Net Cash Flow From Investing", "Net Cash Flow From Financing",
+                      
+                                                        "流动资产", "流动资产合计", "非流动资产合计",
+                      
+                                                        "流动负债合计", "非流动负债合计",
+                      
+                                                        "经营活动产生的现金流量净额", "投资活动产生的现金流量净额", "筹资活动产生的现金流量净额"
+                      
+                                                    ].includes(accountName)) {
+                      
+                                                        itemLevel = 2;
+                      
+                                                    }
+                      
+                      
+                      
+                                                    flattened[uniqueId] = { 
+                      
+                                                        account: accountName, 
+                      
+                                                        type: typeLabel, 
+                      
+                                                        originalKey: currentPath,
+                      
+                                                        orderKey: currentPath, 
+                      
+                                                        id: uniqueId,
+                      
+                                                        itemLevel: itemLevel
+                      
+                                                    };
+                      
+                                                }
+                      
+                                                flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
+                      
+                                            };
+                      
+                        
+                      
+                                            if (typeof value === 'object' && value !== null) {
                           if ('amount' in value) {
                                processItem(value);
                           }
@@ -748,20 +795,42 @@ export default function DataPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                  <tr key={idx} className={clsx(
+                    "transition-colors",
+                    // Level 1: Major Totals (Extra bold, distinct bg, large gap)
+                    row.itemLevel === 1 ? "bg-gray-100 hover:bg-gray-200" :
+                    // Level 2: Main Categories (bold, subtle bg, extra top padding)
+                    row.itemLevel === 2 ? "bg-gray-50 hover:bg-gray-100" : 
+                    "hover:bg-blue-50/30"
+                  )}>
                     <td className={clsx(
-                        "py-3 pr-6 text-gray-900 truncate max-w-[300px]",
-                        row.itemLevel === 2 ? "font-bold pl-6" : "font-medium",
-                        row.itemLevel === 3 && "pl-10",
-                        row.itemLevel === 4 && "pl-14"
+                        "pr-6 text-gray-900 truncate max-w-[300px]",
+                        // Visual Hierarchy Logic
+                        row.itemLevel === 1 ? "font-extrabold pl-4 pt-10 pb-4 text-lg border-t-2 border-gray-300 uppercase tracking-wide" :
+                        row.itemLevel === 2 ? "font-bold pl-6 pt-8 pb-3 text-base border-t border-gray-200" : 
+                        row.itemLevel === 3 ? "font-medium pl-12 py-2.5 text-gray-700" :
+                        "pl-20 py-1.5 text-gray-500 text-sm italic"
                     )} title={row.originalKey}>
                         {row.account}
                     </td>
-                    <td className="py-3 px-6 text-gray-500 text-sm truncate max-w-[150px]">
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs">{row.type}</span>
+                    <td className={clsx(
+                        "px-6 truncate max-w-[150px]",
+                        row.itemLevel === 1 ? "pt-10 pb-4 font-bold" :
+                        row.itemLevel === 2 ? "pt-8 pb-3" : "py-2"
+                    )}>
+                        <span className={clsx(
+                            "px-2 py-1 rounded text-xs",
+                            row.itemLevel === 1 ? "bg-gray-800 text-white shadow-md" :
+                            row.itemLevel === 2 ? "bg-white border border-gray-200 shadow-sm" : "bg-gray-100"
+                        )}>{row.type}</span>
                     </td>
                     {filteredYears.map(year => (
-                        <td key={year} className="py-3 px-6 text-right text-gray-900 font-mono">
+                        <td key={year} className={clsx(
+                            "px-6 text-right font-mono",
+                            row.itemLevel === 1 ? "pt-10 pb-4 font-extrabold text-gray-900 text-lg border-t-2 border-gray-300" :
+                            row.itemLevel === 2 ? "pt-8 pb-3 font-semibold text-gray-900" : 
+                            row.itemLevel === 3 ? "py-2.5 text-gray-800" : "py-1.5 text-gray-500 text-sm"
+                        )}>
                             {row[year] !== undefined ? row[year].toLocaleString() : '-'}
                         </td>
                     ))}
