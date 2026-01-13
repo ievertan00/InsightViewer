@@ -11,8 +11,10 @@ import {
   Calendar,
 } from "lucide-react";
 import { analyzeFlags, FlagResult } from "@/lib/flagsEngine";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function FlagsPage() {
+  const { t } = useLanguage();
   const [flags, setFlags] = useState<FlagResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [allReports, setAllReports] = useState<any[]>([]);
@@ -88,6 +90,10 @@ export default function FlagsPage() {
     // For simplicity in this MVP, we just take all reports up to the selected year 
     // and let the flags engine sort/pick the "Previous" one.
     
+    // Better approach for Flags Engine: 
+    // Pass EVERYTHING <= Target Year.
+    // The engine sorts by `getFiscalScore`.
+    
     const relevantReports = allReports.filter((r) => {
       const year = parseInt(r.fiscal_year) || 0;
       
@@ -95,10 +101,6 @@ export default function FlagsPage() {
       // The flags engine currently picks the *immediately preceding* report in the array.
       // So we pass all historical reports and let the engine handle it, 
       // OR we pre-filter to only include the specific period type history.
-      
-      // Better approach for Flags Engine: 
-      // Pass EVERYTHING <= Target Year.
-      // The engine sorts by `getFiscalScore`.
       
       return year <= targetYearInt;
     });
@@ -110,7 +112,7 @@ export default function FlagsPage() {
   if (loading) {
     return (
       <div className="p-10 text-center text-gray-500">
-        Analyzing financial health...
+        {t('analyzing')}...
       </div>
     );
   }
@@ -120,10 +122,10 @@ export default function FlagsPage() {
       <div className="p-10 text-center text-gray-500 flex flex-col items-center">
         <Activity className="w-12 h-12 text-gray-300 mb-4" />
         <h2 className="text-xl font-semibold text-gray-700">
-          No Data Available
+          {t('noDataFound')}
         </h2>
         <p className="mt-2">
-          Please import financial reports to run the risk analysis.
+          {t('importDesc')}
         </p>
       </div>
     );
@@ -140,10 +142,10 @@ export default function FlagsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center">
             <Flag className="w-6 h-6 mr-3 text-gray-700" />
-            Flag Checklist
+            {t('flagsTitle')}
           </h1>
           <p className="text-gray-500 mt-1 ml-9">
-            Automated forensic checks based on financial data.
+            {t('flagsDesc')}
           </p>
         </div>
 
@@ -160,7 +162,7 @@ export default function FlagsPage() {
               disabled={availableYears.length === 0}
             >
               {availableYears.length === 0 ? (
-                <option>No Data</option>
+                <option>{t('noData')}</option>
               ) : (
                 availableYears.map((year) => (
                   <option key={year} value={year}>
@@ -194,7 +196,7 @@ export default function FlagsPage() {
                   {redFlags.length}
                 </span>
                 <span className="text-xs text-rose-600 font-medium uppercase pt-0.5">
-                  Risks
+                  {t('risks')}
                 </span>
               </div>
             </div>
@@ -205,7 +207,7 @@ export default function FlagsPage() {
                   {greenFlags.length}
                 </span>
                 <span className="text-xs text-emerald-600 font-medium uppercase pt-0.5">
-                  Health
+                  {t('health')}
                 </span>
               </div>
             </div>
@@ -218,7 +220,7 @@ export default function FlagsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <AlertCircle className="w-5 h-5 mr-2 text-rose-500" />
-            Risk Indicators
+            {t('riskIndicators')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {redFlags.map((flag, idx) => (
@@ -229,29 +231,29 @@ export default function FlagsPage() {
                 <div className="absolute top-0 left-0 w-1 h-full bg-rose-400"></div>
                 <div className="flex justify-between items-start mb-3">
                   <span className="inline-block px-2 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded uppercase tracking-wide">
-                    {flag.category}
+                    {t(flag.category)}
                   </span>
                 </div>
                 <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                  {flag.name}
+                  {t(flag.name)}
                 </h3>
                 
                 <div className="mb-4">
                   <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
-                    Trigger Condition
+                    {t('triggerCondition')}
                   </span>
                   <div className="bg-rose-50/50 p-3 rounded-lg border border-rose-100">
                     <div className="text-sm font-bold text-rose-700">
                       {flag.value}
                     </div>
                     <div className="text-[10px] text-rose-500 mt-1 font-medium italic">
-                      Logic: {flag.logic}
+                      {t('logic')}: {flag.logic}
                     </div>
                   </div>
                 </div>
 
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {flag.description}
+                  {t(flag.description)}
                 </p>
               </div>
             ))}
@@ -264,7 +266,7 @@ export default function FlagsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <TrendingUp className="w-5 h-5 mr-2 text-emerald-500" />
-            Health Signals
+            {t('healthSignals')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {greenFlags.map((flag, idx) => (
@@ -275,29 +277,29 @@ export default function FlagsPage() {
                 <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
                 <div className="flex justify-between items-start mb-3">
                   <span className="inline-block px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded uppercase tracking-wide">
-                    {flag.category}
+                    {t(flag.category)}
                   </span>
                 </div>
                 <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                  {flag.name}
+                  {t(flag.name)}
                 </h3>
 
                 <div className="mb-4">
                   <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
-                    Target Criteria
+                    {t('targetCriteria')}
                   </span>
                   <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
                     <div className="text-sm font-bold text-emerald-700">
                       {flag.value}
                     </div>
                     <div className="text-[10px] text-emerald-500 mt-1 font-medium italic">
-                      Logic: {flag.logic}
+                      {t('logic')}: {flag.logic}
                     </div>
                   </div>
                 </div>
 
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {flag.description}
+                  {t(flag.description)}
                 </p>
               </div>
             ))}
@@ -310,7 +312,7 @@ export default function FlagsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-600 mb-4 flex items-center">
             <Info className="w-5 h-5 mr-2" />
-            Additional Data Required
+            {t('additionalData')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {infoFlags.map((flag, idx) => (
@@ -319,13 +321,13 @@ export default function FlagsPage() {
                 className="bg-gray-50 rounded-xl border border-gray-200 p-5 opacity-75"
               >
                 <h3 className="font-semibold text-gray-700 mb-2">
-                  {flag.name}
+                  {t(flag.name)}
                 </h3>
                 <p className="text-sm text-gray-500 italic mb-2">
-                  {flag.description}
+                  {t(flag.description)}
                 </p>
                 <div className="text-xs text-gray-400 font-mono bg-gray-100 p-2 rounded">
-                  Check: {flag.threshold}
+                  {t('check')}: {flag.threshold}
                 </div>
               </div>
             ))}
@@ -337,11 +339,10 @@ export default function FlagsPage() {
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 text-center">
           <CheckCircle2 className="w-12 h-12 text-blue-500 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-blue-900">
-            No Significant Flags Detected
+            {t('noFlags')}
           </h3>
           <p className="text-blue-700 mt-2">
-            The automated analysis did not find any extreme outliers matching
-            the standard risk or health criteria for {selectedYear}.
+            {t('noFlagsDesc')} ({selectedYear})
           </p>
         </div>
       )}

@@ -362,7 +362,7 @@ const calculateMetrics = (
     "Gross Margin",
     safeDiv(grossProfit, revenue),
     formatPercent,
-    "销售毛利率",
+    "grossMarginDesc",
     "(Revenue - COGS) / Revenue"
   );
   addMetric(
@@ -370,7 +370,7 @@ const calculateMetrics = (
     "Net Profit Margin",
     safeDiv(netIncome, revenue),
     formatPercent,
-    "销售净利率",
+    "netProfitMarginDesc",
     "Net Income / Revenue"
   );
   addMetric(
@@ -378,7 +378,7 @@ const calculateMetrics = (
     "Cost of Sales Ratio",
     safeDiv(costOfSales, revenue),
     formatPercent,
-    "销售成本率",
+    "costOfSalesRatioDesc",
     "COGS / Revenue"
   );
   addMetric(
@@ -386,7 +386,7 @@ const calculateMetrics = (
     "Expense of Sales Ratio",
     safeDiv(sellingExp + adminExp + financeExp, revenue),
     formatPercent,
-    "销售期间费用率",
+    "expenseOfSalesRatioDesc",
     "(Selling + Admin + Finance Exp) / Revenue"
   );
   addMetric(
@@ -394,7 +394,7 @@ const calculateMetrics = (
     "EBIT Margin",
     safeDiv(ebit, revenue),
     formatPercent,
-    "息税前利润率",
+    "ebitMarginDesc",
     "EBIT / Total Revenue"
   );
   addMetric(
@@ -402,7 +402,7 @@ const calculateMetrics = (
     "Operating Margin",
     safeDiv(operatingProfit, revenue),
     formatPercent,
-    "营业利润率",
+    "operatingMarginDesc",
     "Operating Income / Total Revenue"
   );
   addMetric(
@@ -410,7 +410,7 @@ const calculateMetrics = (
     "Asset Impairment Ratio",
     safeDiv(assetImpairment, revenue),
     formatPercent,
-    "资产减值损失率",
+    "assetImpairmentRatioDesc",
     "Asset Impairment Loss / Total Revenue"
   );
 
@@ -422,7 +422,7 @@ const calculateMetrics = (
     "ROA",
     safeDiv(netIncome * flowMult, avgAssets),
     formatPercent,
-    "总资产报酬率",
+    "roaDesc",
     "Annualized Net Income / Avg Total Assets"
   );
   addMetric(
@@ -430,7 +430,7 @@ const calculateMetrics = (
     "ROIC",
     safeDiv(ebit * (1 - taxRate) * flowMult, investedCapital),
     formatPercent,
-    "投入资本回报率",
+    "roicDesc",
     "Annualized EBIT * (1 - Tax Rate) / Invested Capital"
   );
   addMetric(
@@ -438,7 +438,7 @@ const calculateMetrics = (
     "CFROI (Proxy)",
     safeDiv(annOCF, investedCapital),
     formatPercent,
-    "现金流投资回报率 (Proxy)",
+    "cfroiProxyDesc",
     "Annualized Operating Cash Flow / Invested Capital"
   );
   addMetric(
@@ -446,7 +446,7 @@ const calculateMetrics = (
     "CROIC",
     safeDiv(fcf * flowMult, investedCapital),
     formatPercent,
-    "现金投入资本回报率",
+    "croicDesc",
     "Annualized Free Cash Flow / (Equity + Debt)"
   );
 
@@ -458,7 +458,7 @@ const calculateMetrics = (
     "Current Ratio",
     safeDiv(currentAssets, currentLiabilities),
     formatNumber,
-    "流动比率",
+    "currentRatioDesc",
     "Current Assets / Current Liabilities"
   );
   addMetric(
@@ -466,7 +466,7 @@ const calculateMetrics = (
     "Quick Ratio",
     safeDiv(currentAssets - inventory, currentLiabilities),
     formatNumber,
-    "速动比率",
+    "quickRatioDesc",
     "(Current Assets - Inventory) / Current Liabilities"
   );
   addMetric(
@@ -474,7 +474,7 @@ const calculateMetrics = (
     "Cash Ratio",
     safeDiv(monetaryFunds + tradingAssets, currentLiabilities),
     formatNumber,
-    "现金比率",
+    "cashRatioDesc",
     "(Cash + Cash Equiv) / Current Liabilities"
   );
   addMetric(
@@ -482,7 +482,7 @@ const calculateMetrics = (
     "Debt to Assets",
     safeDiv(totalLiabilities, totalAssets),
     formatPercent,
-    "资产负债率",
+    "debtToAssetsDesc",
     "Total Liabilities / Total Assets"
   );
   addMetric(
@@ -490,7 +490,7 @@ const calculateMetrics = (
     "Debt to Equity",
     safeDiv(totalLiabilities, totalEquity),
     formatPercent,
-    "产权比率",
+    "debtToEquityDesc",
     "Total Liabilities / Shareholders' Equity"
   );
   addMetric(
@@ -498,7 +498,7 @@ const calculateMetrics = (
     "Interest Coverage",
     safeDiv(annEBIT, annInterestExp),
     formatNumber,
-    "已获利息倍数",
+    "interestCoverageDesc",
     "EBIT / Interest Expense"
   );
   addMetric(
@@ -506,7 +506,7 @@ const calculateMetrics = (
     "Proxy Interest Rate",
     safeDiv(annInterestPaid, avgInterestBearingDebt),
     formatPercent,
-    "估算利率",
+    "proxyInterestRateDesc",
     "Annualized Interest Paid (proxy) / Avg Total Debt"
   );
   addMetric(
@@ -514,7 +514,7 @@ const calculateMetrics = (
     "Operating Cash Flow Ratio",
     safeDiv(ocf, currentLiabilities),
     formatNumber,
-    "经营现金流比率",
+    "operatingCashFlowRatioDesc",
     "Operating Cash Flow / Current Liabilities"
   );
   addMetric(
@@ -522,7 +522,7 @@ const calculateMetrics = (
     "NWC to Assets",
     safeDiv(currentAssets - currentLiabilities, totalAssets),
     formatPercent,
-    "营运资金占总资产比率",
+    "nwcToAssetsDesc",
     "(Current Assets - Current Liabilities) / Total Assets"
   );
   addMetric(
@@ -530,7 +530,7 @@ const calculateMetrics = (
     "Net Debt",
     interestBearingDebt - monetaryFunds,
     formatLargeNumber,
-    "净债务",
+    "netDebtDesc",
     "Interest Bearing Debt - Cash"
   );
 
@@ -542,7 +542,7 @@ const calculateMetrics = (
     "Selling Expense Ratio",
     safeDiv(sellingExp, revenue),
     formatPercent,
-    "销售费用率",
+    "sellingExpenseRatioDesc",
     "Selling Expenses / Revenue"
   );
   addMetric(
@@ -550,7 +550,7 @@ const calculateMetrics = (
     "Admin Expense Ratio",
     safeDiv(adminExp, revenue),
     formatPercent,
-    "管理费用率",
+    "adminExpenseRatioDesc",
     "Administrative Expenses / Revenue"
   );
   addMetric(
@@ -558,7 +558,7 @@ const calculateMetrics = (
     "R&D Expense Ratio",
     safeDiv(rdExp, revenue),
     formatPercent,
-    "研发费用率",
+    "rdExpenseRatioDesc",
     "R&D Expenses / Revenue"
   );
 
@@ -574,7 +574,7 @@ const calculateMetrics = (
     "Inventory Turnover",
     invTurn,
     formatNumber,
-    "存货周转率",
+    "inventoryTurnoverDesc",
     "Annualized COGS / Avg Inventory"
   );
   addMetric(
@@ -582,7 +582,7 @@ const calculateMetrics = (
     "Days Inventory Outstanding",
     dio,
     formatDays,
-    "存货周转天数",
+    "daysInventoryOutstandingDesc",
     "365 / Annualized Inventory Turnover"
   );
   addMetric(
@@ -590,7 +590,7 @@ const calculateMetrics = (
     "AR Turnover",
     arTurn,
     formatNumber,
-    "应收账款周转率",
+    "arTurnoverDesc",
     "Annualized Revenue / Avg AR"
   );
   addMetric(
@@ -598,7 +598,7 @@ const calculateMetrics = (
     "Days Sales Outstanding",
     dso,
     formatDays,
-    "应收账款周转天数",
+    "daysSalesOutstandingDesc",
     "365 / Annualized AR Turnover"
   );
   addMetric(
@@ -606,7 +606,7 @@ const calculateMetrics = (
     "Total Asset Turnover",
     safeDiv(annRevenue, avgAssets),
     formatNumber,
-    "总资产周转率",
+    "totalAssetTurnoverDesc",
     "Annualized Revenue / Avg Total Assets"
   );
   addMetric(
@@ -614,7 +614,7 @@ const calculateMetrics = (
     "Operating Cycle",
     dio + dso,
     formatDays,
-    "营业周期",
+    "operatingCycleDesc",
     "DIO + DSO"
   );
   addMetric(
@@ -622,7 +622,7 @@ const calculateMetrics = (
     "Cash Conversion Cycle",
     dio + dso - dpo,
     formatDays,
-    "现金转换周期",
+    "cashConversionCycleDesc",
     "DIO + DSO - DPO"
   );
 
@@ -631,7 +631,7 @@ const calculateMetrics = (
     "Working Capital",
     currentAssets - currentLiabilities,
     formatLargeNumber,
-    "营运资金",
+    "workingCapitalDesc",
     "Current Assets - Current Liabilities"
   );
 
@@ -643,7 +643,7 @@ const calculateMetrics = (
     "OCF to Revenue",
     safeDiv(ocf, revenue),
     formatPercent,
-    "经营现金流与收入比",
+    "ocfToRevenueDesc",
     "Operating Cash Flow / Revenue"
   );
   addMetric(
@@ -651,7 +651,7 @@ const calculateMetrics = (
     "OCF to Operating Income",
     safeDiv(ocf, operatingProfit),
     formatPercent,
-    "盈利现金比率",
+    "ocfToOperatingIncomeDesc",
     "Operating Cash Flow / Operating Income"
   );
   addMetric(
@@ -659,7 +659,7 @@ const calculateMetrics = (
     "Free Cash Flow (FCFF)",
     fcf,
     formatLargeNumber,
-    "企业自由现金流量",
+    "freeCashFlowDesc",
     "OCF - Capex (Simplified)"
   );
   addMetric(
@@ -667,7 +667,7 @@ const calculateMetrics = (
     "Cash Collection Ratio",
     safeDiv(salesCash, revenue),
     formatPercent,
-    "收现比",
+    "cashCollectionRatioDesc",
     "Cash Received from Sales / Revenue"
   );
   addMetric(
@@ -675,7 +675,7 @@ const calculateMetrics = (
     "OCF to Debt",
     safeDiv(annOCF, totalLiabilities),
     formatPercent,
-    "经营现金流与负债比",
+    "ocfToDebtDesc",
     "Annualized Operating Cash Flow / Total Liabilities"
   );
   addMetric(
@@ -683,7 +683,7 @@ const calculateMetrics = (
     "OCF to Capex",
     safeDiv(ocf, capex),
     formatPercent,
-    "经营现金流与资本支出比",
+    "ocfToCapexDesc",
     "Operating Cash Flow / Capital Expenditures"
   );
 
@@ -709,7 +709,7 @@ const calculateMetrics = (
       "Revenue Growth",
       safeDiv(revenue - prevRevenue, prevRevenue),
       formatPercent,
-      "营收增长率",
+      "revenueGrowthDesc",
       "(Current Revenue - Prev Revenue) / Prev Revenue"
     );
     addMetric(
@@ -717,7 +717,7 @@ const calculateMetrics = (
       "Net Profit Growth",
       safeDiv(netIncome - prevNetIncome, Math.abs(prevNetIncome)),
       formatPercent,
-      "净利润增长率",
+      "netProfitGrowthDesc",
       "(Current Net Income - Prev Net Income) / |Prev Net Income|"
     );
     addMetric(
@@ -725,7 +725,7 @@ const calculateMetrics = (
       "OCF Growth",
       safeDiv(ocf - prevOCF, Math.abs(prevOCF)),
       formatPercent,
-      "经营现金流增长率",
+      "ocfGrowthDesc",
       "(Current OCF - Prev OCF) / |Prev OCF|"
     );
   } else {
@@ -734,7 +734,7 @@ const calculateMetrics = (
       "Revenue Growth",
       0,
       () => "-",
-      "Requires prev period data",
+      "requiresPrevPeriodData",
       "N/A"
     );
     addMetric(
@@ -742,7 +742,7 @@ const calculateMetrics = (
       "Net Profit Growth",
       0,
       () => "-",
-      "Requires prev period data",
+      "requiresPrevPeriodData",
       "N/A"
     );
     addMetric(
@@ -750,7 +750,7 @@ const calculateMetrics = (
       "OCF Growth",
       0,
       () => "-",
-      "Requires prev period data",
+      "requiresPrevPeriodData",
       "N/A"
     );
   }

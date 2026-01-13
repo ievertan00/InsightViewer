@@ -62,9 +62,7 @@ export default function UploadPage() {
       );
 
       if (validFiles.length !== droppedFiles.length) {
-        setUploadError(
-          "File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files."
-        );
+        setUploadError(t('fileTypeRestricted'));
         return;
       }
 
@@ -86,9 +84,7 @@ export default function UploadPage() {
       );
 
       if (validFiles.length !== selectedFiles.length) {
-        setUploadError(
-          "File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files."
-        );
+        setUploadError(t('fileTypeRestricted'));
         return;
       }
 
@@ -105,7 +101,7 @@ export default function UploadPage() {
 
     // Validation: 6-digit number
     if (!/^V{6}$/.test(stockSymbol)) {
-      setSearchError("Stock Code must be a 6-digit number.");
+      setSearchError(t('stockCodeInvalid'));
       return;
     }
 
@@ -116,7 +112,7 @@ export default function UploadPage() {
 
     try {
       const symbol = stockSymbol.startsWith("6")
-        ? `${stockSymbol}.SH`
+        ? `${stockSymbol}.SH` 
         : `${stockSymbol}.SZ`;
 
       let url = `http://localhost:8000/api/v1/stock/${symbol}`;
@@ -157,15 +153,13 @@ export default function UploadPage() {
         );
         setIsFetchingStock(false);
       } else {
-        setSearchError(
-          t('noData')
-        );
+        setSearchError(t('noData'));
         setIsFetchingStock(false);
       }
     } catch (err: any) {
       console.error(err);
       setSearchError(
-        err.message || "An error occurred while fetching stock data."
+        err.message || t('fetchGenericError')
       );
       setIsFetchingStock(false);
     }
@@ -198,7 +192,7 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to process pasted JSON");
+        throw new Error(errorData.detail || t('processJsonError'));
       }
 
       const reportData = await response.json();
@@ -207,7 +201,7 @@ export default function UploadPage() {
       const newName = reportData.company_meta?.name;
 
       if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
-        setPasteError(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+        setPasteError(t('companyNameMismatch').replace('{existing}', existingName).replace('{new}', newName));
         setIsProcessingPaste(false);
         return;
       }
@@ -281,7 +275,7 @@ export default function UploadPage() {
         setJsonContent(""); // Clear input
         setIsProcessingPaste(false);
       } else {
-        setPasteError("The pasted JSON is valid but contains no report data.");
+        setPasteError(t('noReportDataInJson'));
         setIsProcessingPaste(false);
       }
     } catch (e: any) {
@@ -294,454 +288,7 @@ export default function UploadPage() {
   };
 
   const copyLlmPrompt = () => {
-    const prompt = `You are a strict data extraction assistant. Convert the provided financial report (Image/Text/Excel) into the following JSON structure. 
-Rules:
-1. Return ONLY valid JSON. No markdown formatting, no explanations.
-2. If a field is missing in the source, use 0.
-3. Use the exact keys provided below.
-4. "fiscal_year" Format:
-   - Annual: "2023 Annual"
-   - Quarterly: "2023 Q1", "2023 Q2", etc.
-   - Monthly: "2023-01", "2023-02", etc.
-5. "period_type": "Annual", "Quarterly", or "Monthly".
-6. If the source contains multiple periods, generate a separate object in the "reports" array for EACH period.
-
-Template:
-{
-  "company_meta": {
-    "name": "Company Name Placeholder",
-    "stock_code": "000000",
-    "currency": "CNY"
-  },
-  "reports": [
-    {
-      "fiscal_year": "2023 Annual",
-      "period_type": "Annual",
-      "data": {
-        "income_statement": {
-          "title": "Income Statement",
-          "total_operating_revenue": {
-            "amount": 0.0,
-            "operating_revenue": 0.0,
-            "interest_income": 0.0,
-            "earned_premiums": 0.0,
-            "fee_and_commission_income": 0.0,
-            "other_business_revenue": 0.0,
-            "other_items": 0.0
-          },
-          "total_operating_cost": {
-            "amount": 0.0,
-            "operating_cost": 0.0,
-            "interest_expenses": 0.0,
-            "fee_and_commission_expenses": 0.0,
-            "taxes_and_surcharges": 0.0,
-            "selling_expenses": 0.0,
-            "admin_expenses": 0.0,
-            "rd_expenses": 0.0,
-            "financial_expenses": {
-              "amount": 0.0,
-              "interest_expenses": 0.0,
-              "interest_income": 0.0
-            },
-            "asset_impairment_loss": 0.0,
-            "credit_impairment_loss": 0.0,
-            "surrender_value": 0.0,
-            "net_compensation_expenses": 0.0,
-            "net_insurance_contract_reserves": 0.0,
-            "policy_dividend_expenses": 0.0,
-            "reinsurance_expenses": 0.0,
-            "other_business_costs": 0.0,
-            "other_items": 0.0
-          },
-          "other_operating_income": {
-            "amount": 0.0,
-            "fair_value_change_income": 0.0,
-            "investment_income": 0.0,
-            "investment_income_from_associates_jv": 0.0,
-            "net_exposure_hedging_income": 0.0,
-            "exchange_income": 0.0,
-            "asset_disposal_income": 0.0,
-            "asset_impairment_loss_new": 0.0,
-            "credit_impairment_loss_new": 0.0,
-            "other_income": 0.0,
-            "operating_profit_other_items": 0.0,
-            "operating_profit_balance_items": 0.0
-          },
-          "operating_profit": {
-            "amount": 0.0,
-            "non_operating_revenue": 0.0,
-            "non_current_asset_disposal_gain": 0.0,
-            "non_operating_expenses": 0.0,
-            "non_current_asset_disposal_loss": 0.0,
-            "other_items_affecting_total_profit": 0.0,
-            "total_profit_balance_items": 0.0
-          },
-          "total_profit": {
-            "amount": 0.0,
-            "income_tax": 0.0,
-            "unconfirmed_investment_loss": 0.0,
-            "other_items_affecting_net_profit": 0.0,
-            "net_profit_difference": 0.0
-          },
-          "net_profit": {
-            "amount": 0.0,
-            "net_profit_continuing_ops": 0.0,
-            "net_profit_discontinued_ops": 0.0,
-            "profit_from_merged_party_before_merger": 0.0,
-            "net_profit_attr_to_parent": 0.0,
-            "minority_interest_income": 0.0,
-            "net_profit_deducting_non_recurring": 0.0,
-            "other_items": 0.0,
-            "balance_items": 0.0
-          },
-          "earnings_per_share": {
-            "basic_eps": 0.0,
-            "diluted_eps": 0.0
-          },
-          "other_comprehensive_income": {
-            "amount": 0.0,
-            "attr_to_parent": 0.0,
-            "attr_to_minority": 0.0
-          },
-          "total_comprehensive_income": {
-            "amount": 0.0,
-            "attr_to_parent": 0.0,
-            "attr_to_minority": 0.0,
-            "derecognition_income_amortized_cost": 0.0
-          }
-        },
-        "balance_sheet": {
-          "title": "Balance Sheet",
-          "current_assets": {
-            "monetary_funds": 0.0,
-            "clearing_settlement_funds": 0.0,
-            "lending_funds": 0.0,
-            "funds_lent": 0.0,
-            "trading_financial_assets": 0.0,
-            "financial_assets_fvpl": {
-              "amount": 0.0,
-              "trading_financial_assets": 0.0,
-              "designated_financial_assets_fvpl": 0.0
-            },
-            "derivative_financial_assets": 0.0,
-            "notes_and_accounts_receivable": {
-              "amount": 0.0,
-              "notes_receivable": 0.0,
-              "accounts_receivable": 0.0
-            },
-            "receivables_financing": 0.0,
-            "prepayments": 0.0,
-            "premiums_receivable": 0.0,
-            "reinsurance_accounts_receivable": 0.0,
-            "reinsurance_contract_reserves_receivable": 0.0,
-            "other_receivables_total": {
-              "amount": 0.0,
-              "interest_receivable": 0.0,
-              "dividends_receivable": 0.0,
-              "other_receivables": 0.0
-            },
-            "export_tax_refund_receivable": 0.0,
-            "subsidies_receivable": 0.0,
-            "internal_receivables": 0.0,
-            "buy_back_financial_assets": 0.0,
-            "financial_assets_amortized_cost": 0.0,
-            "inventories": 0.0,
-            "financial_assets_fvoci": 0.0,
-            "contract_assets": 0.0,
-            "assets_held_for_sale": 0.0,
-            "non_current_assets_due_within_1y": 0.0,
-            "agency_business_assets": 0.0,
-            "other_current_assets": 0.0,
-            "other_items": 0.0,
-            "balance_items": 0.0,
-            "total_current_assets": 0.0
-          },
-          "non_current_assets": {
-            "loans_and_advances": 0.0,
-            "debt_investments": 0.0,
-            "other_debt_investments": 0.0,
-            "financial_assets_amortized_cost_non_current": 0.0,
-            "financial_assets_fvoci_non_current": 0.0,
-            "available_for_sale_financial_assets": 0.0,
-            "held_to_maturity_investments": 0.0,
-            "long_term_receivables": 0.0,
-            "long_term_equity_investments": 0.0,
-            "investment_properties": 0.0,
-            "fixed_assets": 0.0,
-            "construction_in_progress": 0.0,
-            "construction_materials": 0.0,
-            "other_equity_instrument_investments": 0.0,
-            "other_non_current_financial_assets": 0.0,
-            "fixed_assets_liquidation": 0.0,
-            "productive_biological_assets": 0.0,
-            "oil_and_gas_assets": 0.0,
-            "right_of_use_assets": 0.0,
-            "intangible_assets": 0.0,
-            "balance_items": 0.0,
-            "development_expenses": 0.0,
-            "goodwill": 0.0,
-            "long_term_deferred_expenses": 0.0,
-            "deferred_tax_assets": 0.0,
-            "other_non_current_assets": 0.0,
-            "other_items": 0.0,
-            "total_non_current_assets": 0.0
-          },
-          "assets_summary": {
-            "other_asset_items": 0.0,
-            "asset_balance_items": 0.0,
-            "total_assets": 0.0
-          },
-          "current_liabilities": {
-            "short_term_borrowings": 0.0,
-            "borrowings_from_central_bank": 0.0,
-            "deposits_and_interbank_placements": 0.0,
-            "borrowings_from_interbank": 0.0,
-            "trading_financial_liabilities": 0.0,
-            "financial_liabilities_fvpl": {
-              "amount": 0.0,
-              "trading_financial_liabilities": 0.0,
-              "designated_financial_liabilities_fvpl": 0.0
-            },
-            "derivative_financial_liabilities": 0.0,
-            "notes_and_accounts_payable": {
-              "amount": 0.0,
-              "notes_payable": 0.0,
-              "accounts_payable": 0.0
-            },
-            "advances_from_customers": 0.0,
-            "contract_liabilities": 0.0,
-            "sell_buy_back_financial_assets": 0.0,
-            "fees_and_commissions_payable": 0.0,
-            "payroll_payable": 0.0,
-            "taxes_payable": 0.0,
-            "other_payables_total": {
-              "amount": 0.0,
-              "interest_payable": 0.0,
-              "dividends_payable": 0.0,
-              "other_payables": 0.0
-            },
-            "reinsurance_accounts_payable": 0.0,
-            "internal_payables": 0.0,
-            "estimated_current_liabilities": 0.0,
-            "insurance_contract_reserves": 0.0,
-            "acting_trading_securities": 0.0,
-            "acting_underwriting_securities": 0.0,
-            "deferred_revenue_within_1y": 0.0,
-            "financial_liabilities_amortized_cost": 0.0,
-            "short_term_bonds_payable": 0.0,
-            "liabilities_held_for_sale": 0.0,
-            "non_current_liabilities_due_within_1y": 0.0,
-            "agency_business_liabilities": 0.0,
-            "other_current_liabilities": 0.0,
-            "other_items": 0.0,
-            "balance_items": 0.0,
-            "total_current_liabilities": 0.0
-          },
-          "non_current_liabilities": {
-            "long_term_borrowings": 0.0,
-            "financial_liabilities_amortized_cost_non_current": 0.0,
-            "bonds_payable": {
-              "amount": 0.0,
-              "preference_shares": 0.0,
-              "perpetual_bonds": 0.0
-            },
-            "lease_liabilities": 0.0,
-            "long_term_payables": 0.0,
-            "long_term_payroll_payable": 0.0,
-            "special_payables": 0.0,
-            "estimated_liabilities": 0.0,
-            "deferred_revenue": 0.0,
-            "deferred_tax_liabilities": 0.0,
-            "other_non_current_liabilities": 0.0,
-            "other_items": 0.0,
-            "balance_items": 0.0,
-            "total_non_current_liabilities": 0.0
-          },
-          "liabilities_summary": {
-            "other_liability_items": 0.0,
-            "liability_balance_items": 0.0,
-            "total_liabilities": 0.0
-          },
-          "equity": {
-            "title": "Owner's Equity",
-            "paid_in_capital": 0.0,
-            "other_equity_instruments": {
-              "amount": 0.0,
-              "preference_shares": 0.0,
-              "perpetual_bonds": 0.0,
-              "other": 0.0
-            },
-            "capital_reserves": 0.0,
-            "other_comprehensive_income": 0.0,
-            "treasury_stock": 0.0,
-            "special_reserves": 0.0,
-            "surplus_reserves": 0.0,
-            "general_risk_reserves": 0.0,
-            "unconfirmed_investment_loss": 0.0,
-            "undistributed_profit": 0.0,
-            "proposed_cash_dividends": 0.0,
-            "currency_translation_diff": 0.0,
-            "parent_equity_other_items": 0.0,
-            "parent_equity_balance_items": 0.0,
-            "total_parent_equity": 0.0,
-            "minority_interests": 0.0,
-            "equity_other_items": 0.0,
-            "equity_balance_items": 0.0,
-            "total_equity": 0.0
-          },
-          "balance_check": {
-            "liabilities_and_equity_other_items": 0.0,
-            "liabilities_and_equity_balance_items": 0.0,
-            "total_liabilities_and_equity": 0.0
-          }
-        },
-        "cash_flow_statement": {
-          "title": "Cash Flow Statement",
-          "operating_activities": {
-            "cash_received_from_goods_and_services": 0.0,
-            "net_increase_deposits_interbank": 0.0,
-            "net_increase_borrowings_central_bank": 0.0,
-            "net_increase_borrowings_other_financial": 0.0,
-            "cash_received_original_premiums": 0.0,
-            "net_cash_received_reinsurance": 0.0,
-            "net_increase_insured_investment": 0.0,
-            "net_increase_disposal_trading_assets": 0.0,
-            "cash_received_interest_commission": 0.0,
-            "net_increase_borrowed_funds": 0.0,
-            "net_decrease_loans_advances": 0.0,
-            "net_increase_repurchase_funds": 0.0,
-            "tax_refunds_received": 0.0,
-            "other_cash_received_operating": 0.0,
-            "inflow_other_items": 0.0,
-            "inflow_balance_items": 0.0,
-            "subtotal_cash_inflow_operating": 0.0,
-            "cash_paid_for_goods_and_services": 0.0,
-            "net_increase_loans_advances": 0.0,
-            "net_increase_deposits_central_bank_interbank": 0.0,
-            "cash_paid_original_contract_claims": 0.0,
-            "cash_paid_interest_commission": 0.0,
-            "cash_paid_policy_dividends": 0.0,
-            "cash_paid_to_employees": 0.0,
-            "taxes_paid": 0.0,
-            "other_cash_paid_operating": 0.0,
-            "outflow_other_items": 0.0,
-            "outflow_balance_items": 0.0,
-            "subtotal_cash_outflow_operating": 0.0,
-            "net_cash_flow_other_items": 0.0,
-            "net_cash_flow_balance_items": 0.0,
-            "net_cash_flow_from_operating": 0.0
-          },
-          "investing_activities": {
-            "cash_received_from_investment_recovery": 0.0,
-            "cash_received_from_investment_income": 0.0,
-            "net_cash_from_disposal_assets": 0.0,
-            "net_cash_from_disposal_subsidiaries": 0.0,
-            "cash_received_from_pledge_deposit_reduction": 0.0,
-            "other_cash_received_investing": 0.0,
-            "inflow_other_items": 0.0,
-            "inflow_balance_items": 0.0,
-            "subtotal_cash_inflow_investing": 0.0,
-            "cash_paid_for_assets": 0.0,
-            "cash_paid_for_investments": 0.0,
-            "net_increase_pledged_loans": 0.0,
-            "net_cash_paid_subsidiaries": 0.0,
-            "cash_paid_for_pledge_deposit_increase": 0.0,
-            "other_cash_paid_investing": 0.0,
-            "outflow_other_items": 0.0,
-            "outflow_balance_items": 0.0,
-            "subtotal_cash_outflow_investing": 0.0,
-            "net_cash_flow_other_items": 0.0,
-            "net_cash_flow_balance_items": 0.0,
-            "net_cash_flow_from_investing": 0.0
-          },
-          "financing_activities": {
-            "cash_received_from_investments": {
-              "amount": 0.0,
-              "from_minority_shareholders": 0.0
-            },
-            "cash_received_from_borrowings": 0.0,
-            "cash_received_from_bond_issue": 0.0,
-            "other_cash_received_financing": 0.0,
-            "inflow_other_items": 0.0,
-            "inflow_balance_items": 0.0,
-            "subtotal_cash_inflow_financing": 0.0,
-            "cash_paid_for_debt_repayment": 0.0,
-            "cash_paid_for_dividends_and_profits": 0.0,
-            "dividends_paid_to_minority": 0.0,
-            "cash_paid_for_minority_equity": 0.0,
-            "other_cash_paid_financing": {
-              "amount": 0.0,
-              "paid_to_minority_for_capital_reduction": 0.0
-            },
-            "outflow_other_items": 0.0,
-            "outflow_balance_items": 0.0,
-            "subtotal_cash_outflow_financing": 0.0,
-            "net_cash_flow_other_items": 0.0,
-            "net_cash_flow_balance_items": 0.0,
-            "net_cash_flow_from_financing": 0.0
-          },
-          "cash_increase": {
-            "exchange_rate_effect": 0.0,
-            "increase_other_items": 0.0,
-            "increase_balance_items": 0.0,
-            "net_increase_cash_and_equivalents": 0.0,
-            "cash_at_beginning": 0.0,
-            "end_balance_other_items": 0.0,
-            "end_balance_balance_items": 0.0,
-            "cash_at_end": 0.0
-          },
-          "supplementary_info": {
-            "net_profit_adjustment": {
-              "net_profit": 0.0,
-              "asset_impairment_reserves": 0.0,
-              "depreciation_fixed_assets_investment_props": 0.0,
-              "depreciation_others": 0.0,
-              "depreciation_investment_props": 0.0,
-              "amortization_intangible_assets": 0.0,
-              "amortization_long_term_deferred": 0.0,
-              "amortization_deferred_revenue": 0.0,
-              "decrease_deferred_expenses": 0.0,
-              "increase_accrued_expenses": 0.0,
-              "loss_disposal_assets": 0.0,
-              "loss_scrapping_assets": 0.0,
-              "loss_fair_value_change": 0.0,
-              "financial_expenses": 0.0,
-              "investment_loss": 0.0,
-              "deferred_tax": 0.0,
-              "decrease_deferred_tax_assets": 0.0,
-              "increase_deferred_tax_liabilities": 0.0,
-              "increase_estimated_liabilities": 0.0,
-              "decrease_inventories": 0.0,
-              "decrease_operating_receivables": 0.0,
-              "increase_operating_payables": 0.0,
-              "other": 0.0,
-              "net_cash_flow_other_items": 0.0,
-              "net_cash_flow_balance_items": 0.0,
-              "net_cash_flow_from_operating_indirect": 0.0
-            },
-            "significant_non_cash": {
-              "debt_to_capital": 0.0,
-              "convertible_bonds_due_within_1y": 0.0,
-              "fixed_assets_finance_lease": 0.0,
-              "non_cash_items_other": 0.0
-            },
-            "cash_change_check": {
-              "cash_end_balance": 0.0,
-              "cash_begin_balance": 0.0,
-              "equivalents_end_balance": 0.0,
-              "equivalents_begin_balance": 0.0,
-              "net_increase_other": 0.0,
-              "net_increase_balance": 0.0,
-              "net_increase_cash_and_equivalents_indirect": 0.0
-            },
-            "credit_impairment_loss": 0.0
-          }
-        }
-      }
-    }
-  ]
-}
-`;
+    const prompt = t('llmPromptTemplate');
     navigator.clipboard.writeText(prompt);
     setShowCopiedMessage(true);
     setTimeout(() => setShowCopiedMessage(false), 3000); // Hide after 3 seconds
@@ -848,14 +395,14 @@ Template:
       setProgress(70);
 
       if (reportData.reports.length === 0 && reportData.parsing_warnings.length > 0) {
-        setUploadError("Could not extract any valid reports from the provided files.");
+        setUploadError(t('noValidReportsExtracted'));
         setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
         setIsProcessingUpload(false);
         return;
       }
 
       if (reportData.reports.length === 0) {
-        setUploadError("No valid data could be extracted. Please check the file format.");
+        setUploadError(t('checkFileFormat'));
         setIsProcessingUpload(false);
         return;
       }
@@ -865,7 +412,7 @@ Template:
       const newName = reportData.company_meta?.name;
 
       if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
-        setUploadError(`Cannot append data. Company name mismatch: Existing '${existingName}' vs New '${newName}'.`);
+        setUploadError(t('companyNameMismatch').replace('{existing}', existingName).replace('{new}', newName));
         setIsProcessingUpload(false);
         return;
       }
@@ -973,7 +520,7 @@ Template:
             <h3 className="font-bold mb-2">2. {t('pasteJson')}</h3>
             <p className="mb-2">{t('pasteJsonDesc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>Use the "{t('copyLlmPrompt')}" button.</li>
+              <li>Use the &quot;{t('copyLlmPrompt')}&quot; button.</li>
               <li>Paste the prompt into DeepSeek/ChatGPT/Claude.</li>
               <li>Upload your Excel/PDF/Image to the LLM.</li>
               <li>Paste the JSON response here.</li>
@@ -1039,11 +586,11 @@ Template:
             {isFetchingStock ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}
-            {isFetchingStock ? "Fetching..." : t('fetchData')}
+            {isFetchingStock ? t('processing') : t('fetchData')}
           </button>
         </div>
         <p className="text-xs text-gray-400">
-          Note: Requires Tushare API Token configured on backend.
+          {t('tushareNote')}
         </p>
       </div>
 
@@ -1202,7 +749,7 @@ Template:
               onClick={copyWarningMessage}
               className="text-xs text-yellow-700 hover:text-yellow-900 font-medium underline"
             >
-              Copy Warnings
+              {t('copyWarnings')}
             </button>
           </div>
           <div className="relative">
@@ -1213,7 +760,7 @@ Template:
             />
           </div>
           <p className="text-xs text-yellow-600">
-            These rows were skipped because they did not match the template. Please review your file or the template.
+            {t('warningDetails')}
           </p>
         </div>
       )}

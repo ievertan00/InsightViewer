@@ -8,6 +8,7 @@ import TrendLineChart from "@/components/charts/TrendLineChart";
 import CompositionBarChart from "@/components/charts/CompositionBarChart";
 import FlowBarChart from "@/components/charts/FlowBarChart";
 import GrowthComboChart from "@/components/charts/GrowthComboChart";
+import { useLanguage } from "@/lib/LanguageContext";
 import {
   mapAssetStructure,
   mapLiabilityStructure,
@@ -97,6 +98,7 @@ const PROFIT_SOURCE_COLORS = [
 ];
 
 export default function ChartsPage() {
+  const { t } = useLanguage();
   const [reports, setReports] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<"Annual" | "Quarterly" | "Monthly" | "All">("Annual");
 
@@ -116,6 +118,20 @@ export default function ChartsPage() {
   const [wcCycleData, setWcCycleData] = useState<any[]>([]);
   const [debtAssetData, setDebtAssetData] = useState<any[]>([]);
   const [profitVsCashData, setProfitVsCashData] = useState<any[]>([]);
+
+  // Helper to translate data keys within objects
+  const translateData = (data: any[]) => {
+    return data.map((item) => {
+      const newItem: any = { ...item };
+      Object.keys(item).forEach((key) => {
+        // Skip metadata keys, translate metrics
+        if (key !== "year" && key !== "fiscal_year" && key !== "period_type") {
+          newItem[t(key)] = item[key];
+        }
+      });
+      return newItem;
+    });
+  };
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
@@ -168,7 +184,7 @@ export default function ChartsPage() {
   if (reports.length === 0 && filterType === "All") {
     return (
       <div className="p-10 text-center text-gray-500">
-        No report data found. Please import data first.
+        {t('noDataFound')}
       </div>
     );
   }
@@ -177,9 +193,9 @@ export default function ChartsPage() {
     <div className="space-y-8 pb-20">
       <div className="flex justify-between items-center border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financial Charts</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('chartsTitle')}</h1>
           <p className="text-gray-500">
-            Visual analysis of financial structure and performance.
+            {t('chartsDesc')}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -195,51 +211,51 @@ export default function ChartsPage() {
                     : "text-gray-500 hover:text-gray-700"
                 )}
               >
-                {type}
+                {type === "All" ? t('selectAll') : type === "Annual" ? "Annual" : type === "Quarterly" ? "Quarterly" : "Monthly"}
               </button>
             ))}
           </div>
           <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-            Unit: Million CNY
+            {t('unitMillionCNY')}
           </div>
         </div>
       </div>
 
       {/* 1. Profitability Trends */}
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
-        Profitability Trends
+        {t('profitabilityTrends')}
       </h2>
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Return Metrics (%)">
+          <ChartCard title={t('returnMetrics')}>
             <TrendLineChart
-              data={profitTrendData}
-              dataKeys={["ROE", "Net Margin", "Gross Margin"]}
+              data={translateData(profitTrendData)}
+              dataKeys={["ROE", "Net Margin", "Gross Margin"].map(k => t(k))}
               colors={[COLORS.lightBlue, COLORS.red, COLORS.green]}
               unit="%"
             />
           </ChartCard>
-          <ChartCard title="Revenue vs Cash Collection">
+          <ChartCard title={t('revenueVsCash')}>
             <TrendLineChart
-              data={revenueVsCashData}
-              dataKeys={["Revenue", "Cash From Sales"]}
+              data={translateData(revenueVsCashData)}
+              dataKeys={["Revenue", "Cash From Sales"].map(k => t(k))}
               colors={[COLORS.blue, COLORS.red]}
               unit="M"
             />
           </ChartCard>
-          <ChartCard title="Net Profit vs Operating Cash Flow">
+          <ChartCard title={t('netProfitVsOCF')}>
             <TrendLineChart
-              data={profitVsCashData}
-              dataKeys={["Net Profit", "Operating CF"]}
+              data={translateData(profitVsCashData)}
+              dataKeys={["Net Profit", "Operating CF"].map(k => t(k))}
               colors={[COLORS.blue, COLORS.red]}
               unit="M"
             />
           </ChartCard>
         </div>
 
-        <ChartCard title="Profit Sources Breakdown">
+        <ChartCard title={t('profitSources')}>
           <FlowBarChart
-            data={profitSourceData}
+            data={translateData(profitSourceData)}
             dataKeys={[
               "Main Business Profit",
               "Finance Expense",
@@ -250,7 +266,7 @@ export default function ChartsPage() {
               "Other Income",
               "Non-op Revenue",
               "Non-op Expense",
-            ]}
+            ].map(k => t(k))}
             colors={PROFIT_SOURCE_COLORS}
             unit="M"
           />
@@ -259,29 +275,29 @@ export default function ChartsPage() {
 
       {/* 2. Liquidity & Cycle Analysis */}
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
-        Liquidity & Cycle Analysis
+        {t('liquidityCycle')}
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Liquidity Ratios Trend">
+        <ChartCard title={t('liquidityRatios')}>
           <TrendLineChart
-            data={liquidityData}
-            dataKeys={["Current Ratio", "Quick Ratio", "Cash Ratio"]}
+            data={translateData(liquidityData)}
+            dataKeys={["Current Ratio", "Quick Ratio", "Cash Ratio"].map(k => t(k))}
             colors={[COLORS.blue, COLORS.green, COLORS.orange]}
           />
         </ChartCard>
-        <ChartCard title="Working Capital Cycle (Days)">
+        <ChartCard title={t('workingCapitalCycle')}>
           <TrendLineChart
-            data={wcCycleData}
-            dataKeys={["DIO", "DSO", "DPO", "CCC"]}
+            data={translateData(wcCycleData)}
+            dataKeys={["DIO", "DSO", "DPO", "CCC"].map(k => t(k))}
             colors={[COLORS.blue, COLORS.orange, COLORS.grey, COLORS.purple]}
             unit=" Days"
           />
         </ChartCard>
-        <ChartCard title="Debt-to-Asset Ratio & Delta">
+        <ChartCard title={t('debtToAsset')}>
           <GrowthComboChart
-            data={debtAssetData}
-            barKey="Debt Ratio"
-            lineKey="Debt Ratio Delta"
+            data={translateData(debtAssetData)}
+            barKey={t("Debt Ratio")}
+            lineKey={t("Debt Ratio Delta")}
             barColor={COLORS.lightBlue}
             lineColor={COLORS.orange}
             barUnit="%"
@@ -291,24 +307,24 @@ export default function ChartsPage() {
 
       {/* 3. Efficiency & Cost */}
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
-        Efficiency & Cost Structure
+        {t('efficiencyCost')}
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Turnover Ratios">
+        <ChartCard title={t('turnoverRatios')}>
           <TrendLineChart
-            data={efficiencyData}
+            data={translateData(efficiencyData)}
             dataKeys={[
               "Inventory Turnover",
               "AR Turnover",
               "Fixed Asset Turnover",
               "Total Asset Turnover",
-            ]}
+            ].map(k => t(k))}
             colors={[COLORS.blue, COLORS.orange, COLORS.grey, COLORS.yellow]}
           />
         </ChartCard>
-        <ChartCard title="Cost & Expense Structure (%)">
+        <ChartCard title={t('costStructure')}>
           <CompositionBarChart
-            data={costData}
+            data={translateData(costData)}
             dataKeys={[
               "COGS",
               "Tax & Surcharge",
@@ -316,7 +332,7 @@ export default function ChartsPage() {
               "Admin Exp",
               "R&D Exp",
               "Main Profit",
-            ]}
+            ].map(k => t(k))}
             colors={[
               COLORS.red,
               COLORS.brown,
@@ -331,41 +347,41 @@ export default function ChartsPage() {
 
       {/* 3. Cash Flow & Growth */}
       <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
-        Cash Flow & Growth
+        {t('cashFlowGrowth')}
       </h2>
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Cash Flow Summary">
+          <ChartCard title={t('cashFlowSummary')}>
             <FlowBarChart
-              data={cashFlowData}
-              dataKeys={["Operating CF", "Investing CF", "Financing CF"]}
+              data={translateData(cashFlowData)}
+              dataKeys={["Operating CF", "Investing CF", "Financing CF"].map(k => t(k))}
               colors={[COLORS.red, COLORS.orange, COLORS.blue]}
               unit="M"
             />
           </ChartCard>
-          <ChartCard title="OCF vs Capex vs FCF Trend">
+          <ChartCard title={t('ocfCapexFcf')}>
             <TrendLineChart
-              data={capexData}
-              dataKeys={["Operating CF", "Capex", "Free CF"]}
+              data={translateData(capexData)}
+              dataKeys={["Operating CF", "Capex", "Free CF"].map(k => t(k))}
               colors={[COLORS.green, COLORS.darkBlue, COLORS.orange]}
               unit="M"
             />
           </ChartCard>
-          <ChartCard title="Revenue Growth">
+          <ChartCard title={t('revenueGrowth')}>
             <GrowthComboChart
-              data={growthData}
-              barKey="Revenue"
-              lineKey="Revenue Growth"
+              data={translateData(growthData)}
+              barKey={t("Revenue")}
+              lineKey={t("Revenue Growth")}
               barColor={COLORS.blue}
               lineColor={COLORS.orange}
               barUnit="M"
             />
           </ChartCard>
-          <ChartCard title="Net Profit Growth">
+          <ChartCard title={t('netProfitGrowth')}>
             <GrowthComboChart
-              data={growthData}
-              barKey="Net Profit"
-              lineKey="Net Profit Growth"
+              data={translateData(growthData)}
+              barKey={t("Net Profit")}
+              lineKey={t("Net Profit Growth")}
               barColor={COLORS.lightBlue}
               lineColor={COLORS.orange}
               barUnit="M"
@@ -375,12 +391,12 @@ export default function ChartsPage() {
       </div>
 
       {/* 4. Structure Analysis */}      <h2 className="text-xl font-bold text-gray-800 mt-8 mb-4">
-        Structure Analysis
+        {t('structureAnalysis')}
       </h2>
       <div className="space-y-8">
-        <ChartCard title="Asset Structure">
+        <ChartCard title={t('assetStructure')}>
           <StructureAreaChart
-            data={assetData}
+            data={translateData(assetData)}
             dataKeys={[
               "Cash & Equiv Etc",
               "Receivables Etc",
@@ -394,14 +410,14 @@ export default function ChartsPage() {
               "Right-of-use Assets",
               "Intangible Assets",
               "Other Assets",
-            ]}
+            ].map(k => t(k))}
             colors={ASSET_COLORS}
             unit="M"
           />
         </ChartCard>
-        <ChartCard title="Liability Structure">
+        <ChartCard title={t('liabilityStructure')}>
           <StructureAreaChart
-            data={liabilityData}
+            data={translateData(liabilityData)}
             dataKeys={[
               "Interest-bearing Debt",
               "Payables Etc",
@@ -412,14 +428,14 @@ export default function ChartsPage() {
               "Lease Liabilities",
               "Long-term Payables",
               "Other Liabilities",
-            ]}
+            ].map(k => t(k))}
             colors={LIABILITY_COLORS}
             unit="M"
           />
         </ChartCard>
-        <ChartCard title="Equity Structure">
+        <ChartCard title={t('equityStructure')}>
           <StructureAreaChart
-            data={equityData}
+            data={translateData(equityData)}
             dataKeys={[
               "Paid-in Capital",
               "Other Equity Instruments",
@@ -430,7 +446,7 @@ export default function ChartsPage() {
               "Surplus Reserves",
               "Undistributed Profit",
               "Minority Interests & Other",
-            ]}
+            ].map(k => t(k))}
             colors={EQUITY_COLORS}
             unit="M"
           />

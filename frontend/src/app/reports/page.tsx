@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { FileText, FileCode, Download, Eye } from "lucide-react";
 import clsx from "clsx";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function ExportPage() {
+  const { t } = useLanguage();
   const [format, setFormat] = useState<"pdf" | "markdown">("pdf");
 
   return (
     <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Report Generator</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('reportTitle')}</h1>
         <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-900 transition-colors shadow-sm">
             <Download className="w-5 h-5 mr-2" />
-            Download {format.toUpperCase()}
+            {t('download')} {format.toUpperCase()}
         </button>
       </div>
 
@@ -21,11 +23,11 @@ export default function ExportPage() {
         {/* Settings Panel */}
         <div className="w-80 flex-shrink-0 space-y-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Export Settings</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('exportSettings')}</h3>
                 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('format')}</label>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => setFormat("pdf")}
@@ -51,12 +53,18 @@ export default function ExportPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Include Sections</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('includeSections')}</label>
                         <div className="space-y-2">
-                            {["Company Summary", "Financial Metrics", "Charts & Visuals", "Signal Analysis", "Raw Data Appendix"].map((section) => (
-                                <label key={section} className="flex items-center space-x-2 cursor-pointer">
+                            {[
+                                "companySummary",
+                                "financialMetrics",
+                                "chartsVisuals",
+                                "signalAnalysis",
+                                "rawDataAppendix"
+                            ].map((sectionKey) => (
+                                <label key={sectionKey} className="flex items-center space-x-2 cursor-pointer">
                                     <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-primary h-4 w-4 border-gray-300" />
-                                    <span className="text-sm text-gray-700">{section}</span>
+                                    <span className="text-sm text-gray-700">{t(sectionKey)}</span>
                                 </label>
                             ))}
                         </div>
@@ -70,9 +78,9 @@ export default function ExportPage() {
             <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-500 flex items-center">
                     <Eye className="w-4 h-4 mr-2" />
-                    Preview: {format === 'pdf' ? 'Report_2024.pdf' : 'Report_2024.md'}
+                    {t('preview')}: {format === 'pdf' ? 'Report_2024.pdf' : 'Report_2024.md'}
                 </span>
-                <span className="text-xs text-gray-400">Page 1 of 5</span>
+                <span className="text-xs text-gray-400">{t('page')} 1 {t('of')} 5</span>
             </div>
             <div className="flex-1 overflow-auto p-8 bg-gray-500/10 flex justify-center">
                 <div className={clsx(
@@ -83,53 +91,53 @@ export default function ExportPage() {
                         // Mock PDF Content
                         <div className="space-y-6 text-gray-800">
                              <div className="border-b-2 border-primary pb-4 mb-8">
-                                <h1 className="text-3xl font-bold text-primary">Financial Analysis Report</h1>
-                                <p className="text-gray-500 mt-2">Generated on Jan 05, 2026</p>
+                                <h1 className="text-3xl font-bold text-primary">{t('mockReportTitle')}</h1>
+                                <p className="text-gray-500 mt-2">{t('generatedOn')} Jan 05, 2026</p>
                              </div>
                              
                              <div>
-                                <h2 className="text-xl font-bold mb-2">1. Executive Summary</h2>
+                                <h2 className="text-xl font-bold mb-2">1. {t('executiveSummary')}</h2>
                                 <p className="text-sm leading-relaxed text-gray-600">
-                                    The company shows strong top-line resilience with revenue holding steady at ¥2.39B. However, profitability signals suggest a need for closer inspection of operating expenses. Working capital efficiency remains a key strength.
+                                    {t('mockExecSummaryText')}
                                 </p>
                              </div>
 
                              <div className="grid grid-cols-2 gap-4 mt-8">
                                 <div className="p-4 bg-gray-50 rounded">
-                                    <p className="text-xs text-gray-500 uppercase">Gross Margin</p>
+                                    <p className="text-xs text-gray-500 uppercase">{t('grossMarginDesc')}</p>
                                     <p className="text-xl font-bold">24.5%</p>
                                 </div>
                                 <div className="p-4 bg-gray-50 rounded">
-                                    <p className="text-xs text-gray-500 uppercase">Net Profit Margin</p>
+                                    <p className="text-xs text-gray-500 uppercase">{t('netProfitMarginDesc')}</p>
                                     <p className="text-xl font-bold">8.2%</p>
                                 </div>
                              </div>
 
                              <div className="mt-8 p-4 border-l-4 border-red-500 bg-red-50">
-                                 <h3 className="font-bold text-red-700 mb-1">Signal: High Cash, High Debt</h3>
+                                 <h3 className="font-bold text-red-700 mb-1">{t('risks')}: {t('High-Cash, High-Debt')}</h3>
                                  <p className="text-sm text-red-600">
-                                     Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.
+                                     {t('mockSignalTriggered')}
                                  </p>
                              </div>
                         </div>
                     ) : (
                         // Mock Markdown Content
                         <div className="text-gray-800 whitespace-pre-wrap">
-{`# Financial Analysis Report
-Date: 2026-01-05
+{`# ${t('mockReportTitle')}
+${t('generatedOn')}: 2026-01-05
 
-## 1. Executive Summary
-The company shows strong top-line resilience with revenue holding steady at ¥2.39B. However, profitability signals suggest a need for closer inspection of operating expenses. Working capital efficiency remains a key strength.
+## 1. ${t('executiveSummary')}
+${t('mockExecSummaryText')}
 
-## 2. Key Metrics
-| Metric | Value |
+## 2. ${t('financialMetrics')}
+| ${t('metric')} | ${t('current')} |
 |--------|-------|
-| Gross Margin | 24.5% |
-| Net Profit Margin | 8.2% |
+| ${t('grossMarginDesc')} | 24.5% |
+| ${t('netProfitMarginDesc')} | 8.2% |
 
-## 3. Key Financial Ratios
-### 🚩 High Cash, High Debt
-Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.
+## 3. ${t('flagsTitle')}
+### 🚩 ${t('High-Cash, High-Debt')}
+${t('mockSignalTriggered')}
 `}
                         </div>
                     )}

@@ -176,7 +176,7 @@ export default function InterpretPage() {
                 </span>
                 {generatedReport && (
                     <span className="text-xs font-mono text-gray-400">
-                        Generated via {generatedReport.model_used.toUpperCase()}
+                        {t('generatedVia')} {generatedReport.model_used.toUpperCase()}
                     </span>
                 )}
             </div>

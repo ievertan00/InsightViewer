@@ -405,92 +405,6 @@ const STANDARD_SCHEMA_ORDER: Record<string, number> = (() => {
     return map;
 })();
 
-const flattenReports = (reports: any[]) => {
-    const flattened: Record<string, any> = {};
-
-    reports.forEach((report: any) => {
-        let yearKey = report.fiscal_year.trim(); // e.g. "2024", "2024 Q3"
-        
-        // Normalize Annual keys for filtering consistency
-        if (report.period_type && report.period_type.toLowerCase() === 'annual') {
-            if (!yearKey.toLowerCase().includes('annual')) {
-                yearKey = `${yearKey} Annual`;
-            }
-        }
-
-        const data = report.data;
-
-        if (!data) return;
-
-        const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
-            if (!sectionData) return;
-
-            const traverse = (obj: any, prefix: string = "") => {
-                const parts = prefix ? prefix.split('.') : [];
-                const level = parts.length + 1;
-
-                for (const key in obj) {
-                    if (key === "title" || key === "amount" || typeof obj[key] === 'string') continue;
-
-                    const value = obj[key];
-                    const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
-                    
-                    const uniqueId = `${typeLabel}-${currentPath}`;
-
-                    const processItem = (val: number | any) => {
-                        if (!flattened[uniqueId]) {
-                            let accountName = formatKey(key);
-                            const itemLevel = currentPath.split('.').length;
-
-                            // Level 3 prefix (path length 4)
-                            if (itemLevel === 4) {
-                                accountName = `- ${accountName}`;
-                            }
-
-                            flattened[uniqueId] = { 
-                                account: accountName, 
-                                type: typeLabel, 
-                                originalKey: currentPath,
-                                orderKey: currentPath, 
-                                id: uniqueId,
-                                itemLevel: itemLevel
-                            };
-                        }
-                        flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
-                    };
-
-                    if (typeof value === 'object' && value !== null) {
-                        if ('amount' in value) {
-                             processItem(value);
-                        }
-                        traverse(value, prefix ? `${prefix}.${key}` : `${sectionName}.${key}`);
-                    } else if (typeof value === 'number') {
-                         processItem(value);
-                    }
-                }
-            };
-            traverse(sectionData);
-        };
-
-        processSection("income_statement", data.income_statement, "Income Statement");
-        processSection("balance_sheet", data.balance_sheet, "Balance Sheet");
-        processSection("cash_flow_statement", data.cash_flow_statement, "Cash Flow");
-    });
-
-    return Object.values(flattened).sort((a, b) => {
-        // Sort by Type first (Income > Balance > Cash)
-        const typeOrder: Record<string, number> = { "Income Statement": 1, "Balance Sheet": 2, "Cash Flow": 3 };
-        const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
-        if (typeDiff !== 0) return typeDiff;
-
-        // Sort by Schema Order using full path
-        const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
-        const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
-        
-        return orderA - orderB;
-    });
-};
-
 export default function DataPage() {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
@@ -513,6 +427,89 @@ export default function DataPage() {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const [tableWidth, setTableWidth] = useState(0);
+
+  // Flatten reports logic moved inside component to use t()
+  const flattenReports = (reports: any[]) => {
+      const flattened: Record<string, any> = {};
+  
+      reports.forEach((report: any) => {
+          let yearKey = report.fiscal_year.trim();
+          
+          if (report.period_type && report.period_type.toLowerCase() === 'annual') {
+              if (!yearKey.toLowerCase().includes('annual')) {
+                  yearKey = `${yearKey} Annual`;
+              }
+          }
+  
+          const data = report.data;
+  
+          if (!data) return;
+  
+          const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
+              if (!sectionData) return;
+  
+              const traverse = (obj: any, prefix: string = "") => {
+                  const parts = prefix ? prefix.split('.') : [];
+                  const level = parts.length + 1;
+  
+                  for (const key in obj) {
+                      if (key === "title" || key === "amount" || typeof obj[key] === 'string') continue;
+  
+                      const value = obj[key];
+                      const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
+                      
+                      const uniqueId = `${typeLabel}-${currentPath}`;
+  
+                      const processItem = (val: number | any) => {
+                          if (!flattened[uniqueId]) {
+                              let accountName = t(formatKey(key)); // Use t() for translation
+                              const itemLevel = currentPath.split('.').length;
+  
+                              if (itemLevel === 4) {
+                                  accountName = `- ${accountName}`;
+                              }
+  
+                              flattened[uniqueId] = { 
+                                  account: accountName, 
+                                  type: typeLabel, 
+                                  originalKey: currentPath,
+                                  orderKey: currentPath, 
+                                  id: uniqueId,
+                                  itemLevel: itemLevel
+                              };
+                          }
+                          flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
+                      };
+  
+                      if (typeof value === 'object' && value !== null) {
+                          if ('amount' in value) {
+                               processItem(value);
+                          }
+                          traverse(value, prefix ? `${prefix}.${key}` : `${sectionName}.${key}`);
+                      } else if (typeof value === 'number') {
+                           processItem(value);
+                      }
+                  }
+              };
+              traverse(sectionData);
+          };
+  
+          processSection("income_statement", data.income_statement, "Income Statement");
+          processSection("balance_sheet", data.balance_sheet, "Balance Sheet");
+          processSection("cash_flow_statement", data.cash_flow_statement, "Cash Flow");
+      });
+  
+      return Object.values(flattened).sort((a, b) => {
+          const typeOrder: Record<string, number> = { "Income Statement": 1, "Balance Sheet": 2, "Cash Flow": 3 };
+          const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+          if (typeDiff !== 0) return typeDiff;
+  
+          const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
+          const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
+          
+          return orderA - orderB;
+      });
+  };
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
