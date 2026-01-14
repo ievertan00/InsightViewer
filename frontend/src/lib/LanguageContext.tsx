@@ -1,8 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
-type Language = 'en' | 'zh';
+type Language = "en" | "zh";
 
 type Translations = {
   [key in Language]: {
@@ -70,11 +76,14 @@ const translations: Translations = {
 
     // Home Page
     welcomeTitle: "Welcome to Insight Viewer",
-    welcomeDesc: "Turn dense Chinese financial filings into readable, comparable, and actionable structures.",
+    welcomeDesc:
+      "Turn dense Chinese financial filings into readable, comparable, and actionable structures.",
     step1Title: "1. Upload",
-    step1Desc: "Normalize financial data from various sources into a structured format.",
+    step1Desc:
+      "Normalize financial data from various sources into a structured format.",
     step2Title: "2. Analyze",
-    step2Desc: "View computed ratios, Key Financial Ratios, and visualize key trends.",
+    step2Desc:
+      "View computed ratios, Key Financial Ratios, and visualize key trends.",
     step3Title: "3. Interpret",
     step3Desc: "Get AI-assisted insights and export comprehensive reports.",
     startAnalysis: "Start Analysis",
@@ -101,17 +110,22 @@ const translations: Translations = {
     parseError: "Invalid JSON format",
     uploadError: "Upload failed",
     importWarnings: "Import Warnings",
-    fileTypeRestricted: "File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files.",
+    fileTypeRestricted:
+      "File type is restricted to Excel (.xlsx, .xls) or JSON (.json) files.",
     stockCodeInvalid: "Stock Code must be a 6-digit number.",
     fetchGenericError: "An error occurred while fetching stock data.",
     processJsonError: "Failed to process pasted JSON",
-    companyNameMismatch: "Cannot append data. Company name mismatch: Existing '{existing}' vs New '{new}'.",
+    companyNameMismatch:
+      "Cannot append data. Company name mismatch: Existing '{existing}' vs New '{new}'.",
     noReportDataInJson: "The pasted JSON is valid but contains no report data.",
-    noValidReportsExtracted: "Could not extract any valid reports from the provided files.",
-    checkFileFormat: "No valid data could be extracted. Please check the file format.",
+    noValidReportsExtracted:
+      "Could not extract any valid reports from the provided files.",
+    checkFileFormat:
+      "No valid data could be extracted. Please check the file format.",
     tushareNote: "Note: Requires Tushare API Token configured on backend.",
     copyWarnings: "Copy Warnings",
-    warningDetails: "These rows were skipped because they did not match the template. Please review your file or the template.",
+    warningDetails:
+      "These rows were skipped because they did not match the template. Please review your file or the template.",
     llmPromptTemplate: `You are a strict data extraction assistant. Convert the provided financial report (Image/Text/Excel) into the following JSON structure. 
 Rules:
 1. Return ONLY valid JSON. No markdown formatting, no explanations.
@@ -198,10 +212,10 @@ Template:
     equityStructure: "Equity Structure",
 
     // Chart Data Keys
-    "ROE": "ROE",
+    ROE: "ROE",
     "Net Margin": "Net Margin",
     "Gross Margin": "Gross Margin",
-    "Revenue": "Revenue",
+    Revenue: "Revenue",
     "Cash From Sales": "Cash From Sales",
     "Net Profit": "Net Profit",
     "Operating CF": "Operating CF",
@@ -217,17 +231,17 @@ Template:
     "Current Ratio": "Current Ratio",
     "Quick Ratio": "Quick Ratio",
     "Cash Ratio": "Cash Ratio",
-    "DIO": "DIO",
-    "DSO": "DSO",
-    "DPO": "DPO",
-    "CCC": "CCC",
+    DIO: "DIO",
+    DSO: "DSO",
+    DPO: "DPO",
+    CCC: "CCC",
     "Debt Ratio": "Debt Ratio",
     "Debt Ratio Delta": "Debt Ratio Delta",
     "Inventory Turnover": "Inventory Turnover",
     "AR Turnover": "AR Turnover",
     "Fixed Asset Turnover": "Fixed Asset Turnover",
     "Total Asset Turnover": "Total Asset Turnover",
-    "COGS": "COGS",
+    COGS: "COGS",
     "Tax & Surcharge": "Tax & Surcharge",
     "Selling Exp": "Selling Exp",
     "Admin Exp": "Admin Exp",
@@ -235,17 +249,17 @@ Template:
     "Main Profit": "Main Profit",
     "Investing CF": "Investing CF",
     "Financing CF": "Financing CF",
-    "Capex": "Capex",
+    Capex: "Capex",
     "Free CF": "Free CF",
     "Revenue Growth": "Revenue Growth",
     "Net Profit Growth": "Net Profit Growth",
     "Cash & Equiv Etc": "Cash & Equiv Etc",
     "Receivables Etc": "Receivables Etc",
-    "Prepayments": "Prepayments",
-    "Inventory": "Inventory",
+    Prepayments: "Prepayments",
+    Inventory: "Inventory",
     "Other Current Assets": "Other Current Assets",
     "Long-term Equity Invest": "Long-term Equity Invest",
-    "Goodwill": "Goodwill",
+    Goodwill: "Goodwill",
     "Fixed Assets": "Fixed Assets",
     "Construction In Progress": "Construction In Progress",
     "Right-of-use Assets": "Right-of-use Assets",
@@ -319,7 +333,8 @@ Template:
     healthSignals: "Health Signals",
     additionalData: "Additional Data Required",
     noFlags: "No Significant Flags Detected",
-    noFlagsDesc: "The automated analysis did not find any extreme outliers matching the standard risk or health criteria.",
+    noFlagsDesc:
+      "The automated analysis did not find any extreme outliers matching the standard risk or health criteria.",
     triggerCondition: "Trigger Condition",
     targetCriteria: "Target Criteria",
     logic: "Logic",
@@ -328,13 +343,13 @@ Template:
     check: "Check",
 
     // Flag Categories
-    "Liquidity": "Liquidity",
-    "Revenue": "Revenue",
-    "Cost": "Cost",
-    "Asset": "Asset",
-    "Debt": "Debt",
-    "Earnings": "Earnings",
-    "Growth": "Growth",
+    Liquidity: "Liquidity",
+    Revenue: "Revenue",
+    Cost: "Cost",
+    Asset: "Asset",
+    Debt: "Debt",
+    Earnings: "Earnings",
+    Growth: "Growth",
 
     // Flag Names
     "Abnormal Gross Margin Expansion": "Abnormal Gross Margin Expansion",
@@ -374,45 +389,81 @@ Template:
     "Payables Stretch": "Payables Stretch",
 
     // Flag Descriptions
-    "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.": "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.",
-    "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.": "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.",
-    "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.": "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.",
-    "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.": "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.",
-    "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.": "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.",
-    "Relying on selling assets to generate profit is unsustainable and masks core business weakness.": "Relying on selling assets to generate profit is unsustainable and masks core business weakness.",
-    "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.": "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.",
-    "Sharp deterioration in receivables quality, suggesting customer defaults.": "Sharp deterioration in receivables quality, suggesting customer defaults.",
-    "Earnings driven by grants/fines rather than operations are low quality.": "Earnings driven by grants/fines rather than operations are low quality.",
-    "Profits driven by paper gains are risky and don't reflect cash generation.": "Profits driven by paper gains are risky and don't reflect cash generation.",
-    "Reliance on trading stocks or subsidiaries rather than main product.": "Reliance on trading stocks or subsidiaries rather than main product.",
-    "Profit derived from 'Other Income' is often non-persistent.": "Profit derived from 'Other Income' is often non-persistent.",
-    "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.": "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.",
-    "Inventory growing faster than sales often signals potential write-downs.": "Inventory growing faster than sales often signals potential write-downs.",
-    "Hiding place for misappropriated funds or loans to shareholders.": "Hiding place for misappropriated funds or loans to shareholders.",
-    "High goodwill suggests aggressive acquisitions; risk of massive write-offs.": "High goodwill suggests aggressive acquisitions; risk of massive write-offs.",
-    "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.": "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.",
-    "Used to hide current expenses to artificially boost profits.": "Used to hide current expenses to artificially boost profits.",
-    "Can hide off-book loans or illicit financing.": "Can hide off-book loans or illicit financing.",
-    "Revenue skyrocketing while marketing costs stay flat is highly suspicious.": "Revenue skyrocketing while marketing costs stay flat is highly suspicious.",
-    "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.": "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.",
-    "Massive prepayments are common vehicles for embezzlement or fund transfer.": "Massive prepayments are common vehicles for embezzlement or fund transfer.",
-    "Excessive payables growth signals liquidity stress—suppliers are funding the company.": "Excessive payables growth signals liquidity stress—suppliers are funding the company.",
-    "Often used to hide non-operating cash to inflate OCF.": "Often used to hide non-operating cash to inflate OCF.",
-    "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.": "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.",
-    "The company generates enough cash to fully fund its capital expenditures and growth.": "The company generates enough cash to fully fund its capital expenditures and growth.",
-    "Debt levels are low relative to earnings, indicating a strong balance sheet.": "Debt levels are low relative to earnings, indicating a strong balance sheet.",
-    "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.": "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.",
-    "Operating cash flow is significantly lower than reported total net income.": "Operating cash flow is significantly lower than reported total net income.",
-    "It is taking significantly longer to collect payment from customers.": "It is taking significantly longer to collect payment from customers.",
-    "Earnings are driven heavily by non-cash accruals rather than cash flow.": "Earnings are driven heavily by non-cash accruals rather than cash flow.",
-    "Reliance on short-term debt exposes the company to refinancing risks.": "Reliance on short-term debt exposes the company to refinancing risks.",
-    "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.": "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.",
-    "Free Cash Flow has been negative for consecutive periods despite any reported profits.": "Free Cash Flow has been negative for consecutive periods despite any reported profits.",
-    "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.": "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.",
+    "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.":
+      "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.",
+    "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.":
+      "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.",
+    "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.":
+      "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.",
+    "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.":
+      "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.",
+    "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.":
+      "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.",
+    "Relying on selling assets to generate profit is unsustainable and masks core business weakness.":
+      "Relying on selling assets to generate profit is unsustainable and masks core business weakness.",
+    "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.":
+      "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.",
+    "Sharp deterioration in receivables quality, suggesting customer defaults.":
+      "Sharp deterioration in receivables quality, suggesting customer defaults.",
+    "Earnings driven by grants/fines rather than operations are low quality.":
+      "Earnings driven by grants/fines rather than operations are low quality.",
+    "Profits driven by paper gains are risky and don't reflect cash generation.":
+      "Profits driven by paper gains are risky and don't reflect cash generation.",
+    "Reliance on trading stocks or subsidiaries rather than main product.":
+      "Reliance on trading stocks or subsidiaries rather than main product.",
+    "Profit derived from 'Other Income' is often non-persistent.":
+      "Profit derived from 'Other Income' is often non-persistent.",
+    "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.":
+      "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.",
+    "Inventory growing faster than sales often signals potential write-downs.":
+      "Inventory growing faster than sales often signals potential write-downs.",
+    "Hiding place for misappropriated funds or loans to shareholders.":
+      "Hiding place for misappropriated funds or loans to shareholders.",
+    "High goodwill suggests aggressive acquisitions; risk of massive write-offs.":
+      "High goodwill suggests aggressive acquisitions; risk of massive write-offs.",
+    "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.":
+      "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.",
+    "Used to hide current expenses to artificially boost profits.":
+      "Used to hide current expenses to artificially boost profits.",
+    "Can hide off-book loans or illicit financing.":
+      "Can hide off-book loans or illicit financing.",
+    "Revenue skyrocketing while marketing costs stay flat is highly suspicious.":
+      "Revenue skyrocketing while marketing costs stay flat is highly suspicious.",
+    "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.":
+      "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.",
+    "Massive prepayments are common vehicles for embezzlement or fund transfer.":
+      "Massive prepayments are common vehicles for embezzlement or fund transfer.",
+    "Excessive payables growth signals liquidity stress—suppliers are funding the company.":
+      "Excessive payables growth signals liquidity stress—suppliers are funding the company.",
+    "Often used to hide non-operating cash to inflate OCF.":
+      "Often used to hide non-operating cash to inflate OCF.",
+    "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.":
+      "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.",
+    "The company generates enough cash to fully fund its capital expenditures and growth.":
+      "The company generates enough cash to fully fund its capital expenditures and growth.",
+    "Debt levels are low relative to earnings, indicating a strong balance sheet.":
+      "Debt levels are low relative to earnings, indicating a strong balance sheet.",
+    "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.":
+      "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.",
+    "Operating cash flow is significantly lower than reported total net income.":
+      "Operating cash flow is significantly lower than reported total net income.",
+    "It is taking significantly longer to collect payment from customers.":
+      "It is taking significantly longer to collect payment from customers.",
+    "Earnings are driven heavily by non-cash accruals rather than cash flow.":
+      "Earnings are driven heavily by non-cash accruals rather than cash flow.",
+    "Reliance on short-term debt exposes the company to refinancing risks.":
+      "Reliance on short-term debt exposes the company to refinancing risks.",
+    "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.":
+      "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.",
+    "Free Cash Flow has been negative for consecutive periods despite any reported profits.":
+      "Free Cash Flow has been negative for consecutive periods despite any reported profits.",
+    "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.":
+      "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.",
 
     // Insights Page
     aiInsightsTitle: "AI Insights",
-    aiInsightsDesc: "AI-assisted analysis of key financial ratios and anomalies.",
+    aiInsightsDesc:
+      "AI-assisted analysis of key financial ratios and anomalies.",
     aiModel: "AI Model",
     dataContext: "Data Context",
     generateInsights: "Generate Insights",
@@ -420,7 +471,7 @@ Template:
     synthesizing: "Synthesizing Financial Narrative...",
     connectingTo: "Connecting to model...",
     noAnalysis: "No Analysis Generated Yet",
-    clickToGenerate: "Click \"Generate Insights\" to start the analysis.",
+    clickToGenerate: 'Click "Generate Insights" to start the analysis.',
     downloadMD: "Download MD",
     modelGemini: "Google Gemini (Balanced)",
     modelDeepseek: "DeepSeek R1 (Forensic)",
@@ -442,8 +493,10 @@ Template:
     generatedVia: "Generated via",
     executiveSummary: "Executive Summary",
     mockReportTitle: "Financial Analysis Report",
-    mockExecSummaryText: "The company shows strong top-line resilience with revenue holding steady at ¥2.39B. However, profitability signals suggest a need for closer inspection of operating expenses. Working capital efficiency remains a key strength.",
-    mockSignalTriggered: "Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.",
+    mockExecSummaryText:
+      "The company shows strong top-line resilience with revenue holding steady at ¥2.39B. However, profitability signals suggest a need for closer inspection of operating expenses. Working capital efficiency remains a key strength.",
+    mockSignalTriggered:
+      "Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.",
   },
   zh: {
     // Brand (Fixed)
@@ -504,7 +557,8 @@ Template:
 
     // Home Page
     welcomeTitle: "欢迎使用 Insight Viewer",
-    welcomeDesc: "将复杂的中文财务报告转化为清晰、可比且具有行动意义的结构化数据。",
+    welcomeDesc:
+      "将复杂的中文财务报告转化为清晰、可比且具有行动意义的结构化数据。",
     step1Title: "1. 上传",
     step1Desc: "将来自不同来源的财务数据标准化为统一结构。",
     step2Title: "2. 分析",
@@ -539,7 +593,8 @@ Template:
     stockCodeInvalid: "股票代码必须是 6 位数字。",
     fetchGenericError: "获取股票数据时发生错误。",
     processJsonError: "处理粘贴的 JSON 失败。",
-    companyNameMismatch: "无法追加数据。公司名称不匹配：现有 '{existing}' vs 新增 '{new}'。",
+    companyNameMismatch:
+      "无法追加数据。公司名称不匹配：现有 '{existing}' vs 新增 '{new}'。",
     noReportDataInJson: "粘贴的 JSON 有效，但未包含报告数据。",
     noValidReportsExtracted: "无法从提供的文件中提取任何有效报告。",
     checkFileFormat: "未能提取有效数据。请检查文件格式。",
@@ -632,10 +687,10 @@ Template:
     equityStructure: "权益结构",
 
     // Chart Data Keys
-    "ROE": "净资产收益率",
+    ROE: "净资产收益率",
     "Net Margin": "净利率",
     "Gross Margin": "毛利率",
-    "Revenue": "营业收入",
+    Revenue: "营业收入",
     "Cash From Sales": "销售收现",
     "Net Profit": "净利润",
     "Operating CF": "经营现金流",
@@ -651,17 +706,17 @@ Template:
     "Current Ratio": "流动比率",
     "Quick Ratio": "速动比率",
     "Cash Ratio": "现金比率",
-    "DIO": "存货周转天数",
-    "DSO": "应收周转天数",
-    "DPO": "应付周转天数",
-    "CCC": "现金循环周期",
+    DIO: "存货周转天数",
+    DSO: "应收周转天数",
+    DPO: "应付周转天数",
+    CCC: "现金循环周期",
     "Debt Ratio": "资产负债率",
     "Debt Ratio Delta": "负债率变动",
     "Inventory Turnover": "存货周转率",
     "AR Turnover": "应收周转率",
     "Fixed Asset Turnover": "固定资产周转率",
     "Total Asset Turnover": "总资产周转率",
-    "COGS": "营业成本",
+    COGS: "营业成本",
     "Tax & Surcharge": "税金及附加",
     "Selling Exp": "销售费用",
     "Admin Exp": "管理费用",
@@ -669,17 +724,17 @@ Template:
     "Main Profit": "主营利润",
     "Investing CF": "投资现金流",
     "Financing CF": "筹资现金流",
-    "Capex": "资本支出",
+    Capex: "资本支出",
     "Free CF": "自由现金流",
     "Revenue Growth": "营收增长率",
     "Net Profit Growth": "净利增长率",
     "Cash & Equiv Etc": "货币资金等",
     "Receivables Etc": "应收账款等",
-    "Prepayments": "预付款项",
-    "Inventory": "存货",
+    Prepayments: "预付款项",
+    Inventory: "存货",
     "Other Current Assets": "其他流动资产",
     "Long-term Equity Invest": "长期股权投资",
-    "Goodwill": "商誉",
+    Goodwill: "商誉",
     "Fixed Assets": "固定资产",
     "Construction In Progress": "在建工程",
     "Right-of-use Assets": "使用权资产",
@@ -763,13 +818,13 @@ Template:
     check: "检查",
 
     // Flag Categories
-    "Liquidity": "流动性",
-    "Revenue": "营收",
-    "Cost": "成本",
-    "Asset": "资产",
-    "Debt": "债务",
-    "Earnings": "盈利",
-    "Growth": "增长",
+    Liquidity: "流动性",
+    Revenue: "营收",
+    Cost: "成本",
+    Asset: "资产",
+    Debt: "债务",
+    Earnings: "盈利",
+    Growth: "增长",
 
     // Flag Names
     "Abnormal Gross Margin Expansion": "毛利率异常扩张",
@@ -809,41 +864,76 @@ Template:
     "Payables Stretch": "拖欠供应商款项",
 
     // Flag Descriptions
-    "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.": "毛利率上升但存货周转放缓，暗示可能通过资本化虚增利润或未计提存货跌价。",
-    "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.": "存货增长显著快于营收，暗示需求下降、产品滞销或渠道塞货。",
-    "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.": "支付过高的债务利息（或包含股利）可能暗示高风险借贷状态。",
-    "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.": "货币资金收益率极低，暗示资金可能受限、被质押或虚构。",
-    "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.": "高现金与高债务并存，通常暗示资金受限或虚假。",
-    "Relying on selling assets to generate profit is unsustainable and masks core business weakness.": "依赖出售资产获利不可持续，且掩盖了核心业务的疲软。",
-    "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.": "巨额资产减值（“洗大澡”）暗示过去利润虚增或为未来业绩腾挪空间。",
-    "Sharp deterioration in receivables quality, suggesting customer defaults.": "应收账款质量急剧恶化，暗示客户违约风险。",
-    "Earnings driven by grants/fines rather than operations are low quality.": "主要靠补助或罚款获利，盈利质量低。",
-    "Profits driven by paper gains are risky and don't reflect cash generation.": "利润主要来自账面浮盈，风险高且无现金流支持。",
-    "Reliance on trading stocks or subsidiaries rather than main product.": "依赖炒股或子公司投资收益，而非主营业务。",
-    "Profit derived from 'Other Income' is often non-persistent.": "利润来自“其他收益”，通常不可持续。",
-    "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.": "应收账款增长快于营收，暗示渠道塞货或放宽信用政策。",
-    "Inventory growing faster than sales often signals potential write-downs.": "存货增长快于营收，通常暗示潜在的减值风险。",
-    "Hiding place for misappropriated funds or loans to shareholders.": "可能隐藏被挪用的资金或对股东的借款。",
-    "High goodwill suggests aggressive acquisitions; risk of massive write-offs.": "高商誉暗示激进并购，存在巨额减值风险。",
-    "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.": "迟迟不转固的在建工程，可能是资本化的费用或造假。",
-    "Used to hide current expenses to artificially boost profits.": "用于隐藏当期费用以人为推高利润。",
-    "Can hide off-book loans or illicit financing.": "可能隐藏表外借款或非法融资。",
-    "Revenue skyrocketing while marketing costs stay flat is highly suspicious.": "营收飙升但营销费用持平，非常可疑。",
-    "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.": "管理费用增长远快于营收，显示效率低下或薪酬失控。",
-    "Massive prepayments are common vehicles for embezzlement or fund transfer.": "巨额预付款常是挪用资金或利益输送的工具。",
-    "Excessive payables growth signals liquidity stress—suppliers are funding the company.": "应付账款过度增长暗示流动性压力——靠供应商输血。",
-    "Often used to hide non-operating cash to inflate OCF.": "常用于隐藏非经营性现金以虚增经营现金流。",
-    "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.": "经营现金流超过净利润，显示集团盈利质量高。",
-    "The company generates enough cash to fully fund its capital expenditures and growth.": "公司产生的现金足以完全覆盖资本支出和增长需求。",
-    "Debt levels are low relative to earnings, indicating a strong balance sheet.": "相对于盈利，债务水平较低，资产负债表强劲。",
-    "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.": "利润快速增长但现金流停滞或下降，暗示盈利质量低。",
-    "Operating cash flow is significantly lower than reported total net income.": "经营现金流显著低于报告的净利润。",
-    "It is taking significantly longer to collect payment from customers.": "回款周期显著变长。",
-    "Earnings are driven heavily by non-cash accruals rather than cash flow.": "盈利主要由非现金应计项目驱动，而非现金流。",
-    "Reliance on short-term debt exposes the company to refinancing risks.": "依赖短期债务面临再融资风险。",
-    "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.": "毛利率改善但营业利润率下降，暗示费用上升或费用重分类。",
-    "Free Cash Flow has been negative for consecutive periods despite any reported profits.": "尽管报告盈利，但自由现金流连续多期为负。",
-    "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.": "应付周转天数显著增加，可能通过拖欠供应商来增加现金。",
+    "Rising margins with slowing inventory turnover suggests potential earnings inflation via capitalization or failure to write down obsolete goods.":
+      "毛利率上升但存货周转放缓，暗示可能通过资本化虚增利润或未计提存货跌价。",
+    "Inventory growing significantly faster than sales suggests falling demand, obsolescence, or channel stuffing.":
+      "存货增长显著快于营收，暗示需求下降、产品滞销或渠道塞货。",
+    "Paying an excessively high rate on debt (or dividends included) can signal high-risk borrowing status.":
+      "支付过高的债务利息（或包含股利）可能暗示高风险借贷状态。",
+    "Extremely low yield on cash balances suggests funds may be restricted, pledged, or non-existent.":
+      "货币资金收益率极低，暗示资金可能受限、被质押或虚构。",
+    "Coexistence of high cash coverage and high debt/leverage, often indicating restricted or fictitious cash.":
+      "高现金与高债务并存，通常暗示资金受限或虚假。",
+    "Relying on selling assets to generate profit is unsustainable and masks core business weakness.":
+      "依赖出售资产获利不可持续，且掩盖了核心业务的疲软。",
+    "Large write-downs ('Big Bath') indicate inflated past earnings or clearing decks for future.":
+      "巨额资产减值（“洗大澡”）暗示过去利润虚增或为未来业绩腾挪空间。",
+    "Sharp deterioration in receivables quality, suggesting customer defaults.":
+      "应收账款质量急剧恶化，暗示客户违约风险。",
+    "Earnings driven by grants/fines rather than operations are low quality.":
+      "主要靠补助或罚款获利，盈利质量低。",
+    "Profits driven by paper gains are risky and don't reflect cash generation.":
+      "利润主要来自账面浮盈，风险高且无现金流支持。",
+    "Reliance on trading stocks or subsidiaries rather than main product.":
+      "依赖炒股或子公司投资收益，而非主营业务。",
+    "Profit derived from 'Other Income' is often non-persistent.":
+      "利润来自“其他收益”，通常不可持续。",
+    "Receivables growing faster than sales signals channel stuffing or relaxed credit terms.":
+      "应收账款增长快于营收，暗示渠道塞货或放宽信用政策。",
+    "Inventory growing faster than sales often signals potential write-downs.":
+      "存货增长快于营收，通常暗示潜在的减值风险。",
+    "Hiding place for misappropriated funds or loans to shareholders.":
+      "可能隐藏被挪用的资金或对股东的借款。",
+    "High goodwill suggests aggressive acquisitions; risk of massive write-offs.":
+      "高商誉暗示激进并购，存在巨额减值风险。",
+    "CIP that doesn't convert to fixed assets may be capitalized expense or fraud.":
+      "迟迟不转固的在建工程，可能是资本化的费用或造假。",
+    "Used to hide current expenses to artificially boost profits.":
+      "用于隐藏当期费用以人为推高利润。",
+    "Can hide off-book loans or illicit financing.":
+      "可能隐藏表外借款或非法融资。",
+    "Revenue skyrocketing while marketing costs stay flat is highly suspicious.":
+      "营收飙升但营销费用持平，非常可疑。",
+    "Admin costs growing much faster than sales indicates inefficiency or unchecked compensation.":
+      "管理费用增长远快于营收，显示效率低下或薪酬失控。",
+    "Massive prepayments are common vehicles for embezzlement or fund transfer.":
+      "巨额预付款常是挪用资金或利益输送的工具。",
+    "Excessive payables growth signals liquidity stress—suppliers are funding the company.":
+      "应付账款过度增长暗示流动性压力——靠供应商输血。",
+    "Often used to hide non-operating cash to inflate OCF.":
+      "常用于隐藏非经营性现金以虚增经营现金流。",
+    "Operating Cash Flow exceeds Total Net Profit, indicating high quality of earnings for the consolidated group.":
+      "经营现金流超过净利润，显示集团盈利质量高。",
+    "The company generates enough cash to fully fund its capital expenditures and growth.":
+      "公司产生的现金足以完全覆盖资本支出和增长需求。",
+    "Debt levels are low relative to earnings, indicating a strong balance sheet.":
+      "相对于盈利，债务水平较低，资产负债表强劲。",
+    "Total profits are growing rapidly while cash flow is stagnant or falling, indicating low quality earnings.":
+      "利润快速增长但现金流停滞或下降，暗示盈利质量低。",
+    "Operating cash flow is significantly lower than reported total net income.":
+      "经营现金流显著低于报告的净利润。",
+    "It is taking significantly longer to collect payment from customers.":
+      "回款周期显著变长。",
+    "Earnings are driven heavily by non-cash accruals rather than cash flow.":
+      "盈利主要由非现金应计项目驱动，而非现金流。",
+    "Reliance on short-term debt exposes the company to refinancing risks.":
+      "依赖短期债务面临再融资风险。",
+    "Gross margin improved but Operating margin declined, suggesting rising overheads or expense reclassification.":
+      "毛利率改善但营业利润率下降，暗示费用上升或费用重分类。",
+    "Free Cash Flow has been negative for consecutive periods despite any reported profits.":
+      "尽管报告盈利，但自由现金流连续多期为负。",
+    "Days Payable Outstanding increased significantly, potentially delaying payments to suppliers to boost cash.":
+      "应付周转天数显著增加，可能通过拖欠供应商来增加现金。",
 
     // Insights Page
     aiInsightsTitle: "AI 洞察",
@@ -877,7 +967,8 @@ Template:
     generatedVia: "生成模型：",
     executiveSummary: "执行摘要",
     mockReportTitle: "财务分析报告",
-    mockExecSummaryText: "公司营收保持稳健，稳定在 23.9 亿元。然而，盈利信号表明需要密切关注运营支出。营运资金效率仍然是一个关键优势。",
+    mockExecSummaryText:
+      "公司营收保持稳健，稳定在 23.9 亿元。然而，盈利信号表明需要密切关注运营支出。营运资金效率仍然是一个关键优势。",
     mockSignalTriggered: "由于现金余额高（12亿元）且短期债务负担重而触发。",
 
     // Generated from backend/app/core/mappings.py
@@ -929,7 +1020,8 @@ Template:
     "Cash Received From Investment Income": "取得投资收益收到的现金",
     "Cash Received From Investment Recovery": "收回投资收到的现金",
     "Cash Received From Investments": "吸收投资收到的现金",
-    "Cash Received From Pledge Deposit Reduction": "减少质押和定期存款所收到的现金",
+    "Cash Received From Pledge Deposit Reduction":
+      "减少质押和定期存款所收到的现金",
     "Cash Received Interest Commission": "收取利息、手续费及佣金的现金",
     "Cash Received Original Premiums": "收到原保险合同保费取得的现金",
     "Clearing Settlement Funds": "结算备付金",
@@ -956,11 +1048,14 @@ Template:
     "Depreciation Fixed Assets Investment Props": "固定资产和投资性房地产折旧",
     "Depreciation Investment Props": "投资性房地产折旧摊销",
     "Depreciation Others": "其中:固定资产折旧",
-    "Derecognition Income Amortized Cost": "以摊余成本计量的金融资产终止确认收益",
+    "Derecognition Income Amortized Cost":
+      "以摊余成本计量的金融资产终止确认收益",
     "Derivative Financial Assets": "衍生金融资产",
     "Derivative Financial Liabilities": "衍生金融负债",
-    "Designated Financial Assets Fvpl": "其中:指定以公允价值计量且其变动计入当期损益的金融资产",
-    "Designated Financial Liabilities Fvpl": "其中:指定以公允价值计量且其变动计入当期损益的金融负债",
+    "Designated Financial Assets Fvpl":
+      "其中:指定以公允价值计量且其变动计入当期损益的金融资产",
+    "Designated Financial Liabilities Fvpl":
+      "其中:指定以公允价值计量且其变动计入当期损益的金融负债",
     "Development Expenses": "开发支出",
     "Diluted Eps": "稀释每股收益",
     "Dividends Paid To Minority": "其中:子公司支付给少数股东的股利、利润",
@@ -983,21 +1078,26 @@ Template:
     "Fee And Commission Income": "手续费及佣金收入",
     "Fees And Commissions Payable": "应付手续费及佣金",
     "Financial Assets Amortized Cost": "以摊余成本计量的金融资产",
-    "Financial Assets Amortized Cost Non Current": "以摊余成本计量的金融资产(非流动)",
-    "Financial Assets Fvoci": "以公允价值计量且其变动计入其他综合收益的金融资产",
-    "Financial Assets Fvoci Non Current": "以公允价值计量且其变动计入其他综合收益的金融资产(非流动)",
+    "Financial Assets Amortized Cost Non Current":
+      "以摊余成本计量的金融资产(非流动)",
+    "Financial Assets Fvoci":
+      "以公允价值计量且其变动计入其他综合收益的金融资产",
+    "Financial Assets Fvoci Non Current":
+      "以公允价值计量且其变动计入其他综合收益的金融资产(非流动)",
     "Financial Assets Fvpl": "以公允价值计量且其变动计入当期损益的金融资产",
     "Financial Expenses": "财务费用",
     "Financial Liabilities Amortized Cost": "以摊余成本计量的金融负债",
-    "Financial Liabilities Amortized Cost Non Current": "以摊余成本计量的金融负债(非流动)",
-    "Financial Liabilities Fvpl": "以公允价值计量且其变动计入当期损益的金融负债",
+    "Financial Liabilities Amortized Cost Non Current":
+      "以摊余成本计量的金融负债(非流动)",
+    "Financial Liabilities Fvpl":
+      "以公允价值计量且其变动计入当期损益的金融负债",
     "Fixed Assets": "固定资产",
     "Fixed Assets Finance Lease": "融资租入固定资产",
     "Fixed Assets Liquidation": "固定资产清理",
     "From Minority Shareholders": "其中:子公司吸收少数股东投资收到的现金",
     "Funds Lent": "拆出资金",
     "General Risk Reserves": "一般风险准备",
-    "Goodwill": "商誉",
+    Goodwill: "商誉",
     "Held To Maturity Investments": "持有至到期投资",
     "Income Tax": "减:所得税费用",
     "Increase Accrued Expenses": "预提费用的增加",
@@ -1016,9 +1116,10 @@ Template:
     "Interest Receivable": "应收利息",
     "Internal Payables": "内部应付款",
     "Internal Receivables": "内部应收款",
-    "Inventories": "存货",
+    Inventories: "存货",
     "Investment Income": "投资收益",
-    "Investment Income From Associates Jv": "其中:对联营企业和合营企业的投资收益",
+    "Investment Income From Associates Jv":
+      "其中:对联营企业和合营企业的投资收益",
     "Investment Loss": "投资损失",
     "Investment Properties": "投资性房地产",
     "Lease Liabilities": "租赁负债",
@@ -1046,8 +1147,10 @@ Template:
     "Net Cash Flow From Operating": "经营活动产生的现金流量净额",
     "Net Cash Flow From Operating Indirect": "经营活动现金流量净额(补充)",
     "Net Cash Flow Other Items": "经营活动产生的现金流量净额其他项目",
-    "Net Cash From Disposal Assets": "处置固定资产、无形资产和其他长期资产收回的现金净额",
-    "Net Cash From Disposal Subsidiaries": "处置子公司及其他营业单位收到的现金净额",
+    "Net Cash From Disposal Assets":
+      "处置固定资产、无形资产和其他长期资产收回的现金净额",
+    "Net Cash From Disposal Subsidiaries":
+      "处置子公司及其他营业单位收到的现金净额",
     "Net Cash Paid Subsidiaries": "取得子公司及其他营业单位支付的现金净额",
     "Net Cash Received Reinsurance": "收到再保险业务现金净额",
     "Net Compensation Expenses": "赔付支出净额",
@@ -1058,8 +1161,10 @@ Template:
     "Net Increase Borrowings Central Bank": "向中央银行借款净增加额",
     "Net Increase Borrowings Other Financial": "向其他金融机构拆入资金净增加额",
     "Net Increase Cash And Equivalents": "现金及现金等价物净增加额",
-    "Net Increase Cash And Equivalents Indirect": "现金及现金等价物净增加额(补充)",
-    "Net Increase Deposits Central Bank Interbank": "存放中央银行和同业款项净增加额",
+    "Net Increase Cash And Equivalents Indirect":
+      "现金及现金等价物净增加额(补充)",
+    "Net Increase Deposits Central Bank Interbank":
+      "存放中央银行和同业款项净增加额",
     "Net Increase Deposits Interbank": "客户存款和同业存放款项净增加额",
     "Net Increase Disposal Trading Assets": "处置交易性金融资产净增加额",
     "Net Increase Insured Investment": "保户储金及投资款净增加额",
@@ -1091,7 +1196,7 @@ Template:
     "Operating Profit Balance Items": "营业利润平衡项目",
     "Operating Profit Other Items": "营业利润其他项目",
     "Operating Revenue": "营业收入",
-    "Other": "其他",
+    Other: "其他",
     "Other Asset Items": "资产其他项目",
     "Other Business Costs": "其他业务成本",
     "Other Business Revenue": "其他业务收入",
@@ -1123,7 +1228,8 @@ Template:
     "Outflow Balance Items": "经营活动现金流出平衡项目",
     "Outflow Other Items": "经营活动现金流出其他项目",
     "Paid In Capital": "实收资本(或股本)",
-    "Paid To Minority For Capital Reduction": "其中：子公司减资支付给少数股东的现金",
+    "Paid To Minority For Capital Reduction":
+      "其中：子公司减资支付给少数股东的现金",
     "Parent Equity Balance Items": "归属于母公司股东权益平衡项目",
     "Parent Equity Other Items": "归属于母公司股东权益其他项目",
     "Payroll Payable": "应付职工薪酬",
@@ -1131,7 +1237,7 @@ Template:
     "Policy Dividend Expenses": "保单红利支出",
     "Preference Shares": "其中:优先股(应付债券)",
     "Premiums Receivable": "应收保费",
-    "Prepayments": "预付款项",
+    Prepayments: "预付款项",
     "Productive Biological Assets": "生产性生物资产",
     "Profit From Merged Party Before Merger": "被合并方在合并前实现利润",
     "Proposed Cash Dividends": "拟分配现金股利",
@@ -1163,7 +1269,7 @@ Template:
     "Taxes Payable": "应交税费",
     "Total Assets": "资产总计",
     "Total Comprehensive Income": "综合收益总额",
-    "Total Current Assets": "流动资产",
+    "Total Current Assets": "流动资产合计",
     "Total Current Liabilities": "流动负债合计",
     "Total Equity": "所有者权益合计",
     "Total Liabilities": "负债合计",
@@ -1189,22 +1295,26 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined
+);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>("en");
 
   // Load language from local storage on mount
   useEffect(() => {
-    const savedLang = localStorage.getItem('insight_viewer_language') as Language;
-    if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
+    const savedLang = localStorage.getItem(
+      "insight_viewer_language"
+    ) as Language;
+    if (savedLang && (savedLang === "en" || savedLang === "zh")) {
       setLanguage(savedLang);
     }
   }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem('insight_viewer_language', lang);
+    localStorage.setItem("insight_viewer_language", lang);
   };
 
   const t = (key: string) => {
@@ -1212,7 +1322,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+    <LanguageContext.Provider
+      value={{ language, setLanguage: handleSetLanguage, t }}
+    >
       {children}
     </LanguageContext.Provider>
   );
@@ -1221,7 +1333,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }

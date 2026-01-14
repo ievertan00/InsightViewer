@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, Database, ArrowRight, Eye, EyeOff, Filter, Check, Calendar } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
@@ -412,6 +412,8 @@ export default function DataPage() {
   const [years, setYears] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [rawReports, setRawReports] = useState<any[]>([]);
+  const hasInitializedSelection = useRef(false);
 
   // Filters State
   const [hideZeros, setHideZeros] = useState(false);
@@ -428,135 +430,259 @@ export default function DataPage() {
   const topScrollRef = useRef<HTMLDivElement>(null);
   const [tableWidth, setTableWidth] = useState(0);
 
-  // Flatten reports logic moved inside component to use t()
-  const flattenReports = (reports: any[]) => {
-      const flattened: Record<string, any> = {};
-  
-      reports.forEach((report: any) => {
-          let yearKey = report.fiscal_year.trim();
-          
-          if (report.period_type && report.period_type.toLowerCase() === 'annual') {
-              if (!yearKey.toLowerCase().includes('annual')) {
-                  yearKey = `${yearKey} Annual`;
-              }
-          }
-  
-          const data = report.data;
-  
-          if (!data) return;
-  
-          const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
-              if (!sectionData) return;
-  
-              const traverse = (obj: any, prefix: string = "") => {
-                  const parts = prefix ? prefix.split('.') : [];
-                  const level = parts.length + 1;
-  
-                  for (const key in obj) {
-                      if (key === "title" || key === "amount" || typeof obj[key] === 'string') continue;
-  
-                      const value = obj[key];
-                      const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
-                      
-                                            const uniqueId = `${typeLabel}-${currentPath}`;
-                      
+    // Flatten reports logic moved inside component to use t()
+
+    const flattenReports = useCallback((reports: any[]) => {
+
+        const flattened: Record<string, any> = {};
+
+    
+
+        reports.forEach((report: any) => {
+
+            let yearKey = report.fiscal_year.trim();
+
+            
+
+            if (report.period_type && report.period_type.toLowerCase() === 'annual') {
+
+                if (!yearKey.toLowerCase().includes('annual')) {
+
+                    yearKey = `${yearKey} Annual`;
+
+                }
+
+            }
+
+    
+
+            const data = report.data;
+
+    
+
+            if (!data) return;
+
+    
+
+            const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
+
+                if (!sectionData) return;
+
+    
+
+                const traverse = (obj: any, prefix: string = "") => {
+
+                    const parts = prefix ? prefix.split('.') : [];
+
+                    const level = parts.length + 1;
+
+    
+
+                    for (const key in obj) {
+
+                        if (key === "title" || key === "amount" || typeof obj[key] === 'string') continue;
+
+    
+
+                        const value = obj[key];
+
+                        const currentPath = prefix ? `${prefix}.${key}` : `${sectionName}.${key}`;
+
                         
-                      
-                                            const processItem = (val: number | any) => {
-                      
-                                                if (!flattened[uniqueId]) {
-                      
-                                                    let accountName = t(formatKey(key)); // Use t() for translation
-                      
-                                                    
-                      
-                                                    // Default level based on depth
-                      
-                                                    let itemLevel = currentPath.split('.').length;
-                      
-                      
-                      
-                                                    // Override Levels based on specific keys (English & Chinese context handled by t())
-                      
-                                                    // L2 Overrides
-                      
-                                                    if ([
-                      
-                                                        "Total Assets", "Total Liabilities", "Total Equity", 
-                                                        "资产总计", "负债合计", "所有者权益合计", "股东权益合计",
-                                                        "Total Current Assets", "Total Non Current Assets", 
-                      
-                                                        "Total Current Liabilities", "Total Non Current Liabilities",
-                      
-                                                        "Net Cash Flow From Operating", "Net Cash Flow From Investing", "Net Cash Flow From Financing",
-                      
-                                                        "流动资产", "流动资产合计", "非流动资产合计",
-                      
-                                                        "流动负债合计", "非流动负债合计",
-                      
-                                                        "经营活动产生的现金流量净额", "投资活动产生的现金流量净额", "筹资活动产生的现金流量净额"
-                      
-                                                    ].includes(accountName)) {
-                      
-                                                        itemLevel = 2;
-                      
-                                                    }
-                      
-                      
-                      
-                                                    flattened[uniqueId] = { 
-                      
-                                                        account: accountName, 
-                      
-                                                        type: typeLabel, 
-                      
-                                                        originalKey: currentPath,
-                      
-                                                        orderKey: currentPath, 
-                      
-                                                        id: uniqueId,
-                      
-                                                        itemLevel: itemLevel
-                      
-                                                    };
-                      
-                                                }
-                      
-                                                flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
-                      
-                                            };
-                      
+
+                                              const uniqueId = `${typeLabel}-${currentPath}`;
+
                         
-                      
-                                            if (typeof value === 'object' && value !== null) {
-                          if ('amount' in value) {
-                               processItem(value);
-                          }
-                          traverse(value, prefix ? `${prefix}.${key}` : `${sectionName}.${key}`);
-                      } else if (typeof value === 'number') {
-                           processItem(value);
-                      }
-                  }
-              };
-              traverse(sectionData);
-          };
-  
-          processSection("income_statement", data.income_statement, "Income Statement");
-          processSection("balance_sheet", data.balance_sheet, "Balance Sheet");
-          processSection("cash_flow_statement", data.cash_flow_statement, "Cash Flow");
-      });
-  
-      return Object.values(flattened).sort((a, b) => {
-          const typeOrder: Record<string, number> = { "Income Statement": 1, "Balance Sheet": 2, "Cash Flow": 3 };
-          const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
-          if (typeDiff !== 0) return typeDiff;
-  
-          const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
-          const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
-          
-          return orderA - orderB;
-      });
-  };
+
+                          
+
+                        
+
+                                              const processItem = (val: number | any) => {
+
+                        
+
+                                                  if (!flattened[uniqueId]) {
+
+                        
+
+                                                      let accountName = t(formatKey(key)); // Use t() for translation
+
+                        
+
+                                                      
+
+                        
+
+                                                      // Default level based on depth
+
+                        
+
+                                                      let itemLevel = currentPath.split('.').length;
+
+                        
+
+                                                      // Override Levels based on specific keys (English & Chinese context handled by t())
+
+                        
+
+                                                      // L2 Overrides
+
+                        
+
+                                                      if ([
+
+                        
+
+                                                          "Total Assets", "Total Liabilities", "Total Equity", 
+
+                                                          "资产总计", "负债合计", "所有者权益合计", "股东权益合计",
+
+                                                          "Total Current Assets", "Total Non Current Assets", 
+
+                        
+
+                                                          "Total Current Liabilities", "Total Non Current Liabilities",
+
+                        
+
+                                                          "Net Cash Flow From Operating", "Net Cash Flow From Investing", "Net Cash Flow From Financing",
+
+                        
+
+                                                          "流动资产", "流动资产合计", "非流动资产合计",
+
+                        
+
+                                                          "流动负债合计", "非流动负债合计",
+
+                        
+
+                                                          "经营活动产生的现金流量净额", "投资活动产生的现金流量净额", "筹资活动产生的现金流量净额"
+
+                        
+
+                                                      ].includes(accountName)) {
+
+                        
+
+                                                          itemLevel = 2;
+
+                        
+
+                                                      }
+
+                        
+
+                        
+
+                        
+
+                                                      flattened[uniqueId] = { 
+
+                        
+
+                                                          account: accountName, 
+
+                        
+
+                                                          type: typeLabel, 
+
+                        
+
+                                                          originalKey: currentPath,
+
+                        
+
+                                                          orderKey: currentPath, 
+
+                        
+
+                                                          id: uniqueId,
+
+                        
+
+                                                          itemLevel: itemLevel
+
+                        
+
+                                                      };
+
+                        
+
+                                                  }
+
+                        
+
+                                                  flattened[uniqueId][yearKey] = typeof val === 'number' ? val : val?.amount || 0;
+
+                        
+
+                                              };
+
+                        
+
+                          
+
+                        
+
+                                              if (typeof value === 'object' && value !== null) {
+
+                            if ('amount' in value) {
+
+                                 processItem(value);
+
+                            }
+
+                            traverse(value, prefix ? `${prefix}.${key}` : `${sectionName}.${key}`);
+
+                        } else if (typeof value === 'number') {
+
+                             processItem(value);
+
+                        }
+
+                    }
+
+                };
+
+                traverse(sectionData);
+
+            };
+
+    
+
+            processSection("income_statement", data.income_statement, "Income Statement");
+
+            processSection("balance_sheet", data.balance_sheet, "Balance Sheet");
+
+            processSection("cash_flow_statement", data.cash_flow_statement, "Cash Flow");
+
+        });
+
+    
+
+        return Object.values(flattened).sort((a, b) => {
+
+            const typeOrder: Record<string, number> = { "Income Statement": 1, "Balance Sheet": 2, "Cash Flow": 3 };
+
+            const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+
+            if (typeDiff !== 0) return typeDiff;
+
+    
+
+            const orderA = STANDARD_SCHEMA_ORDER[a.orderKey] ?? 9999;
+
+            const orderB = STANDARD_SCHEMA_ORDER[b.orderKey] ?? 9999;
+
+            
+
+            return orderA - orderB;
+
+        });
+
+    }, [t]);
 
   useEffect(() => {
     const storedReports = localStorage.getItem("insight_viewer_reports");
@@ -576,25 +702,39 @@ export default function DataPage() {
                  
                  const sortedYears = sortPeriods(allYearsRaw);
                  setYears(sortedYears);
-
-                 const flattened = flattenReports(reports);
-                 setDisplayRows(flattened);
-
-                 const itemsList = flattened.map(r => ({ id: r.id, name: r.account, type: r.type }));
-                 setAllItems(itemsList);
-                 setSelectedItems(new Set(itemsList.map(i => i.id)));
+                 setRawReports(reports);
+            } else {
+                 setLoading(false);
             }
         } catch (e) {
             console.error("Failed to parse stored reports", e);
+            setLoading(false);
         }
+    } else {
+        setLoading(false);
     }
     
     if (storedTime) {
         setLastUpdate(new Date(storedTime).toLocaleString());
     }
-
-    setLoading(false);
   }, []);
+
+  useEffect(() => {
+      if (!rawReports.length) return;
+
+      const flattened = flattenReports(rawReports);
+      setDisplayRows(flattened);
+
+      const itemsList = flattened.map(r => ({ id: r.id, name: r.account, type: r.type }));
+      setAllItems(itemsList);
+      
+      if (!hasInitializedSelection.current) {
+           setSelectedItems(new Set(itemsList.map(i => i.id)));
+           hasInitializedSelection.current = true;
+      }
+      
+      setLoading(false);
+  }, [rawReports, flattenReports]);
 
   // Filter Logic
   const filteredYears = useMemo(() => {
