@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from "react";
 import { Search, Database, ArrowRight, Eye, EyeOff, Filter, Check, Calendar } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
@@ -464,13 +464,95 @@ export default function DataPage() {
 
     
 
-            const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
-
-                if (!sectionData) return;
+                        const processSection = (sectionName: string, sectionData: any, typeLabel: string) => {
 
     
 
-                const traverse = (obj: any, prefix: string = "") => {
+                            if (!sectionData) return;
+
+    
+
+            
+
+    
+
+                            // PATCH: Fix missing totals for specific sections if they are 0
+
+    
+
+                            if (sectionName === "income_statement" && sectionData.other_operating_income) {
+
+    
+
+                                const ooi = sectionData.other_operating_income;
+
+    
+
+                                if (!ooi.amount || ooi.amount === 0) {
+
+    
+
+                                    // Calculate manually
+
+    
+
+                                    const sum = (ooi.fair_value_change_income || 0) +
+
+    
+
+                                                (ooi.investment_income || 0) + 
+
+    
+
+                                                (ooi.net_exposure_hedging_income || 0) +
+
+    
+
+                                                (ooi.exchange_income || 0) +
+
+    
+
+                                                (ooi.asset_disposal_income || 0) +
+
+    
+
+                                                (ooi.asset_impairment_loss_new || 0) +
+
+    
+
+                                                (ooi.credit_impairment_loss_new || 0) +
+
+    
+
+                                                (ooi.other_income || 0) +
+
+    
+
+                                                (ooi.operating_profit_other_items || 0) +
+
+    
+
+                                                (ooi.operating_profit_balance_items || 0);
+
+    
+
+                                    if (sum !== 0) ooi.amount = sum;
+
+    
+
+                                }
+
+    
+
+                            }
+
+    
+
+                
+
+    
+
+                            const traverse = (obj: any, prefix: string = "") => {
 
                     const parts = prefix ? prefix.split('.') : [];
 
@@ -934,48 +1016,72 @@ export default function DataPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredData.map((row, idx) => (
-                  <tr key={idx} className={clsx(
-                    "transition-colors",
-                    // Level 1: Major Totals (Extra bold, distinct bg, large gap)
-                    row.itemLevel === 1 ? "bg-gray-100 hover:bg-gray-200" :
-                    // Level 2: Main Categories (bold, subtle bg, extra top padding)
-                    row.itemLevel === 2 ? "bg-gray-50 hover:bg-gray-100" : 
-                    "hover:bg-blue-50/30"
-                  )}>
-                    <td className={clsx(
-                        "pr-6 text-gray-900 truncate max-w-[300px]",
-                        // Visual Hierarchy Logic
-                        row.itemLevel === 1 ? "font-extrabold pl-4 pt-10 pb-4 text-lg border-t-2 border-gray-300 uppercase tracking-wide" :
-                        row.itemLevel === 2 ? "font-bold pl-6 pt-8 pb-3 text-base border-t border-gray-200" : 
-                        row.itemLevel === 3 ? "font-medium pl-12 py-2.5 text-gray-700" :
-                        "pl-20 py-1.5 text-gray-500 text-sm italic"
-                    )} title={row.originalKey}>
-                        {row.account}
-                    </td>
-                    <td className={clsx(
-                        "px-6 truncate max-w-[150px]",
-                        row.itemLevel === 1 ? "pt-10 pb-4 font-bold" :
-                        row.itemLevel === 2 ? "pt-8 pb-3" : "py-2"
-                    )}>
-                        <span className={clsx(
-                            "px-2 py-1 rounded text-xs",
-                            row.itemLevel === 1 ? "bg-gray-800 text-white shadow-md" :
-                            row.itemLevel === 2 ? "bg-white border border-gray-200 shadow-sm" : "bg-gray-100"
-                        )}>{row.type}</span>
-                    </td>
-                    {filteredYears.map(year => (
-                        <td key={year} className={clsx(
-                            "px-6 text-right font-mono",
-                            row.itemLevel === 1 ? "pt-10 pb-4 font-extrabold text-gray-900 text-lg border-t-2 border-gray-300" :
-                            row.itemLevel === 2 ? "pt-8 pb-3 font-semibold text-gray-900" : 
-                            row.itemLevel === 3 ? "py-2.5 text-gray-800" : "py-1.5 text-gray-500 text-sm"
-                        )}>
-                            {row[year] !== undefined ? row[year].toLocaleString() : '-'}
+                {filteredData.map((row, idx) => {
+                  const showGap = idx > 0 && row.type !== filteredData[idx - 1].type;
+                  const isFirst = idx === 0;
+
+                  const getSectionTitle = (type: string) => {
+                    if (type === "Income Statement") return t('incomeStatement');
+                    if (type === "Balance Sheet") return t('balanceSheet');
+                    if (type === "Cash Flow") return t('cashFlowStatement');
+                    return type;
+                  };
+                  
+                  return (
+                    <Fragment key={row.id}>
+                        {(isFirst || showGap) && (
+                            <tr className="bg-gray-50 border-y border-gray-200">
+                                <td colSpan={2 + filteredYears.length} className="px-6 py-4 bg-gray-200/50">
+                                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center">
+                                        <Database className="w-4 h-4 mr-2 text-primary" />
+                                        {getSectionTitle(row.type)}
+                                    </h3>
+                                </td>
+                            </tr>
+                        )}
+                      <tr className={clsx(
+                        "transition-colors",
+                        // Level 1: Major Totals (Extra bold, distinct bg, large gap)
+                        row.itemLevel === 1 ? "bg-gray-100 hover:bg-gray-200" :
+                        // Level 2: Main Categories (bold, subtle bg, extra top padding)
+                        row.itemLevel === 2 ? "bg-gray-50 hover:bg-gray-100" : 
+                        "hover:bg-blue-50/30"
+                      )}>
+                        <td className={clsx(
+                            "pr-6 text-gray-900 truncate max-w-[300px]",
+                            // Visual Hierarchy Logic
+                            row.itemLevel === 1 ? "font-extrabold pl-4 pt-10 pb-4 text-lg border-t-2 border-gray-300 uppercase tracking-wide" :
+                            row.itemLevel === 2 ? "font-bold pl-6 pt-8 pb-3 text-base border-t border-gray-200" : 
+                            row.itemLevel === 3 ? "font-medium pl-12 py-2.5 text-gray-700" :
+                            "pl-20 py-1.5 text-gray-500 text-sm italic"
+                        )} title={row.originalKey}>
+                            {row.account}
                         </td>
-                    ))}
-                  </tr>
-                ))}
+                        <td className={clsx(
+                            "px-6 truncate max-w-[150px]",
+                            row.itemLevel === 1 ? "pt-10 pb-4 font-bold" :
+                            row.itemLevel === 2 ? "pt-8 pb-3" : "py-2"
+                        )}>
+                            <span className={clsx(
+                                "px-2 py-1 rounded text-xs",
+                                row.itemLevel === 1 ? "bg-gray-800 text-white shadow-md" :
+                                row.itemLevel === 2 ? "bg-white border border-gray-200 shadow-sm" : "bg-gray-100"
+                            )}>{row.type}</span>
+                        </td>
+                        {filteredYears.map(year => (
+                            <td key={year} className={clsx(
+                                "px-6 text-right font-mono",
+                                row.itemLevel === 1 ? "pt-10 pb-4 font-extrabold text-gray-900 text-lg border-t-2 border-gray-300" :
+                                row.itemLevel === 2 ? "pt-8 pb-3 font-semibold text-gray-900" : 
+                                row.itemLevel === 3 ? "py-2.5 text-gray-800" : "py-1.5 text-gray-500 text-sm"
+                            )}>
+                                {row[year] !== undefined ? row[year].toLocaleString() : '-'}
+                            </td>
+                        ))}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
         </div>

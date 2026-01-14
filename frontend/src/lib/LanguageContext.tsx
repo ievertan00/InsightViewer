@@ -160,6 +160,9 @@ Template:
     getFinancialData: "Get Financial Data",
     lineItem: "Line Item",
     type: "Type",
+    incomeStatement: "Income Statement",
+    balanceSheet: "Balance Sheet",
+    cashFlowStatement: "Cash Flow Statement",
     showingRecords: "Showing records",
     zerosHidden: "Zeros Hidden",
 
@@ -635,6 +638,9 @@ Template:
     getFinancialData: "获取财务数据",
     lineItem: "报表项目",
     type: "类型",
+    incomeStatement: "利润表",
+    balanceSheet: "资产负债表",
+    cashFlowStatement: "现金流量表",
     showingRecords: "显示记录",
     zerosHidden: "已隐藏零值",
 
