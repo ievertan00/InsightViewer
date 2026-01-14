@@ -508,33 +508,32 @@ export default function UploadPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
           <div>
-            <h3 className="font-bold mb-2">1. {t('searchAShare')}</h3>
-            <p className="mb-2">{t('searchAShareDesc')}</p>
+            <h3 className="font-bold mb-2">{t('howToImportStep1')}</h3>
+            <p className="mb-2">{t('howToImportStep1Desc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>Enter 6-digit code (e.g., 600519).</li>
-              <li>Set Start/End years (e.g., 2020-2023).</li>
+              <li>{t('howToImportStep1Bullet1')}</li>
+              <li>{t('howToImportStep1Bullet2')}</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">2. {t('pasteJson')}</h3>
-            <p className="mb-2">{t('pasteJsonDesc')}</p>
+            <h3 className="font-bold mb-2">{t('howToImportStep2')}</h3>
+            <p className="mb-2">{t('howToImportStep2Desc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>Use the &quot;{t('copyLlmPrompt')}&quot; button.</li>
-              <li>Paste the prompt into DeepSeek/ChatGPT/Claude.</li>
-              <li>Upload your Excel/PDF/Image to the LLM.</li>
-              <li>Paste the JSON response here.</li>
+              <li>{t('howToImportStep2Bullet1').replace('{copyLlmPrompt}', t('copyLlmPrompt'))}</li>
+              <li>{t('howToImportStep2Bullet2')}</li>
+              <li>{t('howToImportStep2Bullet3')}</li>
+              <li>{t('howToImportStep2Bullet4')}</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">3. {t('uploadExcel')}</h3>
-            <p className="mb-2">{t('uploadExcelDesc')}</p>
+            <h3 className="font-bold mb-2">{t('howToImportStep3')}</h3>
+            <p className="mb-2">{t('howToImportStep3Desc')}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>Download standard templates below.</li>
+              <li>{t('howToImportStep3Bullet1')}</li>
               <li>
-                Ensure header row has years (e.g., 2023 Annual, 2023 Q1,
-                2023-01).
+                {t('howToImportStep3Bullet2')}
               </li>
             </ul>
           </div>
