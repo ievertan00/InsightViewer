@@ -13,6 +13,8 @@ import {
 import { analyzeFlags, FlagResult } from "@/lib/flagsEngine";
 import { useLanguage } from "@/lib/LanguageContext";
 
+import { SignalCard } from "@/components/SignalCard";
+
 export default function FlagsPage() {
   const { t } = useLanguage();
   const [flags, setFlags] = useState<FlagResult[]>([]);
@@ -224,38 +226,7 @@ export default function FlagsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {redFlags.map((flag, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 w-1 h-full bg-rose-400"></div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="inline-block px-2 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded uppercase tracking-wide">
-                    {t(flag.category)}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                  {t(flag.name)}
-                </h3>
-                
-                <div className="mb-4">
-                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
-                    {t('triggerCondition')}
-                  </span>
-                  <div className="bg-rose-50/50 p-3 rounded-lg border border-rose-100">
-                    <div className="text-sm font-bold text-rose-700">
-                      {flag.value}
-                    </div>
-                    <div className="text-[10px] text-rose-500 mt-1 font-medium italic">
-                      {t('logic')}: {flag.logic}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {t(flag.description)}
-                </p>
-              </div>
+              <SignalCard key={idx} flag={flag} />
             ))}
           </div>
         </section>
@@ -270,38 +241,7 @@ export default function FlagsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {greenFlags.map((flag, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="inline-block px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded uppercase tracking-wide">
-                    {t(flag.category)}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                  {t(flag.name)}
-                </h3>
-
-                <div className="mb-4">
-                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">
-                    {t('targetCriteria')}
-                  </span>
-                  <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
-                    <div className="text-sm font-bold text-emerald-700">
-                      {flag.value}
-                    </div>
-                    <div className="text-[10px] text-emerald-500 mt-1 font-medium italic">
-                      {t('logic')}: {flag.logic}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {t(flag.description)}
-                </p>
-              </div>
+              <SignalCard key={idx} flag={flag} />
             ))}
           </div>
         </section>
@@ -316,20 +256,7 @@ export default function FlagsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {infoFlags.map((flag, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-50 rounded-xl border border-gray-200 p-5 opacity-75"
-              >
-                <h3 className="font-semibold text-gray-700 mb-2">
-                  {t(flag.name)}
-                </h3>
-                <p className="text-sm text-gray-500 italic mb-2">
-                  {t(flag.description)}
-                </p>
-                <div className="text-xs text-gray-400 font-mono bg-gray-100 p-2 rounded">
-                  {t('check')}: {flag.threshold}
-                </div>
-              </div>
+              <SignalCard key={idx} flag={flag} />
             ))}
           </div>
         </section>

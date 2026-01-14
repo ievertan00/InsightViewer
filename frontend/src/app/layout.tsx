@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { LanguageProvider } from "@/lib/LanguageContext";
 
-const inter = Inter({ subsets: ["latin"] });
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Insight Viewer",
@@ -19,11 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-background text-foreground antialiased`}>
+      <body
+        className={`${outfit.variable} ${fraunces.variable} font-sans bg-background text-foreground antialiased`}
+      >
+        <div className="noise-bg" />
         <LanguageProvider>
           <Sidebar />
           <Header />
-          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)]">
+          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)] relative z-10">
             {children}
           </main>
         </LanguageProvider>

@@ -20,21 +20,24 @@ export default function Sidebar() {
   const { t } = useLanguage();
 
   const navigation = [
-    { name: t('dataImport'), href: "/import", icon: Database },
-    { name: t('dataExplorer'), href: "/explore", icon: FileText },
-    { name: t('ratios'), href: "/ratios", icon: Calculator },
-    { name: t('charts'), href: "/charts", icon: LayoutDashboard },
-    { name: t('flags'), href: "/flags", icon: Flag },
-    { name: t('aiInsights'), href: "/insights", icon: Zap },
+    { name: t("dataImport"), href: "/import", icon: Database },
+    { name: t("dataExplorer"), href: "/explore", icon: FileText },
+    { name: t("ratios"), href: "/ratios", icon: Calculator },
+    { name: t("charts"), href: "/charts", icon: LayoutDashboard },
+    { name: t("flags"), href: "/flags", icon: Flag },
+    { name: t("aiInsights"), href: "/insights", icon: Zap },
+    { name: t("reportGenerator"), href: "/export", icon: Share2 },
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-gray-200 transition-transform hidden md:block">
-      <div className="flex h-16 items-center justify-center border-b border-gray-200 bg-primary text-white">
-        <span className="text-xl font-bold">{t('insightViewer')}</span>
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 glass border-r-0 hidden md:block">
+      <div className="flex h-16 items-center justify-center border-b border-gray-200/30 bg-primary/5">
+        <span className="text-xl font-serif font-bold text-primary tracking-tight">
+          {t("insightViewer")}
+        </span>
       </div>
-      <div className="py-4">
-        <ul className="space-y-2">
+      <div className="py-6 px-3">
+        <ul className="space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -43,13 +46,20 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   className={clsx(
-                    "flex items-center p-3 text-base font-medium rounded-lg mx-2 transition-colors",
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200",
                     isActive
-                      ? "bg-primary text-white"
-                      : "text-gray-900 hover:bg-gray-100"
+                      ? "bg-primary text-white shadow-md shadow-primary/20"
+                      : "text-gray-600 hover:bg-white/50 hover:text-primary"
                   )}
                 >
-                  <Icon className="w-6 h-6 mr-3" />
+                  <Icon
+                    className={clsx(
+                      "w-5 h-5 mr-3",
+                      isActive
+                        ? "text-white"
+                        : "text-gray-400 group-hover:text-primary"
+                    )}
+                  />
                   {item.name}
                 </Link>
               </li>
