@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import ComparisonControls from "@/components/ComparisonControls";
-import { 
-  formatLargeNumber, 
-  formatPercent, 
-  formatNumber, 
-  formatDays 
+import {
+  formatLargeNumber,
+  formatPercent,
+  formatNumber,
+  formatDays,
 } from "@/lib/formatters";
 import { getFiscalYearScore } from "@/lib/chartDataMapper";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -70,9 +70,7 @@ const calculateMetrics = (
   if (!currentData) return [];
 
   const metrics: Metric[] = [];
-  const isMonthly = periodType === "Monthly";
-  const isQuarterly = periodType === "Quarterly";
-  const flowMult = isMonthly ? 12 : isQuarterly ? 4 : 1;
+  const flowMult = 1;
 
   // --- 1. Extract Core Variables (Current Year) ---
   const revenue = getVal(
@@ -992,10 +990,10 @@ export default function KeyRatiosPage() {
     <div className="space-y-6 pb-20">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('ratiosTitle')}</h1>
-          <p className="text-gray-500">
-            {t('ratiosDesc')}
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("ratiosTitle")}
+          </h1>
+          <p className="text-gray-500">{t("ratiosDesc")}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
           <ComparisonControls
@@ -1027,14 +1025,16 @@ export default function KeyRatiosPage() {
       {dupontData && (
         <div className="bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
           <p className="text-xs text-gray-400 flex items-center flex-wrap">
-            {t('analyzing')}{" "}
+            {t("analyzing")}{" "}
             <span className="font-medium text-gray-600 mx-1">
               {dupontData.period}
             </span>
             {dupontData.comparePeriod ? (
               <>
                 <span className="mx-1">
-                  {comparisonMode === "Target" ? t('vs') + " " + t('target') : t('vs')}
+                  {comparisonMode === "Target"
+                    ? t("vs") + " " + t("target")
+                    : t("vs")}
                 </span>
                 <span className="font-medium text-gray-600">
                   {comparisonMode === "Target" && targetMeta
@@ -1043,7 +1043,7 @@ export default function KeyRatiosPage() {
                 </span>
                 {comparisonMode !== "Target" && (
                   <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] uppercase font-bold tracking-wide">
-                    {comparisonMode === "YoY" ? t('yoy') : t('sequential')}
+                    {comparisonMode === "YoY" ? t("yoy") : t("sequential")}
                   </span>
                 )}
               </>
@@ -1054,7 +1054,7 @@ export default function KeyRatiosPage() {
             )}
           </p>
           <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold hidden sm:block">
-            {t('standardizedAnalysis')}
+            {t("standardizedAnalysis")}
           </div>
         </div>
       )}
@@ -1064,17 +1064,17 @@ export default function KeyRatiosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">
-                {t('dupontIdentity')}
+                {t("dupontIdentity")}
               </h2>
             </div>
             <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 hidden sm:block">
-              {t('roeFormula')}
+              {t("roeFormula")}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex flex-col items-center justify-center text-center">
               <span className="text-sm text-blue-600 font-medium mb-1">
-                {t('returnOnEquity')}
+                {t("returnOnEquity")}
               </span>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-3xl font-bold text-blue-900">
@@ -1087,7 +1087,7 @@ export default function KeyRatiosPage() {
                 )}
               </div>
               <span className="text-xs text-blue-400 mt-2">
-                {t('ownerValueCreation')}
+                {t("ownerValueCreation")}
               </span>
             </div>
             <div className="flex items-center justify-center text-gray-300">
@@ -1096,7 +1096,7 @@ export default function KeyRatiosPage() {
             <div className="grid grid-cols-3 col-span-2 gap-4">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  {t('profitability')}
+                  {t("profitability")}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1108,11 +1108,13 @@ export default function KeyRatiosPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-gray-400 mt-2">{t('netMargin')}</div>
+                <div className="text-xs text-gray-400 mt-2">
+                  {t("netMargin")}
+                </div>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  {t('efficiency')}
+                  {t("efficiency")}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1124,11 +1126,13 @@ export default function KeyRatiosPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-gray-400 mt-2">{t('assetTurnover')}</div>
+                <div className="text-xs text-gray-400 mt-2">
+                  {t("assetTurnover")}
+                </div>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center flex flex-col justify-between">
                 <div className="text-xs text-gray-500 font-medium uppercase mb-1">
-                  {t('leverage')}
+                  {t("leverage")}
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">
@@ -1141,7 +1145,7 @@ export default function KeyRatiosPage() {
                   )}
                 </div>
                 <div className="text-xs text-gray-400 mt-2">
-                  {t('equityMultiplier')}
+                  {t("equityMultiplier")}
                 </div>
               </div>
             </div>
@@ -1162,12 +1166,14 @@ export default function KeyRatiosPage() {
               <table className="w-full text-left">
                 <thead className="bg-gray-50/20 text-xs text-gray-400 uppercase tracking-wider font-medium">
                   <tr>
-                    <th className="px-6 py-3">{t('metric')}</th>
-                    <th className="px-4 py-3 text-right">{t('current')}</th>
+                    <th className="px-6 py-3">{t("metric")}</th>
+                    <th className="px-4 py-3 text-right">{t("current")}</th>
                     <th className="px-4 py-3 text-right whitespace-nowrap">
-                      {comparisonMode === "Target" ? t('target') : t('previous')}
+                      {comparisonMode === "Target"
+                        ? t("target")
+                        : t("previous")}
                     </th>
-                    <th className="px-4 py-3 text-right">{t('diff')}</th>
+                    <th className="px-4 py-3 text-right">{t("diff")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -1238,7 +1244,7 @@ export default function KeyRatiosPage() {
                         colSpan={4}
                         className="px-6 py-4 text-center text-gray-400 text-sm"
                       >
-                        {t('noData')}
+                        {t("noData")}
                       </td>
                     </tr>
                   )}

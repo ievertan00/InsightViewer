@@ -360,6 +360,7 @@ const STANDARD_SCHEMA_ORDER: Record<string, number> = (() => {
         "cash_flow_statement.supplementary_info.net_profit_adjustment",
         "cash_flow_statement.supplementary_info.net_profit_adjustment.net_profit",
         "cash_flow_statement.supplementary_info.net_profit_adjustment.asset_impairment_reserves",
+        "cash_flow_statement.supplementary_info.credit_impairment_loss",
         "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_fixed_assets_investment_props",
         "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_others",
         "cash_flow_statement.supplementary_info.net_profit_adjustment.depreciation_investment_props",
@@ -394,8 +395,7 @@ const STANDARD_SCHEMA_ORDER: Record<string, number> = (() => {
         "cash_flow_statement.supplementary_info.cash_change_check.equivalents_begin_balance",
         "cash_flow_statement.supplementary_info.cash_change_check.net_increase_other",
         "cash_flow_statement.supplementary_info.cash_change_check.net_increase_balance",
-        "cash_flow_statement.supplementary_info.cash_change_check.net_increase_cash_and_equivalents_indirect",
-        "cash_flow_statement.supplementary_info.credit_impairment_loss"
+        "cash_flow_statement.supplementary_info.cash_change_check.net_increase_cash_and_equivalents_indirect"
     ];
     
     const map: Record<string, number> = {};
@@ -612,47 +612,115 @@ export default function DataPage() {
 
                         
 
-                                                      if ([
+                                                                                                            if ([
 
                         
 
-                                                          "Total Assets", "Total Liabilities", "Total Equity", 
-
-                                                          "资产总计", "负债合计", "所有者权益合计", "股东权益合计",
-
-                                                          "Total Current Assets", "Total Non Current Assets", 
+                                                      
 
                         
 
-                                                          "Total Current Liabilities", "Total Non Current Liabilities",
+                                                                                                                "Total Assets", "Total Liabilities", "Total Equity", 
 
                         
 
-                                                          "Net Cash Flow From Operating", "Net Cash Flow From Investing", "Net Cash Flow From Financing",
+                                                      
 
                         
 
-                                                          "流动资产", "流动资产合计", "非流动资产合计",
+                                                                                                                "资产总计", "负债合计", "所有者权益合计", "股东权益合计",
 
                         
 
-                                                          "流动负债合计", "非流动负债合计",
+                                                      
 
                         
 
-                                                          "经营活动产生的现金流量净额", "投资活动产生的现金流量净额", "筹资活动产生的现金流量净额"
+                                                                                                                "Total Current Assets", "Total Non Current Assets", 
 
                         
 
-                                                      ].includes(accountName)) {
+                                                      
 
                         
 
-                                                          itemLevel = 2;
+                                                                                                                "Total Current Liabilities", "Total Non Current Liabilities",
 
                         
 
-                                                      }
+                                                      
+
+                        
+
+                                                                                                                "Net Cash Flow From Operating", "Net Cash Flow From Investing", "Net Cash Flow From Financing",
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                                "流动资产", "流动资产合计", "非流动资产合计",
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                                "流动负债合计", "非流动负债合计",
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                                "经营活动产生的现金流量净额", "投资活动产生的现金流量净额", "筹资活动产生的现金流量净额"
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                            ].includes(accountName)) {
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                                itemLevel = 2;
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                            }
+
+                        
+
+                                                      
+
+                        
+
+                                                                                                            // L4 Overrides
+
+                        
+
+                                                                                                            if (typeLabel === "Cash Flow" && (accountName === "Credit Impairment Loss" || accountName === "信用减值损失")) {
+
+                        
+
+                                                                                                                itemLevel = 4;
+
+                        
+
+                                                                                                            }
 
                         
 

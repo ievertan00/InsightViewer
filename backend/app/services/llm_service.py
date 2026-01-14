@@ -12,48 +12,76 @@ class LLMService:
         self.deepseek_key = os.getenv("DEEPSEEK_API_KEY")
         self.qwen_key = os.getenv("DASHSCOPE_API_KEY") or os.getenv("QWEN_API_KEY")
 
-    def _get_system_prompt(self, profile: str) -> str:
-        base_prompt = """
-You are InsightBot, an expert financial analyst. Your goal is to interpret financial data objectively.
+    def _get_system_prompt(self, language: str) -> str:
+        return f"""
+You are an expert Senior Financial Specialist (CFA/CPA level). Your goal is to provide a deep, professional, and actionable financial analysis based *strictly* on the provided data.
 
-**Core Rules:**
-1.  **NO MATH:** Do not attempt to calculate ratios. Use the provided data.
-2.  **EVIDENCE-BASED:** Every claim must cite a specific data point from the input.
-3.  **NEUTRALITY:** Avoid emotional language. Use professional terms.
-4.  **UNCERTAINTY:** If data is missing for a section, explicitly state: "Insufficient data to analyze [Metric]."
-5.  **FORMAT:** Return the response in strict Markdown format.
+**Target Audience:** Investors.
+**Language:** Respond strictly in {language}.
 
-**Task:**
-Generate a financial analysis report based on the provided JSON context.
+**Core Mandates:**
+1.  **EVIDENCE-BASED:** Every claim must cite a specific data point.
+2.  **FILTER NOISE:** Do not mention metrics that are missing or zero unless they are critical omissions.
+3.  **STRUCTURE:** Use clear Markdown headings.
+4.  **TONE:** Professional, objective, and authoritative. Avoid fluff.
+5.  **NO INVESTMENT ADVICE:** No Investment Advice. No advice on "Buy", "Sell", "Hold". Focus solely on analysis.
+
+**Analysis Framework:**
+1.  **Executive Summary:** High-level strategic insights, top risks, and overall health score.
+2.  **Profitability & Growth:** Analyze margins, revenue quality, and cost structure.
+3.  **Solvency & Liquidity:** Assess debt levels, working capital, and cash flow health.
+4.  **Operational Efficiency:** Evaluate asset turnover and management efficiency.
+5.  **Risk Assessment:** Highlight active flags, anomalies, and potential downsides.
 """
-        if profile == "executive_summary":
-            return base_prompt + "\n**Profile: Executive Summary**\nFocus on high-level strategic insights, top risks, and bottom-line health. Be concise."
-        elif profile == "forensic_deep_dive":
-            return base_prompt + "\n**Profile: Forensic Deep Dive**\nFocus on anomalies, red flags, accounting discrepancies, and specific risk vectors. Be skeptical and technical."
-        elif profile == "health_check":
-            return base_prompt + "\n**Profile: Health Check**\nProvide a balanced educational overview of profitability, solvency, and efficiency. Explain what the numbers mean."
-        elif profile == "comprehensive_analysis":
-            return base_prompt + """
-**Profile: Comprehensive Analysis (One for All)**
-Combine the following perspectives into a single, structured report:
-1.  **Executive Summary:** Start with high-level strategic insights and bottom-line health.
-2.  **Financial Health Check:** Provide a balanced overview of profitability, solvency, and efficiency.
-3.  **Forensic Deep Dive:** Investigate anomalies, red flags, and risk vectors.
 
-Structure the report clearly with sections for each perspective.
-"""
-        else: # Default fallback
-            return base_prompt + "\n**Profile: Standard Analysis**\nProvide a general financial analysis."
+    def _filter_zeros(self, data: Any) -> Any:
+        if isinstance(data, dict):
+            cleaned = {}
+            for k, v in data.items():
+                if v in [0, 0.0, None, ""]:
+                    continue
+                cleaned_v = self._filter_zeros(v)
+                if isinstance(cleaned_v, (dict, list)) and not cleaned_v:
+                    continue
+                cleaned[k] = cleaned_v
+            return cleaned
+        elif isinstance(data, list):
+            cleaned = []
+            for item in data:
+                if item in [0, 0.0, None, ""]:
+                    continue
+                cleaned_item = self._filter_zeros(item)
+                if isinstance(cleaned_item, (dict, list)) and not cleaned_item:
+                    continue
+                cleaned.append(cleaned_item)
+            return cleaned
+        return data
 
     def _format_user_message(self, context: AnalysisContext) -> str:
+        # Filter zero values from key data structures
+        filtered_report = self._filter_zeros(context.full_report)
+        filtered_ratios = self._filter_zeros(context.ratios)
+        
+        # Construct a focused context dictionary
+        final_context = {
+            "meta": {
+                "company": context.company_name,
+                "code": context.stock_code,
+                "year": context.fiscal_year,
+                "period": context.period_type
+            },
+            "financials": filtered_report,
+            "ratios": filtered_ratios,
+            "trends": [t.dict() for t in context.trends],
+            "flags": [f.dict() for f in context.active_flags]
+        }
+
         return f"""
-Analyze the following company data:
+Analyze the following company data for {context.company_name}:
 
 ```json
-{context.model_dump_json(indent=2)}
+{json.dumps(final_context, indent=2, ensure_ascii=False)}
 ```
-
-Structure the output with clear headings (#, ##) corresponding to the profile's needs.
 """
 
     def _call_gemini_sync(self, system_prompt: str, user_message: str) -> str:
@@ -61,7 +89,7 @@ Structure the output with clear headings (#, ##) corresponding to the profile's 
             raise ValueError("GEMINI_API_KEY not set")
         genai.configure(api_key=self.gemini_key)
         # Updated to use available model from list_models.py
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3-flash-preview')
         response = model.generate_content(f"{system_prompt}\n\n{user_message}")
         return response.text
 
@@ -95,7 +123,7 @@ Structure the output with clear headings (#, ##) corresponding to the profile's 
         return response.choices[0].message.content
 
     async def generate_report(self, context: AnalysisContext, profile: str, provider: str) -> GeneratedReport:
-        system_prompt = self._get_system_prompt(profile)
+        system_prompt = self._get_system_prompt(context.language)
         user_message = self._format_user_message(context)
         
         full_markdown = ""

@@ -16,14 +16,14 @@ import { GeneratedReport, ReportRequest } from "@/lib/types";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function InterpretPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [reports, setReports] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedReport, setGeneratedReport] = useState<GeneratedReport | null>(null);
   
   const [options, setOptions] = useState<ReportRequest>({
-    report_profile: "comprehensive_analysis",
+    report_profile: "senior_financial_specialist",
     model_provider: "gemini",
     include_reasoning: true
   });
@@ -59,7 +59,8 @@ export default function InterpretPage() {
     setError(null);
     
     try {
-      const context = extractAnalysisContext(reports);
+      const companyName = localStorage.getItem("insight_viewer_company_name") || undefined;
+      const context = extractAnalysisContext(reports, language, companyName);
       const result = await generateReport(context, options);
       setGeneratedReport(result);
       // Save to localStorage

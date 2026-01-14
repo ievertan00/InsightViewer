@@ -35,14 +35,16 @@ export interface AnalysisContext {
   stock_code: string;
   fiscal_year: string;
   period_type: string;
-  key_metrics: Record<string, number>;
+  language: string;
+  full_report: any;
+  ratios: Record<string, number>;
   trends: MetricTrend[];
   active_flags: ActiveFlag[];
   missing_data: string[];
 }
 
 export interface ReportRequest {
-  report_profile: "executive_summary" | "forensic_deep_dive" | "health_check";
+  report_profile: string;
   model_provider: "gemini" | "deepseek" | "qwen";
   include_reasoning?: boolean;
 }

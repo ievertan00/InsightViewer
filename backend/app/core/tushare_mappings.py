@@ -117,6 +117,7 @@ TUSHARE_BALANCE_MAP = {
     # Total Liabilities
     "total_liab": "liabilities_summary.total_liabilities",
     # Equity
+    "total_share": "equity.paid_in_capital",
     "total_hldr_eqy_exc_min_int": "equity.total_parent_equity",
     "total_hldr_eqy_inc_min_int": "equity.total_equity",
     "capital_rese": "equity.capital_reserves",

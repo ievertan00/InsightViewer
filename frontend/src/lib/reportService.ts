@@ -29,7 +29,7 @@ export async function generateReport(
 /**
  * Extracts LLM-ready context from standardized report data and computed flags.
  */
-export function extractAnalysisContext(reports: any[]): AnalysisContext {
+export function extractAnalysisContext(reports: any[], language: string = "en", companyName?: string): AnalysisContext {
   if (!reports || reports.length === 0) {
     throw new Error("No reports available to analyze");
   }
@@ -42,17 +42,7 @@ export function extractAnalysisContext(reports: any[]): AnalysisContext {
   const d = latest.data;
   const pd = previous?.data;
 
-  // 1. Key Metrics (Simplified for LLM)
-  const key_metrics: Record<string, number> = {
-    revenue: getVal(d, "income_statement.total_operating_revenue"),
-    net_profit: getVal(d, "income_statement.net_profit.net_profit_attr_to_parent"),
-    operating_cash_flow: getVal(d, "cash_flow_statement.operating_activities.net_cash_flow_from_operating"),
-    total_assets: getVal(d, "balance_sheet.assets_summary.total_assets"),
-    total_liabilities: getVal(d, "balance_sheet.liabilities_summary.total_liabilities"),
-    cash_and_equiv: getVal(d, "balance_sheet.current_assets.monetary_funds"),
-  };
-
-  // 2. Computed Trends
+  // 1. Computed Trends
   const trends: MetricTrend[] = [];
   const metricsToTrack = [
     { name: "Revenue", path: "income_statement.total_operating_revenue" },
@@ -74,7 +64,7 @@ export function extractAnalysisContext(reports: any[]): AnalysisContext {
     });
   }
 
-  // 3. Active Flags
+  // 2. Active Flags
   const computedFlags = analyzeFlags(reports);
   const active_flags: ActiveFlag[] = computedFlags.map(f => ({
     flag_name: f.name,
@@ -85,15 +75,20 @@ export function extractAnalysisContext(reports: any[]): AnalysisContext {
     description: f.description
   }));
 
+  // 3. Calculated Ratios
+  const ratios = calculateRatios(d, pd, latest.period_type);
+
   return {
-    company_name: latest.company_meta?.name || "Unknown Company",
+    company_name: companyName || latest.company_meta?.name || "Unknown Company",
     stock_code: latest.company_meta?.stock_code || "N/A",
     fiscal_year: latest.fiscal_year,
     period_type: latest.period_type,
-    key_metrics,
+    language,
+    full_report: latest.data,
+    ratios,
     trends,
     active_flags,
-    missing_data: [] // Can be populated by parsing logic later
+    missing_data: []
   };
 }
 
@@ -106,4 +101,41 @@ function getVal(data: any, path: string): number {
     curr = curr?.[part];
   }
   return typeof curr === "number" ? curr : curr?.amount || 0;
+}
+
+const safeDiv = (num: number, den: number) => (den === 0 ? 0 : num / den);
+
+function calculateRatios(currentData: any, prevData: any, periodType: string): Record<string, number> {
+    if (!currentData) return {};
+    
+    const isMonthly = periodType === "Monthly";
+    const isQuarterly = periodType === "Quarterly";
+    const flowMult = isMonthly ? 12 : isQuarterly ? 4 : 1;
+
+    // Extract needed values
+    const revenue = getVal(currentData, "income_statement.total_operating_revenue");
+    const costOfSales = getVal(currentData, "income_statement.total_operating_cost.operating_cost");
+    const grossProfit = revenue - costOfSales;
+    const netIncome = getVal(currentData, "income_statement.net_profit.net_profit_attr_to_parent");
+    const totalAssets = getVal(currentData, "balance_sheet.assets_summary.total_assets");
+    const totalLiabilities = getVal(currentData, "balance_sheet.liabilities_summary.total_liabilities");
+    const totalEquity = getVal(currentData, "balance_sheet.equity.total_equity");
+    const currentAssets = getVal(currentData, "balance_sheet.current_assets.total_current_assets");
+    const currentLiabilities = getVal(currentData, "balance_sheet.current_liabilities.total_current_liabilities");
+    const inventory = getVal(currentData, "balance_sheet.current_assets.inventories");
+    const ocf = getVal(currentData, "cash_flow_statement.operating_activities.net_cash_flow_from_operating");
+
+    // Calculate
+    return {
+        gross_margin: safeDiv(grossProfit, revenue),
+        net_profit_margin: safeDiv(netIncome, revenue),
+        roe: safeDiv(netIncome * flowMult, totalEquity), // Simplified ROE
+        roa: safeDiv(netIncome * flowMult, totalAssets),
+        current_ratio: safeDiv(currentAssets, currentLiabilities),
+        quick_ratio: safeDiv(currentAssets - inventory, currentLiabilities),
+        debt_to_assets: safeDiv(totalLiabilities, totalAssets),
+        debt_to_equity: safeDiv(totalLiabilities, totalEquity),
+        asset_turnover: safeDiv(revenue * flowMult, totalAssets),
+        inventory_turnover: safeDiv(costOfSales * flowMult, inventory)
+    };
 }

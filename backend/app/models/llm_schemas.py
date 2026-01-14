@@ -27,9 +27,11 @@ class AnalysisContext(BaseModel):
     stock_code: str
     fiscal_year: str
     period_type: str
+    language: str
     
-    # Key Financials (Simplified)
-    key_metrics: Dict[str, float]  # e.g. {"revenue": 1000, "net_profit": 50}
+    # Complete Data Context
+    full_report: Dict[str, Any]
+    ratios: Dict[str, Any]
     
     # Computed Trends
     trends: List[MetricTrend]
@@ -43,7 +45,7 @@ class AnalysisContext(BaseModel):
 # --- Report Generation Request/Response ---
 
 class ReportRequest(BaseModel):
-    report_profile: str = Field(..., description="executive_summary | forensic_deep_dive | health_check")
+    report_profile: str = Field("senior_financial_specialist", description="Fixed profile: senior_financial_specialist")
     model_provider: str = Field("gemini", description="gemini | deepseek | qwen")
     include_reasoning: bool = True
 
