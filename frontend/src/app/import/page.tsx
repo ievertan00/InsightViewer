@@ -62,7 +62,7 @@ export default function UploadPage() {
       );
 
       if (validFiles.length !== droppedFiles.length) {
-        setUploadError(t('fileTypeRestricted'));
+        setUploadError(t("fileTypeRestricted"));
         return;
       }
 
@@ -84,7 +84,7 @@ export default function UploadPage() {
       );
 
       if (validFiles.length !== selectedFiles.length) {
-        setUploadError(t('fileTypeRestricted'));
+        setUploadError(t("fileTypeRestricted"));
         return;
       }
 
@@ -100,8 +100,8 @@ export default function UploadPage() {
     if (!stockSymbol) return;
 
     // Validation: 6-digit number
-    if (!/^V{6}$/.test(stockSymbol)) {
-      setSearchError(t('stockCodeInvalid'));
+    if (!/^\d{6}$/.test(stockSymbol)) {
+      setSearchError(t("stockCodeInvalid"));
       return;
     }
 
@@ -112,7 +112,7 @@ export default function UploadPage() {
 
     try {
       const symbol = stockSymbol.startsWith("6")
-        ? `${stockSymbol}.SH` 
+        ? `${stockSymbol}.SH`
         : `${stockSymbol}.SZ`;
 
       let url = `http://localhost:8000/api/v1/stock/${symbol}`;
@@ -128,7 +128,7 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || t('fetchError'));
+        throw new Error(errorData.detail || t("fetchError"));
       }
 
       const data = await response.json();
@@ -153,14 +153,12 @@ export default function UploadPage() {
         );
         setIsFetchingStock(false);
       } else {
-        setSearchError(t('noData'));
+        setSearchError(t("noData"));
         setIsFetchingStock(false);
       }
     } catch (err: any) {
       console.error(err);
-      setSearchError(
-        err.message || t('fetchGenericError')
-      );
+      setSearchError(err.message || t("fetchGenericError"));
       setIsFetchingStock(false);
     }
   };
@@ -171,7 +169,7 @@ export default function UploadPage() {
     try {
       JSON.parse(jsonContent);
     } catch (e) {
-      setPasteError(t('parseError'));
+      setPasteError(t("parseError"));
       return;
     }
 
@@ -192,7 +190,7 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || t('processJsonError'));
+        throw new Error(errorData.detail || t("processJsonError"));
       }
 
       const reportData = await response.json();
@@ -200,13 +198,27 @@ export default function UploadPage() {
       const existingName = localStorage.getItem("insight_viewer_company_name");
       const newName = reportData.company_meta?.name;
 
-      if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
-        setPasteError(t('companyNameMismatch').replace('{existing}', existingName).replace('{new}', newName));
+      if (
+        isAppendMode &&
+        existingName &&
+        newName &&
+        existingName !== newName &&
+        newName !== "Unknown"
+      ) {
+        setPasteError(
+          t("companyNameMismatch")
+            .replace("{existing}", existingName)
+            .replace("{new}", newName)
+        );
         setIsProcessingPaste(false);
         return;
       }
 
-      if (newName && newName !== "Unknown" && (!isAppendMode || !existingName)) {
+      if (
+        newName &&
+        newName !== "Unknown" &&
+        (!isAppendMode || !existingName)
+      ) {
         localStorage.setItem("insight_viewer_company_name", newName);
         window.dispatchEvent(new Event("companyNameUpdate"));
       }
@@ -214,7 +226,9 @@ export default function UploadPage() {
       if (reportData.reports) {
         let finalReports = reportData.reports;
         if (isAppendMode) {
-          const existingReportsStr = localStorage.getItem("insight_viewer_reports");
+          const existingReportsStr = localStorage.getItem(
+            "insight_viewer_reports"
+          );
           if (existingReportsStr) {
             try {
               const existingReports = JSON.parse(existingReportsStr);
@@ -222,36 +236,55 @@ export default function UploadPage() {
                 // Use backend API to properly merge reports
                 const existingReportData = {
                   company_meta: {
-                    name: localStorage.getItem("insight_viewer_company_name") || "Unknown",
+                    name:
+                      localStorage.getItem("insight_viewer_company_name") ||
+                      "Unknown",
                     stock_code: null,
-                    currency: "CNY"
+                    currency: "CNY",
                   },
                   reports: existingReports,
-                  parsing_warnings: []
+                  parsing_warnings: [],
                 };
 
                 const mergeFormData = new FormData();
-                mergeFormData.append('existing_reports_json', JSON.stringify(existingReportData));
-                mergeFormData.append('new_reports_json', JSON.stringify(reportData));
+                mergeFormData.append(
+                  "existing_reports_json",
+                  JSON.stringify(existingReportData)
+                );
+                mergeFormData.append(
+                  "new_reports_json",
+                  JSON.stringify(reportData)
+                );
 
-                const mergeResponse = await fetch("http://localhost:8000/api/v1/merge-reports", {
-                  method: "POST",
-                  body: mergeFormData,
-                });
+                const mergeResponse = await fetch(
+                  "http://localhost:8000/api/v1/merge-reports",
+                  {
+                    method: "POST",
+                    body: mergeFormData,
+                  }
+                );
 
                 if (!mergeResponse.ok) {
                   const errorData = await mergeResponse.json();
-                  throw new Error(errorData.detail || "Failed to merge reports");
+                  throw new Error(
+                    errorData.detail || "Failed to merge reports"
+                  );
                 }
 
                 const mergedData = await mergeResponse.json();
                 finalReports = mergedData.reports;
               }
             } catch (e) {
-              console.error("Failed to merge reports via API, falling back to client-side merge:", e);
+              console.error(
+                "Failed to merge reports via API, falling back to client-side merge:",
+                e
+              );
               const existingReports = JSON.parse(existingReportsStr);
               if (Array.isArray(existingReports)) {
-                finalReports = mergeReportsByFiscalYear(existingReports, reportData.reports);
+                finalReports = mergeReportsByFiscalYear(
+                  existingReports,
+                  reportData.reports
+                );
               }
             }
           }
@@ -263,32 +296,43 @@ export default function UploadPage() {
           return yearB - yearA;
         });
 
-        localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
-        localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
+        localStorage.setItem(
+          "insight_viewer_reports",
+          JSON.stringify(finalReports)
+        );
+        localStorage.setItem(
+          "insight_viewer_last_update",
+          new Date().toISOString()
+        );
 
         // Show warnings if any
-        if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-          setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
+        if (
+          reportData.parsing_warnings &&
+          reportData.parsing_warnings.length > 0
+        ) {
+          setWarningMessage(
+            `${t("importWarnings")}:\n\n${reportData.parsing_warnings.join(
+              "\n"
+            )}`
+          );
         }
 
         setProgress(100);
         setJsonContent(""); // Clear input
         setIsProcessingPaste(false);
       } else {
-        setPasteError(t('noReportDataInJson'));
+        setPasteError(t("noReportDataInJson"));
         setIsProcessingPaste(false);
       }
     } catch (e: any) {
       console.error(e);
-      setPasteError(
-        e.message || t('parseError')
-      );
+      setPasteError(e.message || t("parseError"));
       setIsProcessingPaste(false);
     }
   };
 
   const copyLlmPrompt = () => {
-    const prompt = t('llmPromptTemplate');
+    const prompt = t("llmPromptTemplate");
     navigator.clipboard.writeText(prompt);
     setShowCopiedMessage(true);
     setTimeout(() => setShowCopiedMessage(false), 3000); // Hide after 3 seconds
@@ -303,7 +347,10 @@ export default function UploadPage() {
   };
 
   // Helper function to merge reports by fiscal year, combining different report types
-  const mergeReportsByFiscalYear = (existingReports: any[], newReports: any[]) => {
+  const mergeReportsByFiscalYear = (
+    existingReports: any[],
+    newReports: any[]
+  ) => {
     // Create a map of existing reports by fiscal year
     const reportMap: { [key: string]: any } = {};
 
@@ -314,22 +361,31 @@ export default function UploadPage() {
         reportMap[fiscalYearKey] = { ...report };
       } else {
         // Merge data if fiscal year already exists
-        if (report.data?.income_statement && !reportMap[fiscalYearKey].data?.income_statement) {
+        if (
+          report.data?.income_statement &&
+          !reportMap[fiscalYearKey].data?.income_statement
+        ) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            income_statement: report.data.income_statement
+            income_statement: report.data.income_statement,
           };
         }
-        if (report.data?.balance_sheet && !reportMap[fiscalYearKey].data?.balance_sheet) {
+        if (
+          report.data?.balance_sheet &&
+          !reportMap[fiscalYearKey].data?.balance_sheet
+        ) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            balance_sheet: report.data.balance_sheet
+            balance_sheet: report.data.balance_sheet,
           };
         }
-        if (report.data?.cash_flow_statement && !reportMap[fiscalYearKey].data?.cash_flow_statement) {
+        if (
+          report.data?.cash_flow_statement &&
+          !reportMap[fiscalYearKey].data?.cash_flow_statement
+        ) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            cash_flow_statement: report.data.cash_flow_statement
+            cash_flow_statement: report.data.cash_flow_statement,
           };
         }
       }
@@ -345,19 +401,19 @@ export default function UploadPage() {
         if (report.data?.income_statement) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            income_statement: report.data.income_statement
+            income_statement: report.data.income_statement,
           };
         }
         if (report.data?.balance_sheet) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            balance_sheet: report.data.balance_sheet
+            balance_sheet: report.data.balance_sheet,
           };
         }
         if (report.data?.cash_flow_statement) {
           reportMap[fiscalYearKey].data = {
             ...reportMap[fiscalYearKey].data,
-            cash_flow_statement: report.data.cash_flow_statement
+            cash_flow_statement: report.data.cash_flow_statement,
           };
         }
       }
@@ -388,21 +444,26 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || t('uploadError'));
+        throw new Error(errorData.detail || t("uploadError"));
       }
 
       const reportData = await response.json();
       setProgress(70);
 
-      if (reportData.reports.length === 0 && reportData.parsing_warnings.length > 0) {
-        setUploadError(t('noValidReportsExtracted'));
-        setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
+      if (
+        reportData.reports.length === 0 &&
+        reportData.parsing_warnings.length > 0
+      ) {
+        setUploadError(t("noValidReportsExtracted"));
+        setWarningMessage(
+          `${t("importWarnings")}:\n\n${reportData.parsing_warnings.join("\n")}`
+        );
         setIsProcessingUpload(false);
         return;
       }
 
       if (reportData.reports.length === 0) {
-        setUploadError(t('checkFileFormat'));
+        setUploadError(t("checkFileFormat"));
         setIsProcessingUpload(false);
         return;
       }
@@ -411,13 +472,27 @@ export default function UploadPage() {
       const existingName = localStorage.getItem("insight_viewer_company_name");
       const newName = reportData.company_meta?.name;
 
-      if (isAppendMode && existingName && newName && existingName !== newName && newName !== "Unknown") {
-        setUploadError(t('companyNameMismatch').replace('{existing}', existingName).replace('{new}', newName));
+      if (
+        isAppendMode &&
+        existingName &&
+        newName &&
+        existingName !== newName &&
+        newName !== "Unknown"
+      ) {
+        setUploadError(
+          t("companyNameMismatch")
+            .replace("{existing}", existingName)
+            .replace("{new}", newName)
+        );
         setIsProcessingUpload(false);
         return;
       }
 
-      if (newName && newName !== "Unknown" && (!isAppendMode || !existingName)) {
+      if (
+        newName &&
+        newName !== "Unknown" &&
+        (!isAppendMode || !existingName)
+      ) {
         localStorage.setItem("insight_viewer_company_name", newName);
         window.dispatchEvent(new Event("companyNameUpdate"));
       }
@@ -425,7 +500,9 @@ export default function UploadPage() {
       let finalReports = reportData.reports;
 
       if (isAppendMode) {
-        const existingReportsStr = localStorage.getItem("insight_viewer_reports");
+        const existingReportsStr = localStorage.getItem(
+          "insight_viewer_reports"
+        );
         if (existingReportsStr) {
           try {
             const existingReports = JSON.parse(existingReportsStr);
@@ -433,22 +510,33 @@ export default function UploadPage() {
               // Use backend API to properly merge reports
               const existingReportData = {
                 company_meta: {
-                  name: localStorage.getItem("insight_viewer_company_name") || "Unknown",
+                  name:
+                    localStorage.getItem("insight_viewer_company_name") ||
+                    "Unknown",
                   stock_code: null,
-                  currency: "CNY"
+                  currency: "CNY",
                 },
                 reports: existingReports,
-                parsing_warnings: []
+                parsing_warnings: [],
               };
 
               const mergeFormData = new FormData();
-              mergeFormData.append('existing_reports_json', JSON.stringify(existingReportData));
-              mergeFormData.append('new_reports_json', JSON.stringify(reportData));
+              mergeFormData.append(
+                "existing_reports_json",
+                JSON.stringify(existingReportData)
+              );
+              mergeFormData.append(
+                "new_reports_json",
+                JSON.stringify(reportData)
+              );
 
-              const mergeResponse = await fetch("http://localhost:8000/api/v1/merge-reports", {
-                method: "POST",
-                body: mergeFormData,
-              });
+              const mergeResponse = await fetch(
+                "http://localhost:8000/api/v1/merge-reports",
+                {
+                  method: "POST",
+                  body: mergeFormData,
+                }
+              );
 
               if (!mergeResponse.ok) {
                 const errorData = await mergeResponse.json();
@@ -459,10 +547,16 @@ export default function UploadPage() {
               finalReports = mergedData.reports;
             }
           } catch (e) {
-            console.error("Failed to merge reports via API, falling back to client-side merge:", e);
+            console.error(
+              "Failed to merge reports via API, falling back to client-side merge:",
+              e
+            );
             const existingReports = JSON.parse(existingReportsStr);
             if (Array.isArray(existingReports)) {
-              finalReports = mergeReportsByFiscalYear(existingReports, reportData.reports);
+              finalReports = mergeReportsByFiscalYear(
+                existingReports,
+                reportData.reports
+              );
             }
           }
         }
@@ -474,11 +568,22 @@ export default function UploadPage() {
         return yearB - yearA;
       });
 
-      localStorage.setItem("insight_viewer_reports", JSON.stringify(finalReports));
-      localStorage.setItem("insight_viewer_last_update", new Date().toISOString());
+      localStorage.setItem(
+        "insight_viewer_reports",
+        JSON.stringify(finalReports)
+      );
+      localStorage.setItem(
+        "insight_viewer_last_update",
+        new Date().toISOString()
+      );
 
-      if (reportData.parsing_warnings && reportData.parsing_warnings.length > 0) {
-        setWarningMessage(`${t('importWarnings')}:\n\n${reportData.parsing_warnings.join("\n")}`);
+      if (
+        reportData.parsing_warnings &&
+        reportData.parsing_warnings.length > 0
+      ) {
+        setWarningMessage(
+          `${t("importWarnings")}:\n\n${reportData.parsing_warnings.join("\n")}`
+        );
       }
 
       setProgress(100);
@@ -486,7 +591,7 @@ export default function UploadPage() {
       setIsProcessingUpload(false);
     } catch (err: any) {
       console.error(err);
-      setUploadError(err.message || t('uploadError'));
+      setUploadError(err.message || t("uploadError"));
       setIsProcessingUpload(false);
     }
   };
@@ -494,47 +599,43 @@ export default function UploadPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('importTitle')}</h1>
-        <p className="text-gray-500">
-          {t('importDesc')}
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("importTitle")}</h1>
+        <p className="text-gray-500">{t("importDesc")}</p>
       </div>
 
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-4">
         <h2 className="font-semibold text-blue-900 flex items-center">
           <Info className="w-5 h-5 mr-2 text-blue-600" />
-          {t('howToImport')}
+          {t("howToImport")}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
           <div>
-            <h3 className="font-bold mb-2">{t('howToImportStep1')}</h3>
-            <p className="mb-2">{t('howToImportStep1Desc')}</p>
+            <h3 className="font-bold mb-2">{t("howToImportStep1")}</h3>
+            <p className="mb-2">{t("howToImportStep1Desc")}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>{t('howToImportStep1Bullet1')}</li>
-              <li>{t('howToImportStep1Bullet2')}</li>
+              <li>{t("howToImportStep1Bullet1")}</li>
+              <li>{t("howToImportStep1Bullet2")}</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">{t('howToImportStep2')}</h3>
-            <p className="mb-2">{t('howToImportStep2Desc')}</p>
+            <h3 className="font-bold mb-2">{t("howToImportStep2")}</h3>
+            <p className="mb-2">{t("howToImportStep2Desc")}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>{t('howToImportStep2Bullet1').replace('{copyLlmPrompt}', t('copyLlmPrompt'))}</li>
-              <li>{t('howToImportStep2Bullet2')}</li>
-              <li>{t('howToImportStep2Bullet3')}</li>
-              <li>{t('howToImportStep2Bullet4')}</li>
+              <li>{t("howToImportStep2Bullet1").replace("{copyLlmPrompt}", t("copyLlmPrompt"))}</li>
+              <li>{t("howToImportStep2Bullet2")}</li>
+              <li>{t("howToImportStep2Bullet3")}</li>
+              <li>{t("howToImportStep2Bullet4")}</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold mb-2">{t('howToImportStep3')}</h3>
-            <p className="mb-2">{t('howToImportStep3Desc')}</p>
+            <h3 className="font-bold mb-2">{t("howToImportStep3")}</h3>
+            <p className="mb-2">{t("howToImportStep3Desc")}</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>{t('howToImportStep3Bullet1')}</li>
-              <li>
-                {t('howToImportStep3Bullet2')}
-              </li>
+              <li>{t("howToImportStep3Bullet1")}</li>
+              <li>{t("howToImportStep3Bullet2")}</li>
             </ul>
           </div>
         </div>
@@ -545,7 +646,7 @@ export default function UploadPage() {
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
             1
           </span>
-          {t('searchAShare')}
+          {t("searchAShare")}
         </h3>
         {searchError && (
           <div className="text-sm text-red-600 flex items-center bg-red-50 p-2 rounded-md">
@@ -585,12 +686,10 @@ export default function UploadPage() {
             {isFetchingStock ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}
-            {isFetchingStock ? t('processing') : t('fetchData')}
+            {isFetchingStock ? t("processing") : t("fetchData")}
           </button>
         </div>
-        <p className="text-xs text-gray-400">
-          {t('tushareNote')}
-        </p>
+        <p className="text-xs text-gray-400">{t("tushareNote")}</p>
       </div>
 
       <div className="relative">
@@ -608,13 +707,13 @@ export default function UploadPage() {
             <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
               2
             </span>
-            {t('pasteJson')}
+            {t("pasteJson")}
           </h3>
           <button
             onClick={copyLlmPrompt}
             className="text-xs text-primary hover:text-blue-800 font-medium underline"
           >
-            {t('copyLlmPrompt')}
+            {t("copyLlmPrompt")}
           </button>
         </div>
         {pasteError && (
@@ -637,7 +736,7 @@ export default function UploadPage() {
               onChange={(e) => setIsAppendMode(e.target.checked)}
               className="rounded text-primary focus:ring-primary"
             />
-            <span>{t('addToExisting')}</span>
+            <span>{t("addToExisting")}</span>
           </label>
           <button
             onClick={handleJsonPaste}
@@ -647,7 +746,7 @@ export default function UploadPage() {
             {isProcessingPaste ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}
-            {isProcessingPaste ? t('processing') : t('loadProcessJson')}
+            {isProcessingPaste ? t("processing") : t("loadProcessJson")}
           </button>
         </div>
       </div>
@@ -666,7 +765,7 @@ export default function UploadPage() {
           <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
             3
           </span>
-          {t('dragDropTitle')}
+          {t("dragDropTitle")}
         </h3>
 
         {uploadError && (
@@ -694,13 +793,13 @@ export default function UploadPage() {
             )}
           />
           <p className="text-sm text-gray-500 mb-2 text-center">
-            {t('dragDropDesc')}
+            {t("dragDropDesc")}
           </p>
-          
+
           <div className="flex space-x-3 text-xs mb-4 text-center">
             <span className="text-gray-400">Templates:</span>
             <a
-              href="/templates/[Company_Name]_Standard_Income_Statement.xlsx"
+              href="/templates/公司名称_利润表.xlsx"
               download
               className="text-primary hover:underline"
             >
@@ -708,7 +807,7 @@ export default function UploadPage() {
             </a>
             <span className="text-gray-300">|</span>
             <a
-              href="/templates/[Company_Name]_Standard_Balance_Sheet.xlsx"
+              href="/templates/公司名称_资产负债表.xlsx"
               download
               className="text-primary hover:underline"
             >
@@ -716,7 +815,7 @@ export default function UploadPage() {
             </a>
             <span className="text-gray-300">|</span>
             <a
-              href="/templates/[Company_Name]_Standard_Cash_Flow.xlsx"
+              href="/templates/公司名称_现金流量表.xlsx"
               download
               className="text-primary hover:underline"
             >
@@ -725,7 +824,7 @@ export default function UploadPage() {
           </div>
 
           <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors z-10 relative">
-            {t('browseFiles')}
+            {t("browseFiles")}
             <input
               type="file"
               className="hidden"
@@ -742,13 +841,13 @@ export default function UploadPage() {
           <div className="flex justify-between items-center">
             <h3 className="font-semibold text-yellow-800 flex items-center">
               <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
-              {t('importWarnings')}
+              {t("importWarnings")}
             </h3>
             <button
               onClick={copyWarningMessage}
               className="text-xs text-yellow-700 hover:text-yellow-900 font-medium underline"
             >
-              {t('copyWarnings')}
+              {t("copyWarnings")}
             </button>
           </div>
           <div className="relative">
@@ -758,16 +857,14 @@ export default function UploadPage() {
               value={warningMessage}
             />
           </div>
-          <p className="text-xs text-yellow-600">
-            {t('warningDetails')}
-          </p>
+          <p className="text-xs text-yellow-600">{t("warningDetails")}</p>
         </div>
       )}
 
       {files.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
           <h3 className="font-semibold text-gray-800">
-            {t('selectedFiles')} ({files.length})
+            {t("selectedFiles")} ({files.length})
           </h3>
           <div className="space-y-2">
             {files.map((file, idx) => (
@@ -789,7 +886,7 @@ export default function UploadPage() {
                     onClick={() => removeFile(idx)}
                     className="text-red-500 hover:text-red-700 text-sm"
                   >
-                    {t('remove')}
+                    {t("remove")}
                   </button>
                 )}
               </div>
@@ -801,7 +898,7 @@ export default function UploadPage() {
               <div className="flex-1 mr-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-primary font-medium">
-                    {t('processing')}
+                    {t("processing")}
                   </span>
                   <span className="text-gray-500">{progress}%</span>
                 </div>
@@ -824,7 +921,7 @@ export default function UploadPage() {
                   onChange={(e) => setIsAppendMode(e.target.checked)}
                   className="rounded text-primary focus:ring-primary"
                 />
-                <span>{t('addToExisting')}</span>
+                <span>{t("addToExisting")}</span>
               </label>
               <button
                 onClick={processFiles}
@@ -839,7 +936,7 @@ export default function UploadPage() {
                 {isProcessingUpload && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                {isProcessingUpload ? t('parsing') : t('startProcessing')}
+                {isProcessingUpload ? t("parsing") : t("startProcessing")}
               </button>
             </div>
           </div>
@@ -855,7 +952,7 @@ export default function UploadPage() {
             : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
-        {t('copiedToClipboard')}
+        {t("copiedToClipboard")}
       </div>
     </div>
   );
