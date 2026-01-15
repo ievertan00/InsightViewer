@@ -600,7 +600,7 @@ export default function UploadPage() {
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{t("importTitle")}</h1>
-        <p className="text-gray-500">{t("importDesc")}</p>
+        <p className="text-gray-500">{t("dataPrivacy")}</p>
       </div>
 
       <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-xl p-6 space-y-4">
@@ -612,7 +612,9 @@ export default function UploadPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-emerald-800">
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep1")}</h3>
-            <p className="mb-2 text-emerald-700/80">{t("howToImportStep1Desc")}</p>
+            <p className="mb-2 text-emerald-700/80">
+              {t("howToImportStep1Desc")}
+            </p>
             <ul className="list-disc list-inside space-y-1 text-emerald-700">
               <li>{t("howToImportStep1Bullet1")}</li>
               <li>{t("howToImportStep1Bullet2")}</li>
@@ -621,9 +623,16 @@ export default function UploadPage() {
 
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep2")}</h3>
-            <p className="mb-2 text-emerald-700/80">{t("howToImportStep2Desc")}</p>
+            <p className="mb-2 text-emerald-700/80">
+              {t("howToImportStep2Desc")}
+            </p>
             <ul className="list-disc list-inside space-y-1 text-emerald-700">
-              <li>{t("howToImportStep2Bullet1").replace("{copyLlmPrompt}", t("copyLlmPrompt"))}</li>
+              <li>
+                {t("howToImportStep2Bullet1").replace(
+                  "{copyLlmPrompt}",
+                  t("copyLlmPrompt")
+                )}
+              </li>
               <li>{t("howToImportStep2Bullet2")}</li>
               <li>{t("howToImportStep2Bullet3")}</li>
               <li>{t("howToImportStep2Bullet4")}</li>
@@ -632,7 +641,9 @@ export default function UploadPage() {
 
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep3")}</h3>
-            <p className="mb-2 text-emerald-700/80">{t("howToImportStep3Desc")}</p>
+            <p className="mb-2 text-emerald-700/80">
+              {t("howToImportStep3Desc")}
+            </p>
             <ul className="list-disc list-inside space-y-1 text-emerald-700">
               <li>{t("howToImportStep3Bullet1")}</li>
               <li>{t("howToImportStep3Bullet2")}</li>

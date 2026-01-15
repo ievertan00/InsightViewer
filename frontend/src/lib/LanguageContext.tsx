@@ -97,6 +97,8 @@ const translations: Translations = {
     // Import Page
     importTitle: "Data Import",
     importDesc: "Search by Stock Symbol or upload Excel/JSON files.",
+    dataPrivacy:
+      "Note: This application does not store user data locally. However, by using the AI Insights feature, financial data will be transmitted to third-party LLM providers for processing.",
     howToImport: "How to Import Data Correctly",
     howToImportStep1: "1. Search A-Share",
     howToImportStep1Desc: "For Chinese A-Share companies only.",
@@ -569,6 +571,8 @@ const translations: Translations = {
     // Import Page
     importTitle: "数据导入",
     importDesc: "通过股票代码搜索或上传 Excel/JSON 文件。",
+    dataPrivacy:
+      "注：本应用不存储任何用户数据。但在使用 AI 洞察功能时，相关财务数据将发送至第三方大模型服务商进行处理。",
     howToImport: "如何正确导入数据",
     howToImportStep1: "1. 搜索 A 股",
     howToImportStep1Desc: "仅限中国 A 股公司。",
