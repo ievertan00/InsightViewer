@@ -462,7 +462,7 @@ const translations: Translations = {
     // Insights Page
     aiInsightsTitle: "AI Insights",
     aiInsightsDesc:
-      "AI-assisted analysis of key financial ratios and anomalies. Only for studies and research; not for investment advice.",
+      "AI-assisted analysis of key financial ratios and anomalies. Only for studies and research, not for investment advice.",
     aiModel: "AI Model",
     dataContext: "Data Context",
     generateInsights: "Generate Insights",
@@ -931,7 +931,7 @@ const translations: Translations = {
     // Insights Page
     aiInsightsTitle: "AI 洞察",
     aiInsightsDesc:
-      "本项目及其生成的内容仅用于学习与研究目的。本项目不提供任何形式的投资建议。",
+      "本项目及其生成的内容仅用于学习与研究目的,不提供任何形式的投资建议。",
     aiModel: "AI 模型",
     dataContext: "数据上下文",
     generateInsights: "生成洞察",
