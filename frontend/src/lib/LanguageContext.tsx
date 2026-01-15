@@ -344,7 +344,6 @@ const translations: Translations = {
 
     // Flag Categories
     Liquidity: "Liquidity",
-    Revenue: "Revenue",
     Cost: "Cost",
     Asset: "Asset",
     Debt: "Debt",
@@ -814,7 +813,6 @@ const translations: Translations = {
 
     // Flag Categories
     Liquidity: "流动性",
-    Revenue: "营收",
     Cost: "成本",
     Asset: "资产",
     Debt: "债务",
