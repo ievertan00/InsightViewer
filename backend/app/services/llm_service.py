@@ -104,7 +104,7 @@ Analyze the following company data for {context.company_name}:
             raise ValueError("DEEPSEEK_API_KEY not set")
         client = OpenAI(api_key=self.deepseek_key, base_url="https://api.deepseek.com/v1")
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="deepseek-reasoner",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
