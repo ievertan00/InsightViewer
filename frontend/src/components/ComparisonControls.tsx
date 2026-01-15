@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, X, Loader2, AlertCircle } from "lucide-react";
 import clsx from "clsx";
+import { API_BASE_URL } from "@/lib/config";
 
 interface TargetMeta {
   name: string;
@@ -64,9 +65,7 @@ export default function ComparisonControls({
       // For now, mirroring existing upload page logic which defaults to trying generic or appending .SH
       // The backend actually expects just the code or code.suffix.
 
-      const response = await fetch(
-        `http://localhost:8000/api/v1/stock/${symbol}`
-      );
+      const response = await fetch(`${API_BASE_URL}/stock/${symbol}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch data. Check the code.");

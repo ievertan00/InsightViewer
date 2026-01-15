@@ -1,7 +1,8 @@
 import { AnalysisContext, ReportRequest, GeneratedReport, MetricTrend, ActiveFlag } from "./types";
 import { analyzeFlags } from "./flagsEngine";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "./config";
+
 
 export async function generateReport(
   context: AnalysisContext,

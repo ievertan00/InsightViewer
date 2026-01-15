@@ -12,7 +12,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.10.0
       - key: ALLOWED_ORIGINS
-        value: "*" # Update this to your frontend URL after deployment for better security
+        value: "https://insight-viewer-web.onrender.com,http://localhost:3000" # Update this to your frontend URL after deployment for better security
 
   # Frontend Service
   - type: web
@@ -27,4 +27,4 @@ services:
       - key: NODE_VERSION
         value: 20.10.0
       - key: NEXT_PUBLIC_API_URL
-        value: https://insight-viewer-api.onrender.com # Update if your backend name differs
+        value: https://insight-viewer-api.onrender.com/api/v1 # Update if your backend name differs
