@@ -444,8 +444,8 @@ export default function DataPage() {
   const hasInitializedSelection = useRef(false);
 
   // Filters State
-  const [hideZeros, setHideZeros] = useState(false);
-  const [annualOnly, setAnnualOnly] = useState(true);
+  const [hideZeros, setHideZeros] = useState(true);
+  const [annualOnly, setAnnualOnly] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
