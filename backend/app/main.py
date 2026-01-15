@@ -19,7 +19,7 @@ logging.basicConfig(
 app = FastAPI(title="Insight Viewer API", version="0.1.0")
 
 # Add CORS middleware
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://insight-viewer-web.onrender.com").split(",")
 
 app.add_middleware(
     CORSMiddleware,

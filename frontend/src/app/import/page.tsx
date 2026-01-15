@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "@/lib/LanguageContext";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -115,7 +116,7 @@ export default function UploadPage() {
         ? `${stockSymbol}.SH`
         : `${stockSymbol}.SZ`;
 
-      let url = `http://localhost:8000/api/v1/stock/${symbol}`;
+      let url = `${API_BASE_URL}/stock/${symbol}`;
       const params = new URLSearchParams();
       if (startYear) params.append("start_date", `${startYear}0101`);
       if (endYear) params.append("end_date", `${endYear}1231`);
@@ -183,7 +184,7 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append("file", blob, "pasted_data.json");
 
-      const response = await fetch("http://localhost:8000/api/v1/upload", {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: "POST",
         body: formData,
       });
@@ -257,7 +258,7 @@ export default function UploadPage() {
                 );
 
                 const mergeResponse = await fetch(
-                  "http://localhost:8000/api/v1/merge-reports",
+                  `${API_BASE_URL}/merge-reports`,
                   {
                     method: "POST",
                     body: mergeFormData,
@@ -437,7 +438,7 @@ export default function UploadPage() {
         formData.append("files", file);
       });
 
-      const response = await fetch("http://localhost:8000/api/v1/bulk-upload", {
+      const response = await fetch(`${API_BASE_URL}/bulk-upload`, {
         method: "POST",
         body: formData,
       });
@@ -531,7 +532,7 @@ export default function UploadPage() {
               );
 
               const mergeResponse = await fetch(
-                "http://localhost:8000/api/v1/merge-reports",
+                `${API_BASE_URL}/merge-reports`,
                 {
                   method: "POST",
                   body: mergeFormData,
