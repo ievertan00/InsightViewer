@@ -1,0 +1,30 @@
+services:
+  # Backend Service
+  - type: web
+    name: insight-viewer-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: ALLOWED_ORIGINS
+        value: "*" # Update this to your frontend URL after deployment for better security
+
+  # Frontend Service
+  - type: web
+    name: insight-viewer-web
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.10.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://insight-viewer-api.onrender.com # Update if your backend name differs
