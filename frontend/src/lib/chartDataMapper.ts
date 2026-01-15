@@ -169,7 +169,11 @@ export const mapEquityStructure = (reports: any[]) => {
                                   (getVal(r.data, "balance_sheet.equity.paid_in_capital") + 
                                    getVal(r.data, "balance_sheet.equity.capital_reserves") + 
                                    getVal(r.data, "balance_sheet.equity.surplus_reserves") + 
-                                   getVal(r.data, "balance_sheet.equity.undistributed_profit"))) / 1e6
+                                   getVal(r.data, "balance_sheet.equity.undistributed_profit") + 
+                                   getVal(r.data, "balance_sheet.equity.other_equity_instruments.amount") + 
+                                   getVal(r.data, "balance_sheet.equity.treasury_stock") + 
+                                   getVal(r.data, "balance_sheet.equity.special_reserves")
+                                  )) / 1e6
   }));
 };
 

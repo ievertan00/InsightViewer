@@ -751,7 +751,7 @@ const translations: Translations = {
     "Special Reserves": "专项储备",
     "Surplus Reserves": "盈余公积",
     "Undistributed Profit": "未分配利润",
-    "Minority Interests & Other": "少数股东权益",
+    "Minority Interests & Other": "少数股东权益及其他",
     // Metric Descriptions
     grossMarginDesc: "毛利 / 营收",
     netProfitMarginDesc: "净利 / 营收",

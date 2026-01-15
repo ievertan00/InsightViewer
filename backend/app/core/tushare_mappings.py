@@ -1,13 +1,31 @@
 # Mapping Tushare API Fields to Pydantic Schema Paths (Dot Notation)
+# Updated to include additional fields from official Tushare documentation
+# Supports different company types: 1-General business, 2-Bank, 3-Insurance, 4-Securities
 
 TUSHARE_INCOME_MAP = {
-    # L1: 营业总收入
+    # Basic EPS
+    "basic_eps": "earnings_per_share.basic_eps",
+    "diluted_eps": "earnings_per_share.diluted_eps",
+
+    # Revenue fields
     "total_revenue": "total_operating_revenue.amount",
     "revenue": "total_operating_revenue.operating_revenue",
     "int_income": "total_operating_revenue.interest_income",
     "prem_earned": "total_operating_revenue.earned_premiums",
     "comm_income": "total_operating_revenue.fee_and_commission_income",
-    # L1: 营业总成本
+    "n_commis_income": "total_operating_revenue.net_commission_and_handling_fee_income",
+    "n_oth_income": "total_operating_revenue.other_operating_net_income",
+    "n_oth_b_income": "total_operating_revenue.other_business_net_income",
+    "prem_income": "total_operating_revenue.insurance_premium_income",
+    "out_prem": "total_operating_revenue.less_reinsurance_premium",
+    "une_prem_reser": "total_operating_revenue.provision_for_unexpired_liability",
+    "reins_income": "total_operating_revenue.including_reinsurance_premium_income",
+    "n_sec_tb_income": "total_operating_revenue.net_agency_trading_securities_business_income",
+    "n_sec_uw_income": "total_operating_revenue.securities_underwriting_business_net_income",
+    "n_asset_mg_income": "total_operating_revenue.net_entrusted_customer_asset_management_business_income",
+    "oth_b_income": "total_operating_revenue.other_business_income",
+
+    # Cost fields
     "total_cogs": "total_operating_cost.amount",
     "oper_cost": "total_operating_cost.operating_cost",
     "int_exp": "total_operating_cost.interest_expenses",
@@ -15,7 +33,6 @@ TUSHARE_INCOME_MAP = {
     "biz_tax_surchg": "total_operating_cost.taxes_and_surcharges",
     "sell_exp": "total_operating_cost.selling_expenses",
     "admin_exp": "total_operating_cost.admin_expenses",
-    "rd_exp": "total_operating_cost.rd_expenses",
     "fin_exp": "total_operating_cost.financial_expenses.amount",
     "fin_exp_int_exp": "total_operating_cost.financial_expenses.interest_expenses",
     "fin_exp_int_inc": "total_operating_cost.financial_expenses.interest_income",
@@ -24,9 +41,15 @@ TUSHARE_INCOME_MAP = {
     "prem_refund": "total_operating_cost.surrender_value",
     "compens_payout": "total_operating_cost.net_compensation_expenses",
     "reser_insur_liab": "total_operating_cost.net_insurance_contract_reserves",
-    "div_prem_exp": "total_operating_cost.policy_dividend_expenses",
     "reins_exp": "total_operating_cost.reinsurance_expenses",
-    # L1: 其他经营收益
+    "oper_exp": "total_operating_cost.operating_expenses",
+    "compens_payout_refu": "total_operating_cost.less_reimbursement_of_compensation_payout",
+    "insur_reser_refu": "total_operating_cost.less_reimbursement_of_insurance_liability_reserve",
+    "reins_cost_refund": "total_operating_cost.less_reimbursement_of_reinsurance_expenses",
+    "other_bus_cost": "total_operating_cost.other_business_costs",
+    "rd_exp": "total_operating_cost.rd_expenses",
+
+    # Other operating income fields
     "oth_income": "other_operating_income.other_income",
     "invest_income": "other_operating_income.investment_income",
     "ass_invest_income": "other_operating_income.investment_income_from_associates_jv",
@@ -34,32 +57,63 @@ TUSHARE_INCOME_MAP = {
     "forex_gain": "other_operating_income.exchange_income",
     "asset_disp_income": "other_operating_income.asset_disposal_income",
     "net_expo_hedging_benefits": "other_operating_income.net_exposure_hedging_income",
-    # L1: 营业利润
+    "oth_impair_loss_assets": "other_operating_income.other_asset_impairment_losses",
+    "total_opcost": "other_operating_income.total_operating_costs_part_two",
+    "amodcost_fin_assets": "other_operating_income.gains_from_derecognition_of_financial_assets_measured_at_amortized_cost",
+
+    # Operating profit fields
     "operate_profit": "operating_profit.amount",
-    "op_profit": "operating_profit.amount", # Alias
     "non_oper_income": "operating_profit.non_operating_revenue",
-    "non_op_income": "operating_profit.non_operating_revenue", # Alias
     "non_oper_exp": "operating_profit.non_operating_expenses",
-    "non_op_exp": "operating_profit.non_operating_expenses", # Alias
-    "n_loss_mt_assets": "operating_profit.non_current_asset_disposal_loss",
-    # L1: 利润总额
+    "nca_disploss": "operating_profit.non_current_asset_disposal_loss",
+
+    # Total profit fields
     "total_profit": "total_profit.amount",
     "income_tax": "total_profit.income_tax",
-    # L1: 净利润
+
+    # Net profit fields
     "n_income": "net_profit.amount",
     "continued_net_profit": "net_profit.net_profit_continuing_ops",
     "end_net_profit": "net_profit.net_profit_discontinued_ops",
     "n_income_attr_p": "net_profit.net_profit_attr_to_parent",
     "minority_gain": "net_profit.minority_interest_income",
-    # L1: EPS
-    "basic_eps": "earnings_per_share.basic_eps",
-    "diluted_eps": "earnings_per_share.diluted_eps",
-    # L1: Other Comprehensive Income
+
+    # Comprehensive income fields
     "oth_compr_income": "other_comprehensive_income.amount",
+    "t_compr_income": "total_comprehensive_income.amount",
     "compr_inc_attr_p": "other_comprehensive_income.attr_to_parent",
     "compr_inc_attr_m_s": "other_comprehensive_income.attr_to_minority",
-    # L1: Total Comprehensive Income
-    "t_compr_income": "total_comprehensive_income.amount",
+
+    # Additional fields for different company types
+    "ebit": "earnings_before_interest_and_taxes.amount",  # EBIT
+    "ebitda": "earnings_before_interest_taxes_depreciation_amortization.amount",  # EBITDA
+    "insurance_exp": "insurance_business_expenses.amount",  # Insurance business expenses
+    "undist_profit": "undistributed_profit.beginning_year",  # Undistributed profit at beginning of year
+    "distable_profit": "distributable_profit.amount",  # Distributable profit
+
+    # Transfer and appropriation fields
+    "transfer_surplus_rese": "surplus_reserves.transferred",
+    "transfer_housing_imprest": "housing_revolver_fund.transferred",
+    "transfer_oth": "other_transfers.amount",
+    "adj_lossgain": "adjustment_of_profit_loss_from_previous_years.amount",
+    "withdra_legal_surplus": "appropriation_of_statutory_surplus_reserves.amount",
+    "withdra_legal_pubfund": "appropriation_of_statutory_public_welfare_funds.amount",
+    "withdra_biz_devfund": "appropriation_of_business_development_funds.amount",
+    "withdra_rese_fund": "appropriation_of_reserve_funds.amount",
+    "withdra_oth_ersu": "appropriation_of_discretionary_surplus_reserves.amount",
+    "workers_welfare": "employee_bonus_and_welfare.amount",
+    "distr_profit_shrhder": "profit_distributable_to_shareholders.amount",
+    "prfshare_payable_dvd": "payable_preferred_stock_dividends.amount",
+    "comshare_payable_dvd": "payable_common_stock_dividends.amount",
+    "capit_comstock_div": "common_stock_dividends_converted_to_capital.amount",
+
+    # Other fields
+    "net_after_nr_lp_correct": "net_profit_after_non_recurring_gains_losses_before_correction.amount",
+    "credit_impa_loss": "credit_impairment_losses.amount",
+
+    # Missing financial fields from documentation
+    "div_payt": "total_operating_cost.policy_dividend_expenses",  # Additional mapping alongside div_prem_exp
+    "nca_disploss": "operating_profit.non_current_asset_disposal_loss",
 }
 
 TUSHARE_BALANCE_MAP = {
@@ -74,100 +128,262 @@ TUSHARE_BALANCE_MAP = {
     "div_receiv": "current_assets.other_receivables_total.dividends_receivable",
     "int_receiv": "current_assets.other_receivables_total.interest_receivable",
     "inventories": "current_assets.inventories",
-    "contract_assets": "current_assets.contract_assets",
+    "amor_exp": "current_assets.amortization_expenses",
     "nca_within_1y": "current_assets.non_current_assets_due_within_1y",
+    "sett_rsrv": "current_assets.settlement_reserve",
+    "loanto_oth_bank_fi": "current_assets.loans_to_other_banks_and_financial_institutions",
+    "premium_receiv": "current_assets.premiums_receivable",
+    "reinsur_receiv": "current_assets.reinsurance_receivables",
+    "reinsur_res_receiv": "current_assets.reinsurance_contract_reserves_receivable",
+    "pur_resale_fa": "current_assets.financial_assets_purchased_under_resale_agreements",
     "oth_cur_assets": "current_assets.other_current_assets",
+    "contract_assets": "current_assets.contract_assets",
+
     # Assets - Non Current
     "total_nc_assets": "non_current_assets.total_non_current_assets", # Note: Tushare might not have this exact field, checking fallback or sum
+    "fa_avail_for_sale": "non_current_assets.available_for_sale_financial_assets",
+    "htm_invest": "non_current_assets.held_to_maturity_investments",
     "lt_eqt_invest": "non_current_assets.long_term_equity_investments",
     "invest_real_estate": "non_current_assets.investment_properties",
+    "time_deposits": "non_current_assets.time_deposits",
+    "oth_assets": "non_current_assets.other_assets",
+    "lt_rec": "non_current_assets.long_term_receivables",
     "fix_assets": "non_current_assets.fixed_assets",
     "cip_total": "non_current_assets.construction_in_progress",
     "cip": "non_current_assets.construction_in_progress", # Alias
     "const_materials": "non_current_assets.construction_materials",
-    "use_right_assets": "non_current_assets.right_of_use_assets",
+    "fixed_assets_disp": "non_current_assets.disposal_of_fixed_assets",
+    "produc_bio_assets": "non_current_assets.productive_biological_assets",
+    "oil_and_gas_assets": "non_current_assets.oil_and_gas_assets",
     "intan_assets": "non_current_assets.intangible_assets",
     "r_and_d": "non_current_assets.development_expenses",
     "goodwill": "non_current_assets.goodwill",
     "lt_amor_exp": "non_current_assets.long_term_deferred_expenses",
     "defer_tax_assets": "non_current_assets.deferred_tax_assets",
+    "decr_in_disbur": "non_current_assets.decrease_in_disbursements",
+    "oth_nca": "non_current_assets.other_non_current_assets",
+    "total_nca": "non_current_assets.total_non_current_assets",
+    "cash_reser_cb": "non_current_assets.cash_and_deposits_with_central_bank",
+    "depos_in_oth_bfi": "non_current_assets.deposits_with_other_banks_and_financial_institutions",
+    "prec_metals": "non_current_assets.precious_metals",
+    "deriv_assets": "non_current_assets.derivative_financial_assets",
+    "rr_reins_une_prem": "non_current_assets.reinsurance_unearned_premium_reserves_receivable",
+    "rr_reins_outstd_cla": "non_current_assets.reinsurance_outstanding_claims_reserves_receivable",
+    "rr_reins_lins_liab": "non_current_assets.reinsurance_life_insurance_liability_reserves_receivable",
+    "rr_reins_lthins_liab": "non_current_assets.reinsurance_long_term_health_insurance_liability_reserves_receivable",
+    "refund_depos": "non_current_assets.deposits_paid_out",
+    "ph_pledge_loans": "non_current_assets.policyholder_pledged_loans",
+    "refund_cap_depos": "non_current_assets.capital_deposit_refunds",
+    "indep_acct_assets": "non_current_assets.independent_account_assets",
+    "client_depos": "non_current_assets.client_fund_deposits",
+    "client_prov": "non_current_assets.client_reserve_funds",
+    "transac_seat_fee": "non_current_assets.transaction_seat_fees",
+    "invest_as_receiv": "non_current_assets.investment_assets_receivable",
+    "use_right_assets": "non_current_assets.right_of_use_assets",
+    "debt_invest": "non_current_assets.debt_investment",
+    "oth_debt_invest": "non_current_assets.other_debt_investment",
+    "oth_eq_invest": "non_current_assets.other_equity_instrument_investment",
+    "oth_illiq_fin_assets": "non_current_assets.other_non_current_financial_assets",
+    "oth_eq_ppbond": "equity.other_equity_instruments.perpetual_bonds",
+    "receiv_financing": "non_current_assets.receivables_financing",
+
     # Total Assets
     "total_assets": "assets_summary.total_assets",
+
     # Liabilities - Current
     "total_cur_liab": "current_liabilities.total_current_liabilities",
     "st_borr": "current_liabilities.short_term_borrowings",
     "notes_payable": "current_liabilities.notes_and_accounts_payable.notes_payable",
     "acct_payable": "current_liabilities.notes_and_accounts_payable.accounts_payable",
     "adv_receipts": "current_liabilities.advances_from_customers",
-    "contract_liab": "current_liabilities.contract_liabilities",
+    "sold_for_repur_fa": "current_liabilities.financial_assets_sold_under_repurchase_agreements",
+    "comm_payable": "current_liabilities.commission_payable",
     "payroll_payable": "current_liabilities.payroll_payable",
     "taxes_payable": "current_liabilities.taxes_payable",
     "int_payable": "current_liabilities.other_payables_total.interest_payable",
     "div_payable": "current_liabilities.other_payables_total.dividends_payable",
     "oth_payable": "current_liabilities.other_payables_total.other_payables",
-    "oth_pay_total": "current_liabilities.other_payables_total.amount",
+    "acc_exp": "current_liabilities.accrued_expenses",
+    "deferred_inc": "current_liabilities.deferred_income",
+    "st_bonds_payable": "current_liabilities.short_term_bonds_payable",
+    "payable_to_reinsurer": "current_liabilities.amounts_payable_to_reinsurers",
+    "rsrv_insur_cont": "current_liabilities.insurance_contract_reserves",
+    "acting_trading_sec": "current_liabilities.agency_trading_securities",
+    "acting_uw_sec": "current_liabilities.agency_underwriting_securities",
     "non_cur_liab_due_1y": "current_liabilities.non_current_liabilities_due_within_1y",
+    "oth_cur_liab": "current_liabilities.other_current_liabilities",
+    "contract_liab": "current_liabilities.contract_liabilities",
+    "accounts_receiv_bill": "current_liabilities.notes_receivable_and_accounts_receivable",
+    "accounts_pay": "current_liabilities.notes_payable_and_accounts_payable",
+    "oth_rcv_total": "current_assets.other_receivables_total.amount",
+    "oth_pay_total": "current_liabilities.other_payables_total.amount",
+
     # Liabilities - Non Current
     "total_nc_liab": "non_current_liabilities.total_non_current_liabilities",
     "lt_borr": "non_current_liabilities.long_term_borrowings",
     "bond_payable": "non_current_liabilities.bonds_payable.amount",
     "lease_liab": "non_current_liabilities.lease_liabilities",
     "lt_payable": "non_current_liabilities.long_term_payables",
+    "specific_payables": "non_current_liabilities.specific_payables",
+    "estimated_liab": "non_current_liabilities.estimated_liabilities",
     "defer_tax_liab": "non_current_liabilities.deferred_tax_liabilities",
+    "defer_inc_non_cur_liab": "non_current_liabilities.deferred_income_non_current_liabilities",
+    "oth_ncl": "non_current_liabilities.other_non_current_liabilities",
+    "total_ncl": "non_current_liabilities.total_non_current_liabilities",
+    "cb_borr": "non_current_liabilities.borrowings_from_central_bank",
+    "depos_ib_deposits": "non_current_liabilities.acceptance_deposits_and_interbank_placements",
+    "loan_oth_bank": "non_current_liabilities.interbank_borrowings",
+    "trading_fl": "non_current_liabilities.trading_financial_liabilities",
+    "deriv_liab": "non_current_liabilities.derivative_financial_liabilities",
+    "depos": "non_current_liabilities.deposits",
+    "agency_bus_liab": "non_current_liabilities.agency_business_liabilities",
+    "oth_liab": "non_current_liabilities.other_liabilities",
+    "prem_receiv_adva": "non_current_liabilities.advance_premiums_received",
+    "depos_received": "non_current_liabilities.deposits_received",
+    "ph_invest": "non_current_liabilities.policyholder_deposits_and_investments",
+    "reser_une_prem": "non_current_liabilities.unearned_premium_reserves",
+    "reser_outstd_claims": "non_current_liabilities.outstanding_claims_reserves",
+    "reser_lins_liab": "non_current_liabilities.life_insurance_liability_reserves",
+    "reser_lthins_liab": "non_current_liabilities.long_term_health_insurance_liability_reserves",
+    "indept_acc_liab": "non_current_liabilities.independent_account_liabilities",
+    "pledge_borr": "non_current_liabilities.pledged_borrowings",
+    "indem_payable": "non_current_liabilities.indemnification_payables",
+    "policy_div_payable": "non_current_liabilities.policy_dividend_payables",
+    "lt_payroll_payable": "non_current_liabilities.long_term_payroll_payable",
+    "long_pay_total": "non_current_liabilities.long_term_payables_total",
+
     # Total Liabilities
     "total_liab": "liabilities_summary.total_liabilities",
+
     # Equity
     "total_share": "equity.paid_in_capital",
     "total_hldr_eqy_exc_min_int": "equity.total_parent_equity",
     "total_hldr_eqy_inc_min_int": "equity.total_equity",
-    "capital_rese": "equity.capital_reserves",
+    "cap_rese": "equity.capital_reserves",
+    "oth_eqt_tools": "equity.other_equity_instruments.amount",
+    "oth_eqt_tools_p_shr": "equity.other_equity_instruments.preference_shares",
     "surplus_rese": "equity.surplus_reserves",
+    "special_rese": "equity.special_reserves",
     "undistr_porfit": "equity.undistributed_profit",
+    "retained_earnings": "equity.retained_earnings",
+    "monetary_cap": "equity.monetary_capital",
     "minority_int": "equity.minority_interests",
+    "tl_int_distrib": "equity.total_interest_distribution",
+    "gd_rese": "equity.statutory_surplus_reserves",
+    "ordin_risk_reser": "equity.general_risk_reserves",
+    "hedging_derea": "equity.hedging_derea",
+    "acc_receivable": "equity.accounts_receivable",
+    "treasury_share": "equity.treasury_shares",
+    "ordin_risk_reser": "equity.general_risk_reserves",
+    "forex_differ": "equity.foreign_currency_translation_differences",
+    "invest_loss_unconf": "equity.unrealized_investment_losses",
+
+    # Total Liabilities and Equity
+    "total_liab_hldr_eqy": "total_liabilities_and_shareholders_equity.amount",
+
+    # Additional fields
+    "fix_assets_total": "fixed_assets_total.amount",
+    "hfs_assets": "assets_held_for_sale.amount",
+    "hfs_sales": "liabilities_of_disposal_groups_classified_as_held_for_sale.amount",
+    "cost_fin_assets": "financial_assets_measured_at_amortized_cost.amount",
+    "fair_value_fin_assets": "financial_assets_measured_at_fair_value_through_other_comprehensive_income.amount",
 }
 
 TUSHARE_CASH_MAP = {
-    # Operating
-    "n_cashflow_act": "operating_activities.net_cash_flow_from_operating",
-    "n_cashflow_act_oper_a": "operating_activities.net_cash_flow_from_operating", # Alias
+    # Operating Activities
+    "net_profit": "operating_activities.net_profit",
+    "finan_exp": "operating_activities.financial_expenses",
     "c_fr_sale_sg": "operating_activities.cash_received_from_goods_and_services",
     "recp_tax_rends": "operating_activities.tax_refunds_received",
+    "n_depos_incr_fi": "operating_activities.net_increase_in_customer_deposits_and_interbank_placements",
+    "n_incr_loans_cb": "operating_activities.net_increase_in_loans_from_central_bank",
+    "n_inc_borr_oth_fi": "operating_activities.net_increase_in_funds_borrowed_from_other_financial_institutions",
+    "prem_fr_orig_contr": "operating_activities.premiums_received_from_original_insurance_contracts",
+    "n_incr_insured_dep": "operating_activities.net_increase_in_policyholder_deposits",
+    "n_reinsur_prem": "operating_activities.net_cash_received_from_reinsurance_operations",
+    "n_incr_disp_tfa": "operating_activities.net_increase_from_disposal_of_trading_financial_assets",
+    "ifc_cash_incr": "operating_activities.net_increase_in_interest_and_fee_income",
+    "n_incr_disp_faas": "operating_activities.net_increase_from_disposal_of_available_for_sale_financial_assets",
+    "n_incr_loans_oth_bank": "operating_activities.net_increase_in_funds_borrowed_from_other_banks",
+    "n_cap_incr_repur": "operating_activities.net_increase_in_repurchase_business_funds",
     "c_fr_oth_operate_a": "operating_activities.other_cash_received_operating",
     "c_inf_fr_operate_a": "operating_activities.subtotal_cash_inflow_operating",
     "c_paid_goods_s": "operating_activities.cash_paid_for_goods_and_services",
     "c_paid_to_for_empl": "operating_activities.cash_paid_to_employees",
     "c_paid_for_taxes": "operating_activities.taxes_paid",
-    "c_paid_oth_operate_a": "operating_activities.other_cash_paid_operating",
-    "oth_cash_pay_oper_act": "operating_activities.other_cash_paid_operating", # Alias from log
-    "c_out_flow_operate_a": "operating_activities.subtotal_cash_outflow_operating",
-    "st_cash_out_act": "operating_activities.subtotal_cash_outflow_operating", # Alias from log
-    # Investing
-    "n_cashflow_inv_act": "investing_activities.net_cash_flow_from_investing",
-    "n_cashflow_act_invest_a": "investing_activities.net_cash_flow_from_investing", # Alias
-    "c_recp_return_invest": "investing_activities.cash_received_from_investment_income",
+    "n_incr_clt_loan_adv": "operating_activities.net_increase_in_client_loans_and_advances",
+    "n_incr_dep_cbob": "operating_activities.net_increase_in_deposits_with_central_bank_and_other_banks",
+    "c_pay_claims_orig_inco": "operating_activities.cash_paid_for_original_insurance_contract_claims",
+    "pay_handling_chrg": "operating_activities.cash_paid_for_handling_charges",
+    "pay_comm_insur_plcy": "operating_activities.cash_paid_for_policy_dividends",
+    "oth_cash_pay_oper_act": "operating_activities.other_cash_paid_operating",
+    "st_cash_out_act": "operating_activities.subtotal_cash_outflow_operating",
+    "n_cashflow_act": "operating_activities.net_cash_flow_from_operating",
+
+    # Investing Activities
+    "oth_recp_ral_inv_act": "investing_activities.other_cash_received_related_to_investment_activities",
     "c_disp_withdrwl_invest": "investing_activities.cash_received_from_investment_recovery",
-    "n_recp_disp_fix_intan_long": "investing_activities.net_cash_from_disposal_assets",
-    "n_recp_disp_fiolta": "investing_activities.net_cash_from_disposal_assets", # Alias from log
-    "c_inf_fr_invest_act": "investing_activities.subtotal_cash_inflow_investing",
-    "stot_inflows_inv_act": "investing_activities.subtotal_cash_inflow_investing", # Alias from log
-    "c_paid_acq_invest": "investing_activities.cash_paid_for_assets",
-    "c_pay_acq_const_fiolta": "investing_activities.cash_paid_for_assets", # Alias from log
+    "c_recp_return_invest": "investing_activities.cash_received_from_investment_income",
+    "n_recp_disp_fiolta": "investing_activities.net_cash_from_disposal_assets",
+    "n_recp_disp_sobu": "investing_activities.net_cash_received_from_disposal_of_subsidies_and_other_business_units",
+    "stot_inflows_inv_act": "investing_activities.subtotal_cash_inflow_investing",
+    "c_pay_acq_const_fiolta": "investing_activities.cash_paid_for_assets",
     "c_paid_invest": "investing_activities.cash_paid_for_investments",
-    "c_out_flow_invest_act": "investing_activities.subtotal_cash_outflow_investing",
-    "stot_out_inv_act": "investing_activities.subtotal_cash_outflow_investing", # Alias from log
-    # Financing
-    "n_cash_flows_fnc_act": "financing_activities.net_cash_flow_from_financing",
-    "n_cashflow_act_fnc_a": "financing_activities.net_cash_flow_from_financing", # Alias
-    "c_recp_cap_invest": "financing_activities.cash_received_from_investments.amount",
+    "n_disp_subs_oth_biz": "investing_activities.net_cash_paid_for_acquisition_of_subsidiaries_and_other_business_units",
+    "oth_pay_ral_inv_act": "investing_activities.other_cash_paid_related_to_investment_activities",
+    "n_incr_pledge_loan": "investing_activities.net_increase_in_pledged_loans",
+    "stot_out_inv_act": "investing_activities.subtotal_cash_outflow_investing",
+    "n_cashflow_inv_act": "investing_activities.net_cash_flow_from_investing",
+
+    # Financing Activities
     "c_recp_borrow": "financing_activities.cash_received_from_borrowings",
-    "c_inf_fr_fnc_act": "financing_activities.subtotal_cash_inflow_financing",
+    "proc_issue_bonds": "financing_activities.cash_received_from_issuing_bonds",
+    "oth_cash_recp_ral_fnc_act": "financing_activities.other_cash_received_related_to_financing_activities",
+    "stot_cash_in_fnc_act": "financing_activities.subtotal_cash_inflow_financing",
     "c_prepay_amt_borr": "financing_activities.cash_paid_for_debt_repayment",
-    "c_dist_dm_profit": "financing_activities.cash_paid_for_dividends_and_profits",
-    "c_pay_dist_dpcp_int_exp": "financing_activities.cash_paid_for_dividends_and_profits", # Alias from log
-    "c_out_flow_fnc_act": "financing_activities.subtotal_cash_outflow_financing",
-    "stot_cashout_fnc_act": "financing_activities.subtotal_cash_outflow_financing", # Alias from log
-    # Overall
+    "c_pay_dist_dpcp_int_exp": "financing_activities.cash_paid_for_dividends_and_profits",
+    "incl_dvd_profit_paid_sc_ms": "financing_activities.dividends_paid_to_minority_shareholders_by_subsidiaries",
+    "oth_cashpay_ral_fnc_act": "financing_activities.other_cash_paid_related_to_financing_activities",
+    "stot_cashout_fnc_act": "financing_activities.subtotal_cash_outflow_financing",
+    "n_cash_flows_fnc_act": "financing_activities.net_cash_flow_from_financing",
+
+    # Overall Cash Flow
+    "eff_fx_flu_cash": "cash_increase.effect_of_exchange_rate_changes_on_cash",
     "n_incr_cash_cash_equ": "cash_increase.net_increase_cash_and_equivalents",
     "c_cash_equ_beg_period": "cash_increase.cash_at_beginning",
     "c_cash_equ_end_period": "cash_increase.cash_at_end",
+    "c_recp_cap_contrib": "cash_increase.cash_received_from_capital_contributions",
+    "incl_cash_rec_saims": "cash_increase.cash_received_from_minority_shareholders_investments_in_subsidiaries",
+    "uncon_invest_loss": "cash_increase.unrealized_investment_losses",
+    "prov_depr_assets": "cash_increase.asset_impairment_provision",
+    "depr_fa_coga_dpba": "cash_increase.depreciation_of_fixed_assets",
+    "amort_intang_assets": "cash_increase.amortization_of_intangible_assets",
+    "lt_amort_deferred_exp": "cash_increase.long_term_deferred_expense_amortization",
+    "decr_deferred_exp": "cash_increase.decrease_in_deferred_expenses",
+    "incr_acc_exp": "cash_increase.increase_in_accrued_expenses",
+    "loss_disp_fiolta": "cash_increase.loss_from_disposal_of_fixed_intangible_and_other_long_term_assets",
+    "loss_scr_fa": "cash_increase.loss_from_scrapping_fixed_assets",
+    "loss_fv_chg": "cash_increase.loss_from_fair_value_changes",
+    "invest_loss": "cash_increase.investment_losses",
+    "decr_def_inc_tax_assets": "cash_increase.decrease_in_deferred_tax_assets",
+    "incr_def_inc_tax_liab": "cash_increase.increase_in_deferred_tax_liabilities",
+    "decr_inventories": "cash_increase.decrease_in_inventories",
+    "decr_oper_payable": "cash_increase.decrease_in_operating_receivables",
+    "incr_oper_payable": "cash_increase.increase_in_operating_payables",
+    "others": "cash_increase.others",
+    "im_net_cashflow_oper_act": "cash_increase.net_cash_flow_from_operating_activities_indirect_method",
+    "conv_debt_into_cap": "cash_increase.conversion_of_debt_to_capital",
+    "conv_copbonds_due_within_1y": "cash_increase.convertible_bonds_due_within_one_year",
+    "fa_fnc_leases": "cash_increase.finance_leased_fixed_assets",
+    "im_n_incr_cash_equ": "cash_increase.net_increase_in_cash_and_cash_equivalents_indirect_method",
+    "net_dism_capital_add": "cash_increase.net_increase_in_disbursement_of_funds",
+    "net_cash_rece_sec": "cash_increase.net_cash_received_from_agency_trading_securities",
+    "credit_impa_loss": "cash_increase.credit_impairment_losses",
+    "use_right_asset_dep": "cash_increase.right_of_use_asset_depreciation",
+    "oth_loss_asset": "cash_increase.other_asset_impairment_losses",
+    "end_bal_cash": "cash_increase.ending_cash_balance",
+    "beg_bal_cash": "cash_increase.beginning_cash_balance",
+    "end_bal_cash_equ": "cash_increase.ending_cash_equivalents_balance",
+    "beg_bal_cash_equ": "cash_increase.beginning_cash_equivalents_balance",
+    "update_flag": "cash_increase.update_flag",  # Update flag for tracking changes
 }
