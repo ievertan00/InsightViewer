@@ -33,13 +33,12 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api/v1", tags=["upload"])
 app.include_router(stock.router, prefix="/api/v1", tags=["stock"])
 app.include_router(report.router, prefix="/api/v1", tags=["report"])
-app.include_router(report.router, prefix="/api/v1", tags=["health"])
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Insight Viewer API. Go to /docs for API documentation."}
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
