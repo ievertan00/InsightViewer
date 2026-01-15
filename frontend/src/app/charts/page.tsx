@@ -28,73 +28,73 @@ import {
   getFiscalYearScore,
 } from "@/lib/chartDataMapper";
 
-// --- Color Constants (from Financial Visualization.md) ---
+// --- Color Constants (Professional Tech Theme) ---
 const COLORS = {
-  red: "#C00000",
-  orange: "#ED7D31",
-  grey: "#A5A5A5",
-  yellow: "#FFC000",
-  blue: "#4472C4",
-  green: "#70AD47",
-  darkBlue: "#255E91",
-  lightBlue: "#5B9BD5",
-  darkGrey: "#595959",
-  lightGrey: "#D9D9D9",
-  paleYellow: "#FFF2CC",
-  brown: "#C65911",
-  cyan: "#00B0F0",
-  purple: "#7030A0",
+  red: "#EF4444",      // Red-500
+  orange: "#F97316",   // Orange-500
+  yellow: "#EAB308",   // Yellow-500
+  green: "#10B981",    // Emerald-500
+  cyan: "#06B6D4",     // Cyan-500
+  blue: "#3B82F6",     // Blue-500
+  darkBlue: "#1E3A8A", // Blue-900
+  lightBlue: "#60A5FA",// Blue-400
+  purple: "#8B5CF6",   // Violet-500
+  grey: "#94A3B8",     // Slate-400
+  darkGrey: "#475569", // Slate-600
+  lightGrey: "#CBD5E1",// Slate-300
+  paleYellow: "#FEF08A", // Yellow-200
+  brown: "#92400E",    // Amber-800
 };
 
 const ASSET_COLORS = [
-  COLORS.red,
-  COLORS.orange,
-  COLORS.grey,
-  COLORS.yellow,
-  COLORS.blue,
-  COLORS.green,
-  COLORS.darkBlue,
-  "#AFABAB",
-  COLORS.lightGrey,
-  "#997300",
-  "#E7E6E6",
-  "#404040",
+  COLORS.blue,        // Cash/Liquid
+  COLORS.cyan,        // Receivables
+  COLORS.lightBlue,   // Inventory
+  COLORS.purple,      // Investments
+  COLORS.darkBlue,    // Fixed Assets
+  COLORS.grey,        // Intangibles
+  COLORS.orange,      // Other
+  COLORS.green,       // Biological/Special
+  COLORS.red,         // Risky/Impaired
+  COLORS.yellow,      // Other Current
+  COLORS.darkGrey,    // Deferred
+  COLORS.lightGrey,   // Other Non-Current
 ];
 
 const LIABILITY_COLORS = [
-  COLORS.lightBlue,
-  COLORS.orange,
-  COLORS.grey,
-  COLORS.yellow,
-  COLORS.blue,
-  COLORS.green,
-  COLORS.darkBlue,
-  "#9E480E",
-  "#636363",
+  COLORS.red,         // Short-term Debt
+  COLORS.orange,      // Payables
+  COLORS.yellow,      // Contract Liabilities
+  COLORS.brown,       // Tax Payable
+  COLORS.darkBlue,    // Long-term Debt
+  COLORS.purple,      // Bonds
+  COLORS.cyan,        // Lease
+  COLORS.grey,        // Provisions
+  COLORS.darkGrey,    // Other
 ];
 
 const EQUITY_COLORS = [
-  COLORS.blue,
-  COLORS.lightBlue,
-  "#DAE3F3",
-  COLORS.grey,
-  "#2F5597",
-  "#548235",
-  "#D0CECE",
-  "#e96e1de1",
-  COLORS.darkGrey,
+  COLORS.green,       // Capital
+  COLORS.lightBlue,   // Reserves
+  COLORS.cyan,        // Retained Earnings
+  COLORS.blue,        // Minority Interest
+  COLORS.purple,      // Other Equity
+  COLORS.grey,        // Treasury
+  COLORS.lightGrey,   // Translation Diff
+  COLORS.orange,      // Special Reserves
+  COLORS.darkGrey,    // General Risk Prep
 ];
 
 const PROFIT_SOURCE_COLORS = [
-  COLORS.blue,
-  COLORS.orange,
-  COLORS.yellow,
-  COLORS.green,
-  COLORS.lightBlue,
-  COLORS.lightGrey,
-  COLORS.brown,
-  COLORS.darkGrey,
-  COLORS.grey,
+  COLORS.blue,        // Revenue
+  COLORS.cyan,        // Gross Profit
+  COLORS.purple,      // Operating Profit
+  COLORS.green,       // Net Profit
+  COLORS.orange,      // Non-operating
+  COLORS.red,         // Losses/Expenses
+  COLORS.grey,        // Tax
+  COLORS.darkBlue,    // Comprehensive
+  COLORS.lightBlue,   // Minority
 ];
 
 export default function ChartsPage() {
@@ -215,7 +215,7 @@ export default function ChartsPage() {
               </button>
             ))}
           </div>
-          <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium">
             {t('unitMillionCNY')}
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function ChartsPage() {
             colors={[
               COLORS.red,
               COLORS.brown,
-              "#F4B084",
+              COLORS.orange,
               COLORS.yellow,
               COLORS.lightBlue,
               COLORS.blue,

@@ -27,16 +27,16 @@ export default function FlowBarChart({ data, dataKeys, colors, stacked = false, 
         data={data}
         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-        <ReferenceLine y={0} stroke="#9ca3af" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+        <ReferenceLine y={0} stroke="#94A3B8" />
         <XAxis 
             dataKey="year" 
-            tick={{ fill: '#6b7280', fontSize: 12 }} 
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ fill: '#64748B', fontSize: 12 }} 
+            axisLine={{ stroke: '#E2E8F0' }}
             tickLine={false}
         />
         <YAxis 
-            tick={{ fill: '#6b7280', fontSize: 12 }} 
+            tick={{ fill: '#64748B', fontSize: 12 }} 
             axisLine={false}
             tickLine={false}
             tickFormatter={(val) => `${val.toFixed(0)}${unit}`}
@@ -44,7 +44,7 @@ export default function FlowBarChart({ data, dataKeys, colors, stacked = false, 
         <Tooltip 
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             formatter={(value: number, name: string) => [`${value.toFixed(2)}${unit}`, name]}
-            cursor={{ fill: '#f3f4f6' }}
+            cursor={{ fill: '#F1F5F9' }}
         />
         <Legend 
             verticalAlign="bottom" 

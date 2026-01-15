@@ -2,14 +2,13 @@
 
 **Insight Viewer** is a specialized financial analysis tool designed to transform dense Chinese financial filings into clear, comparable, and actionable insights. It bridges the gap between raw data and decision-making by standardizing financial reports into a unified structure.
 
-## 🚀 Key Features
+## 🚀 Core Functions
 
-- **Data Standardization**: Automatically maps various financial report formats to a standardized CAS (Chinese Accounting Standards) structure.
-- **Interactive Visualization**: Visualize trends in Revenue, Net Profit, Cash Flow, and more with dynamic charts.
-- **Financial Ratios**: Calculate and track key performance indicators (KPIs) like Gross Margin, ROE, and Debt-to-Asset ratios.
-- **Risk Detection (Flags)**: Automated forensic checks to highlight potential "Red Flags" (Risks) and "Green Flags" (Health Signals) in financial statements.
-- **AI-Powered Insights**: Leverage AI to generate summaries and deeper analysis of financial data.
-- **Excel/JSON Support**: Import data easily from standard Excel templates or JSON files.
+- **Data Ingestion & Normalization**: Standardize Excel and JSON inputs into a uniform format for cross-source consistency. The system programmatically retrieves A-share financial data via standardized stock codes.
+- **Automated Ratio Computation**: Execute standardized calculations for core financial performance metrics to ensure analytical accuracy and comparability.
+- **Peer Benchmarking**: Perform relative valuation by comparing the target company’s performance against selected A-share industry peers.
+- **Algorithmic Risk Scanning**: Apply pre-defined heuristic logic to financial statements to automatically flag potential anomalies or audit risks.
+- **AI-Driven Financial Insights**: Deploy Large Language Models (LLMs) to synthesize complex data, identifying high-level financial trends and structural anomalies that traditional analysis might miss.
 
 ## 🛠 Tech Stack
 

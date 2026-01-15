@@ -34,9 +34,11 @@ export default function RootLayout({
       >
         <div className="noise-bg" />
         <LanguageProvider>
-          <Sidebar />
-          <Header />
-          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)] relative z-10">
+          <div className="print:hidden">
+            <Sidebar />
+            <Header />
+          </div>
+          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)] relative z-10 print:ml-0 print:p-0">
             {children}
           </main>
         </LanguageProvider>

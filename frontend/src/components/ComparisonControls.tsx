@@ -157,14 +157,14 @@ export default function ComparisonControls({
       {/* Target Search / Display */}
       <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
         {targetMeta ? (
-          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md text-sm border border-blue-100">
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-md text-sm border border-emerald-100">
             <span className="font-medium truncate max-w-[150px]">
               {targetMeta.name}
             </span>
-            <span className="text-blue-400 text-xs">({targetMeta.code})</span>
+            <span className="text-emerald-500/80 text-xs">({targetMeta.code})</span>
             <button
               onClick={clearTarget}
-              className="ml-1 hover:text-blue-900 focus:outline-none"
+              className="ml-1 hover:text-emerald-900 focus:outline-none"
             >
               <X className="w-3.5 h-3.5" />
             </button>

@@ -45,7 +45,7 @@ export interface AnalysisContext {
 
 export interface ReportRequest {
   report_profile: string;
-  model_provider: "gemini" | "deepseek" | "qwen";
+  model_provider: "qwen" | "deepseek" | "gemini";
   include_reasoning?: boolean;
 }
 

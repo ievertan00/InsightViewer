@@ -852,7 +852,18 @@ export default function KeyRatiosPage() {
           setReports(parsed);
           const availableYears = parsed.map((r: any) => r.fiscal_year);
           setYears(availableYears);
-          setSelectedYear(availableYears[0]);
+
+          // Find latest annual report
+          const latestAnnual = parsed.find(
+            (r: any) =>
+              r.period_type === "Annual" || r.fiscal_year.includes("Annual")
+          );
+
+          if (latestAnnual) {
+            setSelectedYear(latestAnnual.fiscal_year);
+          } else {
+            setSelectedYear(availableYears[0]);
+          }
         }
       } catch (e) {
         console.error("Error loading reports", e);
@@ -1042,7 +1053,7 @@ export default function KeyRatiosPage() {
                     : dupontData.comparePeriod}
                 </span>
                 {comparisonMode !== "Target" && (
-                  <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] uppercase font-bold tracking-wide">
+                  <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] uppercase font-bold tracking-wide">
                     {comparisonMode === "YoY" ? t("yoy") : t("sequential")}
                   </span>
                 )}
@@ -1072,21 +1083,21 @@ export default function KeyRatiosPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex flex-col items-center justify-center text-center">
-              <span className="text-sm text-blue-600 font-medium mb-1">
+            <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex flex-col items-center justify-center text-center">
+              <span className="text-sm text-emerald-600 font-medium mb-1">
                 {t("returnOnEquity")}
               </span>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-3xl font-bold text-blue-900">
+                <span className="text-3xl font-bold text-emerald-900">
                   {formatPercent(dupontData.current.roe)}
                 </span>
                 {dupontData.comparison && (
-                  <span className="text-lg text-blue-400 font-medium">
+                  <span className="text-lg text-emerald-500/80 font-medium">
                     vs {formatPercent(dupontData.comparison.roe)}
                   </span>
                 )}
               </div>
-              <span className="text-xs text-blue-400 mt-2">
+              <span className="text-xs text-emerald-400 mt-2">
                 {t("ownerValueCreation")}
               </span>
             </div>
@@ -1182,7 +1193,7 @@ export default function KeyRatiosPage() {
                     .map((metric) => (
                       <tr
                         key={metric.name}
-                        className="group hover:bg-blue-50/30 transition-colors"
+                        className="group hover:bg-emerald-50/30 transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 group relative">

@@ -50,8 +50,17 @@ export default function FlagsPage() {
           const sortedAll = sortReports(parsed);
           
           if (sortedAll.length > 0) {
-             // Default to the very latest report
-             setSelectedYear(sortedAll[sortedAll.length - 1].fiscal_year);
+             // Default to the latest ANNUAL report if available
+             const latestAnnual = [...sortedAll].reverse().find(
+               (r: any) => r.period_type === "Annual" || r.fiscal_year.includes("Annual")
+             );
+
+             if (latestAnnual) {
+               setSelectedYear(latestAnnual.fiscal_year);
+             } else {
+               // Fallback to absolute latest
+               setSelectedYear(sortedAll[sortedAll.length - 1].fiscal_year);
+             }
           }
         }
       } catch (e) {
@@ -263,13 +272,13 @@ export default function FlagsPage() {
       )}
 
       {redFlags.length === 0 && greenFlags.length === 0 && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 text-center">
-          <CheckCircle2 className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-blue-900">
+        <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-xl p-8 text-center">
+          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-emerald-900">
             {t('noFlags')}
           </h3>
-          <p className="text-blue-700 mt-2">
-            {t('noFlagsDesc')} ({selectedYear})
+          <p className="text-emerald-700/70 mt-2">
+            {t('noFlagsDesc')}
           </p>
         </div>
       )}

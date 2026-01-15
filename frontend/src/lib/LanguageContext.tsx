@@ -72,21 +72,27 @@ const translations: Translations = {
     charts: "Charts",
     flags: "Flags",
     aiInsights: "AI Insights",
-    reportGenerator: "Report Generator",
 
     // Home Page
-    welcomeTitle: "Welcome to Insight Viewer",
+    welcomeTitle: "Financial Data Processing & Analysis",
     welcomeDesc:
-      "Turn dense Chinese financial filings into readable, comparable, and actionable structures.",
-    step1Title: "1. Upload",
-    step1Desc:
-      "Normalize financial data from various sources into a structured format.",
-    step2Title: "2. Analyze",
-    step2Desc:
-      "View computed ratios, Key Financial Ratios, and visualize key trends.",
-    step3Title: "3. Interpret",
-    step3Desc: "Get AI-assisted insights and export comprehensive reports.",
-    startAnalysis: "Start Analysis",
+      "A tool for parsing, normalizing, and analyzing financial reports. Converts raw data into structured metrics and visual insights.",
+    heroCta: "Begin Analysis",
+    featureImportTitle: "Data Ingestion & Normalization",
+    featureImportDesc:
+      "Standardize Excel and JSON inputs into a uniform format for cross-source consistency. The system programmatically retrieves A-share financial data via standardized stock codes.",
+    featureRatiosTitle: "Automated Ratio Computation",
+    featureRatiosDesc:
+      "Execute standardized calculations for core financial performance metrics to ensure analytical accuracy and comparability.",
+    featureBenchmarkingTitle: "Peer Benchmarking",
+    featureBenchmarkingDesc:
+      "Perform relative valuation by comparing the target company’s performance against selected A-share industry peers.",
+    featureFlagsTitle: "Algorithmic Risk Scanning",
+    featureFlagsDesc:
+      "Apply pre-defined heuristic logic to financial statements to automatically flag potential anomalies or audit risks.",
+    featureInsightsTitle: "AI-Driven Financial Insights",
+    featureInsightsDesc:
+      "Deploy Large Language Models (LLMs) to synthesize complex data, identifying high-level financial trends and structural anomalies that traditional analysis might miss.",
 
     // Import Page
     importTitle: "Data Import",
@@ -455,7 +461,7 @@ const translations: Translations = {
     // Insights Page
     aiInsightsTitle: "AI Insights",
     aiInsightsDesc:
-      "AI-assisted analysis of key financial ratios and anomalies.",
+      "AI-assisted analysis of key financial ratios and anomalies. Only for studies and research; not for investment advice.",
     aiModel: "AI Model",
     dataContext: "Data Context",
     generateInsights: "Generate Insights",
@@ -465,30 +471,10 @@ const translations: Translations = {
     noAnalysis: "No Analysis Generated Yet",
     clickToGenerate: 'Click "Generate Insights" to start the analysis.',
     downloadMD: "Download MD",
-    modelGemini: "Google Gemini (Balanced)",
-    modelDeepseek: "DeepSeek R1 (Forensic)",
-    modelQwen: "Alibaba Qwen (CN Context)",
-
-    // Report Page
-    reportTitle: "Report Generator",
-    exportSettings: "Export Settings",
-    format: "Format",
-    includeSections: "Include Sections",
     downloadPDF: "Download PDF",
-    downloadMarkdown: "Download Markdown",
-    companySummary: "Company Summary",
-    financialMetrics: "Financial Metrics",
-    chartsVisuals: "Charts & Visuals",
-    signalAnalysis: "Signal Analysis",
-    rawDataAppendix: "Raw Data Appendix",
-    generatedOn: "Generated on",
-    generatedVia: "Generated via",
-    executiveSummary: "Executive Summary",
-    mockReportTitle: "Financial Analysis Report",
-    mockExecSummaryText:
-      "The company shows strong top-line resilience with revenue holding steady at ¥2.39B. However, profitability signals suggest a need for closer inspection of operating expenses. Working capital efficiency remains a key strength.",
-    mockSignalTriggered:
-      "Triggered due to simultaneous high cash balance (¥1.2B) and short-term debt load.",
+    modelGemini: "Google Gemini",
+    modelDeepseek: "DeepSeek R1",
+    modelQwen: "Alibaba Qwen (Recommended)",
   },
   zh: {
     // Brand (Fixed)
@@ -545,19 +531,40 @@ const translations: Translations = {
     charts: "图表分析",
     flags: "风险标记",
     aiInsights: "AI 洞察",
-    reportGenerator: "报告生成",
 
     // Home Page
-    welcomeTitle: "欢迎使用 Insight Viewer",
+
+    welcomeTitle: "财务数据处理与分析",
+
     welcomeDesc:
-      "将复杂的中文财务报告转化为清晰、可比且具有行动意义的结构化数据。",
-    step1Title: "1. 上传",
-    step1Desc: "将来自不同来源的财务数据标准化为统一结构。",
-    step2Title: "2. 分析",
-    step2Desc: "查看计算出的财务比率，关键指标，并可视化关键趋势。",
-    step3Title: "3. 解读",
-    step3Desc: "获取 AI 辅助的洞察分析并导出全面报告。",
-    startAnalysis: "开始分析",
+      "用于解析、标准化和分析财务报告的工具。将原始数据转换为结构化指标和可视化洞察。",
+
+    heroCta: "开始分析",
+
+    featureImportTitle: "数据摄取与标准化",
+
+    featureImportDesc:
+      "将 Excel 和 JSON 输入标准化为统一格式，确保跨源一致性。系统通过标准化股票代码自动检索 A 股财务数据。",
+
+    featureRatiosTitle: "自动化比率计算",
+
+    featureRatiosDesc:
+      "对核心财务指标执行标准化计算，确保分析的准确性和可比性。",
+
+    featureBenchmarkingTitle: "行业对标",
+
+    featureBenchmarkingDesc:
+      "通过将目标公司的核心财务指标与选定的 A 股行业同行进行比较。",
+
+    featureFlagsTitle: "算法风险扫描",
+
+    featureFlagsDesc:
+      "将预定义的启发式逻辑应用于财务报表，自动标记潜在的异常或审计风险。",
+
+    featureInsightsTitle: "AI 驱动的财务洞察",
+
+    featureInsightsDesc:
+      "部署大语言模型 (LLM) 合成复杂数据，识别传统分析可能忽略的高级财务趋势和结构性异常。",
 
     // Import Page
     importTitle: "数据导入",
@@ -921,7 +928,8 @@ const translations: Translations = {
 
     // Insights Page
     aiInsightsTitle: "AI 洞察",
-    aiInsightsDesc: "关键财务比率与异常的 AI 辅助分析。",
+    aiInsightsDesc:
+      "本项目及其生成的内容仅用于学习与研究目的。本项目不提供任何形式的投资建议。",
     aiModel: "AI 模型",
     dataContext: "数据上下文",
     generateInsights: "生成洞察",
@@ -931,29 +939,10 @@ const translations: Translations = {
     noAnalysis: "尚未生成分析",
     clickToGenerate: "点击“生成洞察”开始分析。",
     downloadMD: "下载 Markdown",
-    modelGemini: "Google Gemini (均衡)",
-    modelDeepseek: "DeepSeek R1 (深度取证)",
-    modelQwen: "Alibaba Qwen (中文语境)",
-
-    // Report Page
-    reportTitle: "报告生成器",
-    exportSettings: "导出设置",
-    format: "格式",
-    includeSections: "包含章节",
     downloadPDF: "下载 PDF",
-    downloadMarkdown: "下载 Markdown",
-    companySummary: "公司摘要",
-    financialMetrics: "财务指标",
-    chartsVisuals: "图表与可视化",
-    signalAnalysis: "信号分析",
-    rawDataAppendix: "原始数据附录",
-    generatedOn: "生成于",
-    generatedVia: "生成模型：",
-    executiveSummary: "执行摘要",
-    mockReportTitle: "财务分析报告",
-    mockExecSummaryText:
-      "公司营收保持稳健，稳定在 23.9 亿元。然而，盈利信号表明需要密切关注运营支出。营运资金效率仍然是一个关键优势。",
-    mockSignalTriggered: "由于现金余额高（12亿元）且短期债务负担重而触发。",
+    modelGemini: "Google Gemini",
+    modelDeepseek: "DeepSeek R1",
+    modelQwen: "Alibaba Qwen (推荐)",
 
     // Generated from backend/app/core/mappings.py
     "Accounts Payable": "应付账款",

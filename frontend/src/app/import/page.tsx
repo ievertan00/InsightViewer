@@ -603,17 +603,17 @@ export default function UploadPage() {
         <p className="text-gray-500">{t("importDesc")}</p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-4">
-        <h2 className="font-semibold text-blue-900 flex items-center">
-          <Info className="w-5 h-5 mr-2 text-blue-600" />
+      <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-xl p-6 space-y-4">
+        <h2 className="font-semibold text-emerald-900 flex items-center">
+          <Info className="w-5 h-5 mr-2 text-emerald-600" />
           {t("howToImport")}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-emerald-800">
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep1")}</h3>
-            <p className="mb-2">{t("howToImportStep1Desc")}</p>
-            <ul className="list-disc list-inside space-y-1 text-blue-700">
+            <p className="mb-2 text-emerald-700/80">{t("howToImportStep1Desc")}</p>
+            <ul className="list-disc list-inside space-y-1 text-emerald-700">
               <li>{t("howToImportStep1Bullet1")}</li>
               <li>{t("howToImportStep1Bullet2")}</li>
             </ul>
@@ -621,8 +621,8 @@ export default function UploadPage() {
 
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep2")}</h3>
-            <p className="mb-2">{t("howToImportStep2Desc")}</p>
-            <ul className="list-disc list-inside space-y-1 text-blue-700">
+            <p className="mb-2 text-emerald-700/80">{t("howToImportStep2Desc")}</p>
+            <ul className="list-disc list-inside space-y-1 text-emerald-700">
               <li>{t("howToImportStep2Bullet1").replace("{copyLlmPrompt}", t("copyLlmPrompt"))}</li>
               <li>{t("howToImportStep2Bullet2")}</li>
               <li>{t("howToImportStep2Bullet3")}</li>
@@ -632,8 +632,8 @@ export default function UploadPage() {
 
           <div>
             <h3 className="font-bold mb-2">{t("howToImportStep3")}</h3>
-            <p className="mb-2">{t("howToImportStep3Desc")}</p>
-            <ul className="list-disc list-inside space-y-1 text-blue-700">
+            <p className="mb-2 text-emerald-700/80">{t("howToImportStep3Desc")}</p>
+            <ul className="list-disc list-inside space-y-1 text-emerald-700">
               <li>{t("howToImportStep3Bullet1")}</li>
               <li>{t("howToImportStep3Bullet2")}</li>
             </ul>
@@ -643,7 +643,7 @@ export default function UploadPage() {
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <h3 className="font-semibold text-gray-800 flex items-center">
-          <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
+          <span className="w-8 h-8 rounded-full bg-emerald-100 text-primary flex items-center justify-center mr-3 text-sm">
             1
           </span>
           {t("searchAShare")}
@@ -681,7 +681,7 @@ export default function UploadPage() {
           <button
             onClick={fetchStockData}
             disabled={isFetchingStock || !stockSymbol}
-            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 whitespace-nowrap flex items-center"
+            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-900 transition-colors disabled:bg-gray-400 whitespace-nowrap flex items-center"
           >
             {isFetchingStock ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -704,14 +704,14 @@ export default function UploadPage() {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-gray-800 flex items-center">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
+            <span className="w-8 h-8 rounded-full bg-emerald-100 text-primary flex items-center justify-center mr-3 text-sm">
               2
             </span>
             {t("pasteJson")}
           </h3>
           <button
             onClick={copyLlmPrompt}
-            className="text-xs text-primary hover:text-blue-800 font-medium underline"
+            className="text-xs text-primary hover:text-emerald-800 font-medium underline"
           >
             {t("copyLlmPrompt")}
           </button>
@@ -741,7 +741,7 @@ export default function UploadPage() {
           <button
             onClick={handleJsonPaste}
             disabled={!jsonContent.trim() || isProcessingPaste}
-            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-900 transition-colors disabled:bg-gray-400 flex items-center"
+            className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-900 transition-colors disabled:bg-gray-400 flex items-center"
           >
             {isProcessingPaste ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -762,7 +762,7 @@ export default function UploadPage() {
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <h3 className="font-semibold text-gray-800 flex items-center">
-          <span className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3 text-sm">
+          <span className="w-8 h-8 rounded-full bg-emerald-100 text-primary flex items-center justify-center mr-3 text-sm">
             3
           </span>
           {t("dragDropTitle")}
@@ -779,7 +779,7 @@ export default function UploadPage() {
           className={clsx(
             "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer bg-gray-50/50 min-h-[200px]",
             isDragging
-              ? "border-primary bg-blue-50"
+              ? "border-primary bg-emerald-50/30"
               : "border-gray-200 hover:border-primary"
           )}
           onDragOver={handleDragOver}
@@ -823,7 +823,7 @@ export default function UploadPage() {
             </a>
           </div>
 
-          <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-blue-900 transition-colors z-10 relative">
+          <label className="bg-primary text-white px-6 py-2 rounded-lg font-medium cursor-pointer hover:bg-emerald-900 transition-colors z-10 relative">
             {t("browseFiles")}
             <input
               type="file"
@@ -930,7 +930,7 @@ export default function UploadPage() {
                   "px-6 py-2 rounded-lg font-medium text-white transition-colors flex items-center",
                   isProcessingUpload
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-primary hover:bg-blue-900"
+                    : "bg-primary hover:bg-emerald-900"
                 )}
               >
                 {isProcessingUpload && (

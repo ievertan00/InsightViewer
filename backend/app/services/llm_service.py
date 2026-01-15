@@ -20,6 +20,7 @@ You are an expert Senior Financial Specialist (CFA/CPA level). Your goal is to p
 **Language:** Respond strictly in {language}.
 
 **Core Mandates:**
+1.  **Annual-Data-First:** PRIORITIZE data from the most recent Annual period as the primary basis for analysis. Use data from other periods solely for trend confirmation or supporting evidence.
 1.  **EVIDENCE-BASED:** Every claim must cite a specific data point.
 2.  **FILTER NOISE:** Do not mention metrics that are missing or zero unless they are critical omissions.
 3.  **STRUCTURE:** Use clear Markdown headings.
@@ -62,18 +63,23 @@ You are an expert Senior Financial Specialist (CFA/CPA level). Your goal is to p
         filtered_report = self._filter_zeros(context.full_report)
         filtered_ratios = self._filter_zeros(context.ratios)
         
+        # Restrict Ratios and Flags to Annual Data Only
+        is_annual = context.period_type == "Annual" or "Annual" in context.fiscal_year
+        
+        final_ratios = filtered_ratios if is_annual else {}
+        final_flags = [f.dict() for f in context.active_flags] if is_annual else []
+
         # Construct a focused context dictionary
         final_context = {
             "meta": {
                 "company": context.company_name,
-                "code": context.stock_code,
                 "year": context.fiscal_year,
                 "period": context.period_type
             },
             "financials": filtered_report,
-            "ratios": filtered_ratios,
+            "ratios": final_ratios,
             "trends": [t.dict() for t in context.trends],
-            "flags": [f.dict() for f in context.active_flags]
+            "flags": final_flags
         }
 
         return f"""

@@ -35,16 +35,16 @@ export default function GrowthComboChart({
         data={data}
         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
         <XAxis 
             dataKey="year" 
-            tick={{ fill: '#6b7280', fontSize: 12 }} 
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ fill: '#64748B', fontSize: 12 }} 
+            axisLine={{ stroke: '#E2E8F0' }}
             tickLine={false}
         />
         <YAxis 
             yAxisId="left"
-            tick={{ fill: '#6b7280', fontSize: 12 }} 
+            tick={{ fill: '#64748B', fontSize: 12 }} 
             axisLine={false}
             tickLine={false}
             tickFormatter={(val) => `${val.toFixed(0)}${barUnit}`}
@@ -52,7 +52,7 @@ export default function GrowthComboChart({
         <YAxis 
             yAxisId="right"
             orientation="right"
-            tick={{ fill: '#6b7280', fontSize: 12 }} 
+            tick={{ fill: '#64748B', fontSize: 12 }} 
             axisLine={false}
             tickLine={false}
             tickFormatter={(val) => `${val}%`}

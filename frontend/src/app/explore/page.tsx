@@ -950,7 +950,7 @@ export default function DataPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900">{t('noDataFound')}</h2>
               <p className="text-gray-500 max-w-md">{t('noData')}</p>
-              <Link href="/import" className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-blue-900 transition-colors flex items-center">
+              <Link href="/import" className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-emerald-900 transition-colors flex items-center">
                   {t('getFinancialData')} <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
           </div>
@@ -988,7 +988,7 @@ export default function DataPage() {
             <div className="relative" onClick={e => e.stopPropagation()}>
                 <button 
                     onClick={() => { setShowTypeDropdown(!showTypeDropdown); setShowFilterDropdown(false); }}
-                    className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showTypeDropdown ? 'border-primary text-primary bg-blue-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                    className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showTypeDropdown ? 'border-primary text-primary bg-emerald-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
                     <Filter className="w-4 h-4 mr-2" />
                     {t('sheet')} ({selectedTypes.size})
@@ -1015,7 +1015,7 @@ export default function DataPage() {
             <div className="relative" onClick={e => e.stopPropagation()}>
                 <button 
                     onClick={() => { setShowFilterDropdown(!showFilterDropdown); setShowTypeDropdown(false); }}
-                    className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showFilterDropdown ? 'border-primary text-primary bg-blue-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                    className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${showFilterDropdown ? 'border-primary text-primary bg-emerald-50' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
                     <Filter className="w-4 h-4 mr-2" />
                     {t('items')} ({selectedItems.size})
@@ -1113,7 +1113,7 @@ export default function DataPage() {
                         row.itemLevel === 1 ? "bg-gray-100 hover:bg-gray-200" :
                         // Level 2: Main Categories (bold, subtle bg, extra top padding)
                         row.itemLevel === 2 ? "bg-gray-50 hover:bg-gray-100" : 
-                        "hover:bg-blue-50/30"
+                        "hover:bg-emerald-50/30"
                       )}>
                         <td className={clsx(
                             "pr-6 text-gray-900 truncate max-w-[300px]",

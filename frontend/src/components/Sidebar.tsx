@@ -26,7 +26,6 @@ export default function Sidebar() {
     { name: t("charts"), href: "/charts", icon: LayoutDashboard },
     { name: t("flags"), href: "/flags", icon: Flag },
     { name: t("aiInsights"), href: "/insights", icon: Zap },
-    { name: t("reportGenerator"), href: "/export", icon: Share2 },
   ];
 
   return (
