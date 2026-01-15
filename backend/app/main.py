@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.schemas import StandardizedReport
 from app.api import upload, stock, report
+from datetime import datetime
 
 # Load .env file
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -32,6 +33,7 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api/v1", tags=["upload"])
 app.include_router(stock.router, prefix="/api/v1", tags=["stock"])
 app.include_router(report.router, prefix="/api/v1", tags=["report"])
+app.include_router(report.router, prefix="/api/v1", tags=["health"])
 
 @app.get("/")
 def read_root():
@@ -39,7 +41,7 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 @app.get("/schema/template", response_model=StandardizedReport)
 def get_schema_template():
