@@ -11,6 +11,16 @@ export interface ParsedSheetData {
   data: FinancialDataPoint[];
 }
 
+export interface ReportData {
+  [key: string]: any; // Loose typing for deep nested financial data
+}
+
+export interface StandardizedReport {
+  fiscal_year: string;
+  period_type: string;
+  data: ReportData;
+}
+
 // --- LLM Report Types ---
 
 export interface MetricTrend {
