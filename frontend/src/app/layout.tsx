@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { LanguageProvider } from "@/lib/LanguageContext";
+import { SidebarProvider } from "@/lib/SidebarContext";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -34,13 +35,15 @@ export default function RootLayout({
       >
         <div className="noise-bg" />
         <LanguageProvider>
-          <div className="print:hidden">
-            <Sidebar />
-            <Header />
-          </div>
-          <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)] relative z-10 print:ml-0 print:p-0">
-            {children}
-          </main>
+          <SidebarProvider>
+            <div className="print:hidden">
+              <Sidebar />
+              <Header />
+            </div>
+            <main className="md:ml-64 p-8 min-h-[calc(100vh-4rem)] relative z-10 print:ml-0 print:p-0">
+              {children}
+            </main>
+          </SidebarProvider>
         </LanguageProvider>
       </body>
     </html>

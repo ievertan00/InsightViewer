@@ -5,11 +5,13 @@ import { User, Settings, Bell, Menu, Landmark } from "lucide-react";
 import { usePathname } from "next/navigation";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useSidebar } from "@/lib/SidebarContext";
 
 export default function Header() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { toggle } = useSidebar();
 
   useEffect(() => {
     // Check for company name in localStorage periodically or on mount
@@ -33,7 +35,11 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between h-16 px-6 glass sticky top-0 z-30 md:ml-64 border-b-0">
       <div className="flex items-center">
-        <button className="mr-4 md:hidden text-gray-500" aria-label="Menu">
+        <button
+          className="mr-4 md:hidden text-gray-500"
+          aria-label="Menu"
+          onClick={toggle}
+        >
           <Menu className="w-6 h-6" />
         </button>
         <div className="flex items-center space-x-2">
