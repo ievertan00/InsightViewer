@@ -18,8 +18,9 @@ It handles the parsing, normalization, and analysis of Chinese financial reports
 
 2.  Create a virtual environment (recommended):
 
-    ```bash
+    ```bash    
     python -m venv venv
+
     # Windows:
     venv\Scripts\activate
     # Linux/Mac:
