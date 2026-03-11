@@ -17,7 +17,17 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
 app = FastAPI(title="Insight Viewer API", version="0.1.0")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
+    logging.error(f"{request.method} {request.url} - Validation error: {exc_str}")
+    content = {'detail': exc.errors(), 'body': exc.body}
+    return JSONResponse(content=content, status_code=422)
 
 # Add CORS middleware
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://insight-viewer-web.onrender.com").split(",")
