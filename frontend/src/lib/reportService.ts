@@ -53,40 +53,45 @@ export function extractAnalysisContext(reports: any[], language: string = "en", 
 
   for (const m of metricsToTrack) {
     const curr = getVal(d, m.path);
-    const prev = pd ? getVal(pd, m.path) : undefined;
-    const yoy = prev ? ((curr - prev) / Math.abs(prev)) * 100 : undefined;
+    const prev = pd ? getVal(pd, m.path) : null;
+    const yoy = (prev !== null && prev !== 0) ? ((curr - prev) / Math.abs(prev)) * 100 : null;
     
     trends.push({
       metric_name: m.name,
       current_value: curr,
-      previous_value: prev,
-      yoy_change_percent: yoy,
-      trend_direction: yoy === undefined ? "stable" : yoy > 2 ? "increasing" : yoy < -2 ? "decreasing" : "stable"
+      previous_value: prev ?? 0,
+      yoy_change_percent: yoy ?? 0,
+      trend_direction: yoy === null ? "stable" : yoy > 2 ? "increasing" : yoy < -2 ? "decreasing" : "stable"
     });
   }
 
   // 2. Active Flags
   const computedFlags = analyzeFlags(reports);
   const active_flags: ActiveFlag[] = computedFlags.map(f => ({
-    flag_name: f.name,
-    flag_type: f.type as "Red" | "Green",
+    flag_name: f.name || "Unknown Flag",
+    flag_type: (f.type === "Red" || f.type === "Green") ? f.type : "Red",
     severity: f.type === "Red" ? "Critical" : "Positive",
-    triggered_value: f.value,
-    threshold: f.threshold,
-    description: f.description
+    triggered_value: String(f.value || "0"),
+    threshold: String(f.threshold || "0"),
+    description: f.description || "No description"
   }));
 
   // 3. Calculated Ratios
   const ratios = calculateRatios(d, pd, latest.period_type);
+  // Ensure no NaNs or nulls in ratios
+  const cleanRatios: Record<string, number> = {};
+  Object.entries(ratios).forEach(([k, v]) => {
+    cleanRatios[k] = isNaN(v) || v === null ? 0 : v;
+  });
 
   return {
     company_name: companyName || latest.company_meta?.name || "Unknown Company",
     stock_code: latest.company_meta?.stock_code || "N/A",
-    fiscal_year: latest.fiscal_year,
-    period_type: latest.period_type,
+    fiscal_year: latest.fiscal_year || "Unknown",
+    period_type: latest.period_type || "Annual",
     language,
-    full_report: latest.data,
-    ratios,
+    full_report: latest.data || {},
+    ratios: cleanRatios,
     trends,
     active_flags,
     missing_data: []
