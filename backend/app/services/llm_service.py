@@ -98,9 +98,9 @@ Analyze the following company data for {context.company_name}:
         if not self.gemini_client:
             raise ValueError("GEMINI_API_KEY not set or client initialization failed")
         
-        # Updated to use gemini-3.0-flash model
+        # Updated to use gemini-3-flash-preview model
         response = self.gemini_client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-3-flash-preview',
             contents=f"{system_prompt}\n\n{user_message}"
         )
         return response.text

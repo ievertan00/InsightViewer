@@ -41,7 +41,7 @@ async def financial_analysis_flow(context: AnalysisContext) -> GeneratedReport:
         raise ValueError("GEMINI_API_KEY not found in environment.")
 
     client = genai.Client(api_key=api_key)
-    model_id = 'gemini-3.0-flash'
+    model_id = 'gemini-3-flash-preview'
 
     # --- Step 1: The Analyst ---
     print("  [1/3] Analyst: Generating draft...")
@@ -132,7 +132,7 @@ async def financial_analysis_flow(context: AnalysisContext) -> GeneratedReport:
     {{
         "title": "...",
         "profile_used": "Triangle of Truth Architecture",
-        "model_used": "Gemini-3.0-Flash",
+        "model_used": "Gemini-3-Flash-Preview",
         "sections": [
             {{ "section_title": "Executive Summary", "content_markdown": "..." }},
             ...
