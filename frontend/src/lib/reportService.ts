@@ -101,7 +101,8 @@ function getVal(data: any, path: string): number {
   for (const part of parts) {
     curr = curr?.[part];
   }
-  return typeof curr === "number" ? curr : curr?.amount || 0;
+  const value = typeof curr === "number" ? curr : curr?.amount || 0;
+  return isNaN(value) ? 0 : value;
 }
 
 const safeDiv = (num: number, den: number) => (den === 0 ? 0 : num / den);

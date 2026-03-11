@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 from typing import List, Dict, Any
-import google.generativeai as genai
+from google import genai
 from openai import OpenAI
 from app.models.llm_schemas import AnalysisContext, GeneratedReport, GeneratedReportSection
 
@@ -11,6 +11,10 @@ class LLMService:
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         self.deepseek_key = os.getenv("DEEPSEEK_API_KEY")
         self.qwen_key = os.getenv("DASHSCOPE_API_KEY") or os.getenv("QWEN_API_KEY")
+        
+        self.gemini_client = None
+        if self.gemini_key:
+            self.gemini_client = genai.Client(api_key=self.gemini_key)
 
     def _get_system_prompt(self, language: str) -> str:
         return f"""
@@ -91,12 +95,14 @@ Analyze the following company data for {context.company_name}:
 """
 
     def _call_gemini_sync(self, system_prompt: str, user_message: str) -> str:
-        if not self.gemini_key:
-            raise ValueError("GEMINI_API_KEY not set")
-        genai.configure(api_key=self.gemini_key)
-        # Updated to use available model from list_models.py
-        model = genai.GenerativeModel('gemini-3-flash-preview')
-        response = model.generate_content(f"{system_prompt}\n\n{user_message}")
+        if not self.gemini_client:
+            raise ValueError("GEMINI_API_KEY not set or client initialization failed")
+        
+        # Updated to use gemini-3.0-flash model
+        response = self.gemini_client.models.generate_content(
+            model='gemini-3.0-flash',
+            contents=f"{system_prompt}\n\n{user_message}"
+        )
         return response.text
 
     def _call_deepseek_sync(self, system_prompt: str, user_message: str) -> str:

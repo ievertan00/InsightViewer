@@ -38,3 +38,4 @@ backend/.mypy_cache/
 # Project Specific
 /DemoData/
 venv
+/node_modules/

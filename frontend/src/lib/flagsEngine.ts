@@ -26,7 +26,8 @@ const getVal = (data: any, path: string): number => {
   for (const part of parts) {
     curr = curr?.[part];
   }
-  return typeof curr === "number" ? curr : curr?.amount || 0;
+  const value = typeof curr === "number" ? curr : curr?.amount || 0;
+  return isNaN(value) ? 0 : value;
 };
 
 // Safe division
